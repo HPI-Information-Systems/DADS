@@ -10,4 +10,7 @@ public class SlaveCommand extends BaseCommand
 {
     @Parameter(names = "--master-host", description = "host of the MASTER system", required = true)
     private String masterHost;
+
+    @Parameter(names = "--master-port", description = "port of the MASTER system")
+    private int masterPort = DEFAULT_PORT;
 }

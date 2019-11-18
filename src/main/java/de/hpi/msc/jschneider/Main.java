@@ -2,10 +2,14 @@ package de.hpi.msc.jschneider;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import de.hpi.msc.jschneider.bootstrap.ActorSystemInitializer;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
+import de.hpi.msc.jschneider.bootstrap.command.SlaveCommand;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.FileNotFoundException;
 
 public class Main
 {
@@ -17,9 +21,11 @@ public class Main
     public static void main(final String[] args)
     {
         val masterCommand = new MasterCommand();
+        val slaveCommand = new SlaveCommand();
 
         val argumentParser = JCommander.newBuilder()
                                        .addCommand(MASTER_COMMAND, masterCommand)
+                                       .addCommand(SLAVE_COMMAND, slaveCommand)
                                        .build();
 
         try
@@ -36,10 +42,12 @@ public class Main
             {
                 case MASTER_COMMAND:
                 {
+                    ActorSystemInitializer.runMaster(masterCommand);
                     break;
                 }
                 case SLAVE_COMMAND:
                 {
+                    ActorSystemInitializer.runSlave(slaveCommand);
                     break;
                 }
                 default:
@@ -59,6 +67,11 @@ public class Main
             {
                 argumentParser.usage(argumentParser.getParsedCommand());
             }
+            System.exit(1);
+        }
+        catch (FileNotFoundException fileNotFoundException)
+        {
+            Log.error(fileNotFoundException);
             System.exit(1);
         }
     }

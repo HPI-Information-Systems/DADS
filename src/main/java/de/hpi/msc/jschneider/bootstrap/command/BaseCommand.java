@@ -13,9 +13,13 @@ abstract class BaseCommand
 {
     private static final int DEFAULT_NUMBER_OF_WORKERS = 4;
     private static final Path DEFAULT_WORKING_DIRECTORY = Paths.get("");
+    protected static final int DEFAULT_PORT = 7788;
 
     @Parameter(names = "--host", description = "host address of THIS actor system", required = true)
     private String host;
+
+    @Parameter(names = "--port", description = "port of THIS actor system")
+    private int port = DEFAULT_PORT;
 
     @Parameter(names = "--workers", description = "number of worker threads to utilize")
     private int numberOfWorkers = DEFAULT_NUMBER_OF_WORKERS;
