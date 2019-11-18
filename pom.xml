@@ -72,6 +72,11 @@
             <version>2.6.0</version>
         </dependency>
         <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>chill-akka_2.12</artifactId>
+            <version>0.9.3</version>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.14.0</version>
@@ -93,6 +98,11 @@
             <artifactId>lombok</artifactId>
             <version>1.18.10</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>1.78</version>
         </dependency>
     </dependencies>
 
