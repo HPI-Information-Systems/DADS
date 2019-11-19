@@ -1,7 +1,7 @@
 package de.hpi.msc.jschneider.bootstrap;
 
 import akka.actor.ActorSystem;
-import de.hpi.msc.jschneider.actor.common.Reaper;
+import de.hpi.msc.jschneider.actor.common.reaper.Reaper;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.bootstrap.command.SlaveCommand;
 import de.hpi.msc.jschneider.bootstrap.configuration.ConfigurationFactory;
@@ -40,7 +40,7 @@ public class ActorSystemInitializer
         val configuration = ConfigurationFactory.createRemoteConfiguration(host, port);
         val actorSystem = ActorSystem.create(name, configuration);
 
-        Reaper.spawn(actorSystem);
+        Reaper.spawnIn(actorSystem);
 
         return actorSystem;
     }

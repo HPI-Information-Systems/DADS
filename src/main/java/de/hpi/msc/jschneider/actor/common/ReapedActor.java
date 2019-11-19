@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.actor.common;
 
-public abstract class ReapedActor extends BaseActor
+import de.hpi.msc.jschneider.actor.common.reaper.Reaper;
+
+public abstract class ReapedActor<TController extends BaseActorController> extends BaseActor<TController>
 {
     @Override
     public void preStart() throws Exception

@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.utility;
 
 import akka.japi.pf.FI;
+import junit.framework.TestCase;
 import lombok.val;
 import org.junit.Test;
 
@@ -8,10 +9,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ImprovedReceiveBuilderTest
+public class ImprovedReceiveBuilderTest extends TestCase
 {
-    @Test
-    public void latestMessageHandlerIsUsed()
+    public void testLatestMessageHandlerIsUsed()
     {
         val builder = new ImprovedReceiveBuilder();
 
@@ -32,8 +32,7 @@ public class ImprovedReceiveBuilderTest
         assertThat(numberOfCallsToHandler2.get()).isEqualTo(1);
     }
 
-    @Test
-    public void latestMatchAnyIsUsed()
+    public void testLatestMatchAnyIsUsed()
     {
         val builder = new ImprovedReceiveBuilder();
 

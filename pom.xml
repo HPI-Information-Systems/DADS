@@ -72,6 +72,13 @@
             <version>2.6.0</version>
         </dependency>
         <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-testkit_${scala.version}</artifactId>
+            <version>2.6.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>chill-akka_2.12</artifactId>
             <version>0.9.3</version>
