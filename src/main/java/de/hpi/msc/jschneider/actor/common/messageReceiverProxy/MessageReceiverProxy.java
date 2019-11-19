@@ -1,15 +1,16 @@
-package de.hpi.msc.jschneider.actor.common.reaper;
+package de.hpi.msc.jschneider.actor.common.messageReceiverProxy;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
+import de.hpi.msc.jschneider.actor.common.Message;
 import de.hpi.msc.jschneider.actor.common.messageSenderProxy.MessageSenderProxy;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
+public class MessageReceiverProxy extends AbstractActor<MessageReceiverProxyModel, MessageReceiverProxyControl>
 {
     private static final String NAME = "MessageReceiverProxy";
     private static ActorRef globalInstance;
@@ -17,7 +18,7 @@ public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
 
     public static ActorRef createIn(ActorSystem actorSystem)
     {
-        return actorSystem.actorOf(Props.create(Reaper.class), NAME);
+        return actorSystem.actorOf(Props.create(MessageReceiverProxy.class), NAME);
     }
 
     public static ActorRef globalInstance()
@@ -49,28 +50,27 @@ public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
     }
 
     @Override
-    protected ReaperModel createModel()
+    protected MessageReceiverProxyModel createModel()
     {
-        return ReaperModel.builder()
-                          .selfProvider(this::self)
-                          .senderProvider(this::sender)
-                          .messageSenderProxyProvider(MessageSenderProxy::globalInstance)
-                          .childFactory(context()::actorOf)
-                          .watchActorCallback(context()::watch)
-                          .terminateSystemCallback(context().system()::terminate)
-                          .build();
+        return MessageReceiverProxyModel.builder()
+                                        .selfProvider(this::self)
+                                        .senderProvider(this::sender)
+                                        .messageSenderProxyProvider(MessageSenderProxy::globalInstance)
+                                        .childFactory(context()::actorOf)
+                                        .watchActorCallback(context()::watch)
+                                        .build();
     }
 
     @Override
-    protected ReaperControl createControl(ReaperModel model)
+    protected MessageReceiverProxyControl createControl(MessageReceiverProxyModel model)
     {
-        return new ReaperControl(model);
+        return new MessageReceiverProxyControl(model);
     }
 
     @Override
     public Receive createReceive()
     {
-        return defaultReceiveBuilder().match(ReaperMessages.WatchMeMessage.class, control()::onWatchMe)
+        return defaultReceiveBuilder().match(Message.class, control()::onMessage)
                                       .build();
     }
 }
