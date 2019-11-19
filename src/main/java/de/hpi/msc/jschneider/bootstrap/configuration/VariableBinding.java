@@ -7,13 +7,13 @@ class VariableBinding
     private final String _pattern;
     private final String _value;
 
-    VariableBinding(final String pattern, final Object value)
+    VariableBinding(String pattern, Object value)
     {
         _pattern = pattern;
         _value = Objects.toString(value);
     }
 
-    String apply(final String input)
+    String apply(String input)
     {
         return input.replaceAll(_pattern, _value);
     }

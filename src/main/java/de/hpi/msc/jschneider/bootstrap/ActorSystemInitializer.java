@@ -23,21 +23,21 @@ public class ActorSystemInitializer
     private static final String MASTER_ACTOR_SYSTEM_NAME = "MasterActorSystem";
     private static final String SLAVE_ACTOR_SYSTEM_NAME = "SlaveActorSystem";
 
-    public static void runMaster(final MasterCommand masterCommand) throws FileNotFoundException
+    public static void runMaster(MasterCommand masterCommand) throws FileNotFoundException
     {
         val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME, masterCommand.getHost(), masterCommand.getPort());
 
         awaitTermination(actorSystem);
     }
 
-    public static void runSlave(final SlaveCommand slaveCommand) throws FileNotFoundException
+    public static void runSlave(SlaveCommand slaveCommand) throws FileNotFoundException
     {
         val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand.getHost(), slaveCommand.getPort());
 
         awaitTermination(actorSystem);
     }
 
-    private static ActorSystem initializeActorSystem(final String name, final String host, final int port) throws FileNotFoundException
+    private static ActorSystem initializeActorSystem(String name, String host, int port) throws FileNotFoundException
     {
         val configuration = ConfigurationFactory.createRemoteConfiguration(host, port);
         val actorSystem = ActorSystem.create(name, configuration);
@@ -49,7 +49,7 @@ public class ActorSystemInitializer
         return actorSystem;
     }
 
-    private static void awaitTermination(final ActorSystem actorSystem)
+    private static void awaitTermination(ActorSystem actorSystem)
     {
         try
         {

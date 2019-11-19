@@ -9,7 +9,7 @@ import java.nio.file.Path;
 public class FileValidator implements IValueValidator<Path>
 {
     @Override
-    public void validate(final String parameterName, final Path parameterValue) throws ParameterException
+    public void validate(String parameterName, Path parameterValue) throws ParameterException
     {
         val file = parameterValue.toFile();
         if (!file.exists())

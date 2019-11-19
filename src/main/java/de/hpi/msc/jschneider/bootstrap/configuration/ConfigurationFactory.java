@@ -16,14 +16,14 @@ public class ConfigurationFactory
     private static final String HOST_VARIABLE_PATTERN = "host";
     private static final String PORT_VARIABLE_PATTERN = "port";
 
-    public static Config createRemoteConfiguration(final String host, final int port) throws FileNotFoundException
+    public static Config createRemoteConfiguration(String host, int port) throws FileNotFoundException
     {
         return loadConfiguration(DEFAULT_CONFIGURATION_NAME,
                                  new VariableBinding(HOST_VARIABLE_PATTERN, host),
                                  new VariableBinding(PORT_VARIABLE_PATTERN, port));
     }
 
-    private static Config loadConfiguration(final String resourceName, VariableBinding... variables) throws FileNotFoundException
+    private static Config loadConfiguration(String resourceName, VariableBinding... variables) throws FileNotFoundException
     {
         val inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
         if (inputStream == null)
