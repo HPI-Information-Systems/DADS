@@ -5,6 +5,8 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
 import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.utility.actorPool.ActorPool;
+import de.hpi.msc.jschneider.actor.utility.actorPool.RoundRobinActorPool;
 import lombok.var;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,8 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MessageSenderProxy extends AbstractActor<MessageSenderProxyModel, MessageSenderProxyControl>
 {
     private static final String NAME = "MessageSenderProxy";
-    private static final AtomicInteger nextInstanceIndex = new AtomicInteger();
-    private static ActorRef[] instancePool;
+    private static ActorPool instancePool;
 
     public static void initializePool(ActorSystem actorSystem, int poolSize) throws Exception
     {
@@ -22,16 +23,12 @@ public class MessageSenderProxy extends AbstractActor<MessageSenderProxyModel, M
             throw new Exception("The global MessageSenderProxy pool has already been initialized!");
         }
 
-        instancePool = new ActorRef[poolSize];
-        for (var i = 0; i < poolSize; ++i)
-        {
-            instancePool[i] = actorSystem.actorOf(Props.create(MessageSenderProxy.class), NAME + i);
-        }
+        instancePool = new RoundRobinActorPool(NAME, poolSize, actorName -> actorSystem.actorOf(Props.create(MessageSenderProxy.class), actorName));
     }
 
     public static ActorRef getLocalActor()
     {
-        return instancePool[nextInstanceIndex.getAndIncrement() % instancePool.length];
+        return instancePool.getActor();
     }
 
     @Override

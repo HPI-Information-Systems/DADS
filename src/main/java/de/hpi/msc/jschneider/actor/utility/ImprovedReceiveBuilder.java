@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.utility;
+package de.hpi.msc.jschneider.actor.utility;
 
 import akka.actor.AbstractActor;
 import akka.japi.pf.CaseStatement;

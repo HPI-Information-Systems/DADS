@@ -44,7 +44,7 @@ public class ActorSystemInitializer
 
         MessageSenderProxy.initializePool(actorSystem, command.getNumberOfWorkers());
         MessageReceiverProxy.initializePool(actorSystem, command.getNumberOfWorkers());
-        Reaper.getLocalActor(Reaper.initializeSingleton(actorSystem));
+        Reaper.initializeSingleton(actorSystem);
 
         return actorSystem;
     }

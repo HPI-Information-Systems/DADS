@@ -12,6 +12,6 @@ public class MessageSenderProxyMessages
     public static class AddMessageReceiverPoolMessage extends AbstractMessage
     {
         private static final long serialVersionUID = 2764089941012723670L;
-        private ActorRef[] messageReceiverPool;
+        private ActorRef[] messageReceivers;
     }
 }

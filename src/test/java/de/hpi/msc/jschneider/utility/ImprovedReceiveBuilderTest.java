@@ -1,9 +1,9 @@
 package de.hpi.msc.jschneider.utility;
 
 import akka.japi.pf.FI;
+import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 import junit.framework.TestCase;
 import lombok.val;
-import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

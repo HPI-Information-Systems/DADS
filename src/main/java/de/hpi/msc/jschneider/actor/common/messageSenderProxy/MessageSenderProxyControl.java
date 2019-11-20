@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.actor.common.messageSenderProxy;
 
 import de.hpi.msc.jschneider.actor.common.AbstractActorControl;
 import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.utility.actorPool.RoundRobinActorPool;
 import lombok.val;
 import lombok.var;
 import org.agrona.collections.MutableLong;
@@ -17,14 +18,14 @@ public class MessageSenderProxyControl extends AbstractActorControl<MessageSende
     public void send(Message message)
     {
         val receiverRootPath = message.getReceiver().path().root();
-        val receiver = getModel().getRemoteMessageReceivers().get(receiverRootPath);
-        if (receiver == null)
+        val receiverPool = getModel().getRemoteMessageReceivers().get(receiverRootPath);
+        if (receiverPool == null)
         {
             getLog().error(String.format("Unable to send message to %1$s!", receiverRootPath));
             return;
         }
 
-        receiver.tell(message, message.getSender());
+        receiverPool.getActor().tell(message, message.getSender());
 
         var counter = getModel().getSentMessageCounter().get(receiverRootPath);
         if (counter == null)
@@ -39,7 +40,14 @@ public class MessageSenderProxyControl extends AbstractActorControl<MessageSende
 
     public void onAddMessageReceiver(MessageSenderProxyMessages.AddMessageReceiverPoolMessage message)
     {
-        getModel().getRemoteMessageReceivers().put(message.getMessageReceiverPool().path().root(), message.getMessageReceiverPool());
+        if (message.getMessageReceivers().length < 1)
+        {
+            getLog().warn(String.format("%1$s tried to add 0 remote message receivers to %2$s.", getSender().path(), getClass().getName()));
+            return;
+        }
+
+        val remoteRootPath = message.getSender().path().root();
+        getModel().getRemoteMessageReceivers().put(remoteRootPath, new RoundRobinActorPool(message.getMessageReceivers()));
     }
 
     public void onMessage(Message message)

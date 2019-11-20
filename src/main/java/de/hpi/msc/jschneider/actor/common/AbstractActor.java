@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.actor.common;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.Terminated;
-import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 
 public abstract class AbstractActor<TActorModel extends ActorModel, TActorControl extends ActorControl<TActorModel>> extends AbstractLoggingActor
 {
