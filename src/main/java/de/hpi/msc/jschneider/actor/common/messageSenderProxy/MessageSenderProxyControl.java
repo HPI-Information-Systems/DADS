@@ -37,9 +37,9 @@ public class MessageSenderProxyControl extends AbstractActorControl<MessageSende
         }
     }
 
-    public void onAddMessageReceiver(MessageSenderProxyMessages.AddMessageReceiverMessage message)
+    public void onAddMessageReceiver(MessageSenderProxyMessages.AddMessageReceiverPoolMessage message)
     {
-        getModel().getRemoteMessageReceivers().put(message.getMessageReceiver().path().root(), message.getMessageReceiver());
+        getModel().getRemoteMessageReceivers().put(message.getMessageReceiverPool().path().root(), message.getMessageReceiverPool());
     }
 
     public void onMessage(Message message)

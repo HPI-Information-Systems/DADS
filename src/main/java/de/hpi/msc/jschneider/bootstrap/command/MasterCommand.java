@@ -10,7 +10,7 @@ import java.nio.file.Path;
 
 @Getter
 @Parameters(commandDescription = "starts a master actor system")
-public class MasterCommand extends BaseCommand
+public class MasterCommand extends AbstractCommand
 {
     @Parameter(names = "--sequence", description = "record sequence to analyze", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
     private Path sequenceFilePath;

@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @Parameters(commandDescription = "starts a slave actor system")
-public class SlaveCommand extends BaseCommand
+public class SlaveCommand extends AbstractCommand
 {
     @Parameter(names = "--master-host", description = "host of the MASTER system", required = true)
     private String masterHost;

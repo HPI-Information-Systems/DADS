@@ -12,7 +12,7 @@ public abstract class AbstractReapedActor<TActorModel extends ActorModel, TActor
 
         control().send(ReaperMessages.WatchMeMessage.builder()
                                                     .sender(getSelf())
-                                                    .receiver(Reaper.globalInstance())
+                                                    .receiver(Reaper.getLocalActor())
                                                     .build());
     }
 }

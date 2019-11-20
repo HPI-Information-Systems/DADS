@@ -6,47 +6,38 @@ import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
 import de.hpi.msc.jschneider.actor.common.Message;
 import de.hpi.msc.jschneider.actor.common.messageSenderProxy.MessageSenderProxy;
+import lombok.var;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageReceiverProxy extends AbstractActor<MessageReceiverProxyModel, MessageReceiverProxyControl>
 {
     private static final String NAME = "MessageReceiverProxy";
-    private static ActorRef globalInstance;
-    private static final Lock globalInstanceLock = new ReentrantLock();
+    private static final AtomicInteger nextInstanceIndex = new AtomicInteger();
+    private static ActorRef[] instancePool;
 
-    public static ActorRef createIn(ActorSystem actorSystem)
+    public static void initializePool(ActorSystem actorSystem, int poolSize) throws Exception
     {
-        return actorSystem.actorOf(Props.create(MessageReceiverProxy.class), NAME);
-    }
-
-    public static ActorRef globalInstance()
-    {
-        globalInstanceLock.lock();
-
-        try
+        if (instancePool != null)
         {
-            return globalInstance;
+            throw new Exception("The global MessageReceiverProxy pool has already been initialized!");
         }
-        finally
+
+        instancePool = new ActorRef[poolSize];
+        for (var i = 0; i < poolSize; ++i)
         {
-            globalInstanceLock.unlock();
+            instancePool[i] = actorSystem.actorOf(Props.create(MessageSenderProxy.class), NAME + i);
         }
     }
 
-    public static void globalInstance(ActorRef instance)
+    public static ActorRef getLocalActor()
     {
-        globalInstanceLock.lock();
+        return instancePool[nextInstanceIndex.getAndIncrement() % instancePool.length];
+    }
 
-        try
-        {
-            globalInstance = instance;
-        }
-        finally
-        {
-            globalInstanceLock.unlock();
-        }
+    public static ActorRef[] getAllLocalActors()
+    {
+        return instancePool;
     }
 
     @Override
@@ -55,7 +46,7 @@ public class MessageReceiverProxy extends AbstractActor<MessageReceiverProxyMode
         return MessageReceiverProxyModel.builder()
                                         .selfProvider(this::self)
                                         .senderProvider(this::sender)
-                                        .messageSenderProxyProvider(MessageSenderProxy::globalInstance)
+                                        .messageSenderProxyProvider(MessageSenderProxy::getLocalActor)
                                         .childFactory(context()::actorOf)
                                         .watchActorCallback(context()::watch)
                                         .build();

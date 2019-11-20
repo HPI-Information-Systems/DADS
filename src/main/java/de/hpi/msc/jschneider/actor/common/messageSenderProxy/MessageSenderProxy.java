@@ -5,47 +5,33 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
 import de.hpi.msc.jschneider.actor.common.Message;
+import lombok.var;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageSenderProxy extends AbstractActor<MessageSenderProxyModel, MessageSenderProxyControl>
 {
     private static final String NAME = "MessageSenderProxy";
-    private static ActorRef globalInstance;
-    private static final Lock globalInstanceLock = new ReentrantLock();
+    private static final AtomicInteger nextInstanceIndex = new AtomicInteger();
+    private static ActorRef[] instancePool;
 
-    public static ActorRef createIn(ActorSystem actorSystem)
+    public static void initializePool(ActorSystem actorSystem, int poolSize) throws Exception
     {
-        return actorSystem.actorOf(Props.create(MessageSenderProxy.class), NAME);
-    }
-
-    public static ActorRef globalInstance()
-    {
-        globalInstanceLock.lock();
-
-        try
+        if (instancePool != null)
         {
-            return globalInstance;
+            throw new Exception("The global MessageSenderProxy pool has already been initialized!");
         }
-        finally
+
+        instancePool = new ActorRef[poolSize];
+        for (var i = 0; i < poolSize; ++i)
         {
-            globalInstanceLock.unlock();
+            instancePool[i] = actorSystem.actorOf(Props.create(MessageSenderProxy.class), NAME + i);
         }
     }
 
-    public static void globalInstance(ActorRef instance)
+    public static ActorRef getLocalActor()
     {
-        globalInstanceLock.lock();
-
-        try
-        {
-            globalInstance = instance;
-        }
-        finally
-        {
-            globalInstanceLock.unlock();
-        }
+        return instancePool[nextInstanceIndex.getAndIncrement() % instancePool.length];
     }
 
     @Override
@@ -69,7 +55,7 @@ public class MessageSenderProxy extends AbstractActor<MessageSenderProxyModel, M
     @Override
     public Receive createReceive()
     {
-        return defaultReceiveBuilder().match(MessageSenderProxyMessages.AddMessageReceiverMessage.class, control()::onAddMessageReceiver)
+        return defaultReceiveBuilder().match(MessageSenderProxyMessages.AddMessageReceiverPoolMessage.class, control()::onAddMessageReceiver)
                                       .match(Message.class, control()::onMessage)
                                       .build();
     }

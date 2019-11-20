@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Getter
-abstract class BaseCommand
+public abstract class AbstractCommand
 {
     private static final int DEFAULT_NUMBER_OF_WORKERS = 4;
     private static final Path DEFAULT_WORKING_DIRECTORY = Paths.get("");

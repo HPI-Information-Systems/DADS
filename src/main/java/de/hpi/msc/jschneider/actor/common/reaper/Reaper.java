@@ -6,46 +6,24 @@ import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
 import de.hpi.msc.jschneider.actor.common.messageSenderProxy.MessageSenderProxy;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
 {
-    private static final String NAME = "MessageReceiverProxy";
-    private static ActorRef globalInstance;
-    private static final Lock globalInstanceLock = new ReentrantLock();
+    private static final String NAME = "Reaper";
+    private static ActorRef singletonInstance;
 
-    public static ActorRef createIn(ActorSystem actorSystem)
+    public static void initializeSingleton(ActorSystem actorSystem) throws Exception
     {
-        return actorSystem.actorOf(Props.create(Reaper.class), NAME);
+        if (singletonInstance != null)
+        {
+            throw new Exception("The Reaper has already been initialized!");
+        }
+
+        singletonInstance = actorSystem.actorOf(Props.create(Reaper.class), NAME);
     }
 
-    public static ActorRef globalInstance()
+    public static ActorRef getLocalActor()
     {
-        globalInstanceLock.lock();
-
-        try
-        {
-            return globalInstance;
-        }
-        finally
-        {
-            globalInstanceLock.unlock();
-        }
-    }
-
-    public static void globalInstance(ActorRef instance)
-    {
-        globalInstanceLock.lock();
-
-        try
-        {
-            globalInstance = instance;
-        }
-        finally
-        {
-            globalInstanceLock.unlock();
-        }
+        return singletonInstance;
     }
 
     @Override
@@ -54,7 +32,7 @@ public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
         return ReaperModel.builder()
                           .selfProvider(this::self)
                           .senderProvider(this::sender)
-                          .messageSenderProxyProvider(MessageSenderProxy::globalInstance)
+                          .messageSenderProxyProvider(MessageSenderProxy::getLocalActor)
                           .childFactory(context()::actorOf)
                           .watchActorCallback(context()::watch)
                           .terminateSystemCallback(context().system()::terminate)
