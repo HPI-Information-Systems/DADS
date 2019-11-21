@@ -36,7 +36,7 @@ public class ReaperControl extends AbstractActorControl<ReaperModel>
         val sender = message.getSender();
         if (sender.path().root() != getSelf().path().root())
         {
-            getLog().error(String.format("Remote actor wants to be watched by %1$s!", getClass().getName()));
+            getLog().error(String.format("Remote actor (%1$s) wants to be watched by %2$s!", sender.path(), getClass().getName()));
             return;
         }
 
