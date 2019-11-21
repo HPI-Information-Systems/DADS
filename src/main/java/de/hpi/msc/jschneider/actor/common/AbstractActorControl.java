@@ -45,7 +45,7 @@ public abstract class AbstractActorControl<TActorModel extends ActorModel> imple
 
     protected final ActorRef getMessageSender()
     {
-        return getModel().getMessageSenderProxy();
+        return getModel().getMessageDispatcher();
     }
 
     protected final Set<ActorRef> getChildActors()

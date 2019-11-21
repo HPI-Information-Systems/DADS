@@ -6,27 +6,18 @@ import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 
 public abstract class AbstractActor<TActorModel extends ActorModel, TActorControl extends ActorControl<TActorModel>> extends AbstractLoggingActor
 {
-    private final TActorModel model;
-    private final TActorControl control;
+    private TActorModel model;
+    private TActorControl control;
 
-    protected AbstractActor()
+    protected final void setModel(TActorModel model)
     {
-        model = createModel();
-        if (model == null)
-        {
-            throw new NullPointerException("Model must not be null!");
-        }
-
-        control = createControl(model);
-        if (control == null)
-        {
-            throw new NullPointerException("Control must not be null!");
-        }
+        this.model = model;
     }
 
-    protected abstract TActorModel createModel();
-
-    protected abstract TActorControl createControl(TActorModel model);
+    protected final void setControl(TActorControl control)
+    {
+        this.control = control;
+    }
 
     protected final TActorModel model()
     {

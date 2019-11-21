@@ -13,7 +13,7 @@ public interface ActorModel
 
     ActorRef getSender();
 
-    ActorRef getMessageSenderProxy();
+    ActorRef getMessageDispatcher();
 
     Set<ActorRef> getChildActors();
 

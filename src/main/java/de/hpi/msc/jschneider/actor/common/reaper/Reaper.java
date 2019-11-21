@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
-import de.hpi.msc.jschneider.actor.common.messageSenderProxy.MessageSenderProxy;
+import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
 
 public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
 {
@@ -26,21 +26,25 @@ public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
         return singletonInstance;
     }
 
-    @Override
-    protected ReaperModel createModel()
+    private Reaper()
+    {
+        setModel(createModel());
+        setControl(createControl(model()));
+    }
+
+    private ReaperModel createModel()
     {
         return ReaperModel.builder()
                           .selfProvider(this::self)
                           .senderProvider(this::sender)
-                          .messageSenderProxyProvider(MessageSenderProxy::getLocalActor)
+                          .messageDispatcherProvider(MessageDispatcher::getLocalSingleton)
                           .childFactory(context()::actorOf)
                           .watchActorCallback(context()::watch)
                           .terminateSystemCallback(context().system()::terminate)
                           .build();
     }
 
-    @Override
-    protected ReaperControl createControl(ReaperModel model)
+    private ReaperControl createControl(ReaperModel model)
     {
         return new ReaperControl(model);
     }
