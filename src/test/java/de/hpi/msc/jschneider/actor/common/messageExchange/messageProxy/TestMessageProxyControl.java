@@ -64,15 +64,19 @@ public class TestMessageProxyControl extends TestCase
 
     private Message enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver)
     {
+        return enqueueMessage(control, sender, receiver, 1, 1);
+    }
+
+    private Message enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver, int expectedMessages, int expectedUncompletedMessages)
+    {
         val message = MockMessage.builder()
                                  .sender(sender)
                                  .receiver(receiver)
                                  .build();
 
         control.onMessage(message);
-        assertThat(control.getModel().getTotalNumberOfEnqueuedMessages().get()).isEqualTo(1);
-        assertThat(control.getModel().getMessageQueues().get(receiver.path()).size()).isEqualTo(1);
-        assertThat(control.getModel().getMessageQueues().get(receiver.path()).numberOfUnacknowledgedMessages()).isEqualTo(1);
+        assertThat(control.getModel().getMessageQueues().get(receiver.path()).size()).isEqualTo(expectedMessages);
+        assertThat(control.getModel().getMessageQueues().get(receiver.path()).numberOfUncompletedMessages()).isEqualTo(expectedUncompletedMessages);
 
         return message;
     }
@@ -107,16 +111,16 @@ public class TestMessageProxyControl extends TestCase
         val message = enqueueMessage(control, localActor.ref(), localActor.ref());
         localActor.expectMsg(message);
 
-        val ack = MessageProxyMessages.AcknowledgeMessage.builder()
-                                                         .sender(localActor.ref())
-                                                         .receiver(localActor.ref())
-                                                         .acknowledgedMessageId(message.getId())
-                                                         .build();
+        val completed = MessageProxyMessages.MessageCompletedMessage.builder()
+                                                                    .sender(localActor.ref())
+                                                                    .receiver(localActor.ref())
+                                                                    .acknowledgedMessageId(message.getId())
+                                                                    .build();
 
-        control.onAcknowledge(ack);
+        control.onMessageCompleted(completed);
         assertThat(control.getModel().getTotalNumberOfEnqueuedMessages().get()).isEqualTo(0);
         assertThat(control.getModel().getMessageQueues().get(localActor.ref().path()).size()).isEqualTo(0);
-        assertThat(control.getModel().getMessageQueues().get(localActor.ref().path()).numberOfUnacknowledgedMessages()).isEqualTo(0);
+        assertThat(control.getModel().getMessageQueues().get(localActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(0);
     }
 
     public void testAcknowledgeLocalToRemoteMessage()
@@ -125,29 +129,48 @@ public class TestMessageProxyControl extends TestCase
         val message = enqueueMessage(control, localActor.ref(), remoteActor.ref());
         remoteDispatcher.expectMsg(message);
 
-        val ack = MessageProxyMessages.AcknowledgeMessage.builder()
-                                                         .sender(remoteActor.ref())
-                                                         .receiver(localActor.ref())
-                                                         .acknowledgedMessageId(message.getId())
-                                                         .build();
+        val completed = MessageProxyMessages.MessageCompletedMessage.builder()
+                                                                    .sender(remoteActor.ref())
+                                                                    .receiver(localActor.ref())
+                                                                    .acknowledgedMessageId(message.getId())
+                                                                    .build();
 
-        control.onAcknowledge(ack);
+        control.onMessageCompleted(completed);
         assertThat(control.getModel().getTotalNumberOfEnqueuedMessages().get()).isEqualTo(0);
         assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).size()).isEqualTo(0);
-        assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).numberOfUnacknowledgedMessages()).isEqualTo(0);
+        assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(0);
     }
 
     public void testForwardAcknowledgeLocalToRemote()
     {
         val control = new MessageProxyControl(dummyModel());
 
-        val ack = MessageProxyMessages.AcknowledgeMessage.builder()
-                                                         .sender(localActor.ref())
-                                                         .receiver(remoteActor.ref())
-                                                         .acknowledgedMessageId(UUID.randomUUID())
-                                                         .build();
+        val completed = MessageProxyMessages.MessageCompletedMessage.builder()
+                                                                    .sender(localActor.ref())
+                                                                    .receiver(remoteActor.ref())
+                                                                    .acknowledgedMessageId(UUID.randomUUID())
+                                                                    .build();
 
-        control.onAcknowledge(ack);
-        remoteDispatcher.expectMsg(ack);
+        control.onMessageCompleted(completed);
+        remoteDispatcher.expectMsg(completed);
+    }
+
+    public void testQueueMultipleMessages()
+    {
+        val control = new MessageProxyControl(dummyModel());
+        val firstMessage = enqueueMessage(control, localActor.ref(), remoteActor.ref());
+        remoteDispatcher.expectMsg(firstMessage);
+
+        val secondMessage = enqueueMessage(control, localActor.ref(), remoteActor.ref(), 2, 1);
+
+        val completed = MessageProxyMessages.MessageCompletedMessage.builder()
+                                                                    .sender(remoteActor.ref())
+                                                                    .receiver(localActor.ref())
+                                                                    .acknowledgedMessageId(firstMessage.getId())
+                                                                    .build();
+        control.onMessageCompleted(completed);
+        assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).size()).isEqualTo(1);
+        assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(1);
+        remoteDispatcher.expectMsg(secondMessage);
     }
 }

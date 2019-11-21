@@ -19,12 +19,12 @@ public class TestActorMessageQueue extends TestCase
     private MockMessage enqueueMessage(ActorMessageQueue queue, Function<Message, Integer> enqueueFunction)
     {
         val expectedSize = queue.size() + 1;
-        val expectedUnacknowledgedMessages = queue.numberOfUnacknowledgedMessages();
+        val expectedUnacknowledgedMessages = queue.numberOfUncompletedMessages();
         val message = dummyMessage();
 
         assertThat(enqueueFunction.apply(message)).isEqualTo(expectedSize);
         assertThat(queue.size()).isEqualTo(expectedSize);
-        assertThat(queue.numberOfUnacknowledgedMessages()).isEqualTo(expectedUnacknowledgedMessages);
+        assertThat(queue.numberOfUncompletedMessages()).isEqualTo(expectedUnacknowledgedMessages);
 
         return message;
     }
@@ -32,14 +32,14 @@ public class TestActorMessageQueue extends TestCase
     private Message dequeueMessage(ActorMessageQueue queue, Message expectedMessage)
     {
         val expectedSize = queue.size();
-        val expectedUnacknowledgedMessages = queue.numberOfUnacknowledgedMessages() < queue.size()
-                                             ? queue.numberOfUnacknowledgedMessages() + 1
-                                             : queue.numberOfUnacknowledgedMessages();
+        val expectedUnacknowledgedMessages = queue.numberOfUncompletedMessages() < queue.size()
+                                             ? queue.numberOfUncompletedMessages() + 1
+                                             : queue.numberOfUncompletedMessages();
 
         val message = queue.dequeue();
 
         assertThat(queue.size()).isEqualTo(expectedSize);
-        assertThat(queue.numberOfUnacknowledgedMessages()).isEqualTo(expectedUnacknowledgedMessages);
+        assertThat(queue.numberOfUncompletedMessages()).isEqualTo(expectedUnacknowledgedMessages);
         assertThat(message).isEqualTo(expectedMessage);
 
         return message;
@@ -71,6 +71,6 @@ public class TestActorMessageQueue extends TestCase
 
         assertThat(queue.tryAcknowledge(message.getId())).isTrue();
         assertThat(queue.size()).isEqualTo(0);
-        assertThat(queue.numberOfUnacknowledgedMessages()).isEqualTo(0);
+        assertThat(queue.numberOfUncompletedMessages()).isEqualTo(0);
     }
 }

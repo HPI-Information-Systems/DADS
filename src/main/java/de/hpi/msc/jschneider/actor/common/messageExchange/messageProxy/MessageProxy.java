@@ -40,7 +40,7 @@ public class MessageProxy extends AbstractActor<MessageProxyModel, MessageProxyC
     public Receive createReceive()
     {
         return defaultReceiveBuilder().match(Message.class, control()::onMessage)
-                                      .match(MessageProxyMessages.AcknowledgeMessage.class, control()::onAcknowledge)
+                                      .match(MessageProxyMessages.MessageCompletedMessage.class, control()::onMessageCompleted)
                                       .build();
     }
 }

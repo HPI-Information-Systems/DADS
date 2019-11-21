@@ -9,7 +9,7 @@ import java.util.UUID;
 public class MessageProxyMessages
 {
     @SuperBuilder
-    public static class AcknowledgeMessage extends AbstractMessage
+    public static class MessageCompletedMessage extends AbstractMessage
     {
         private static final long serialVersionUID = -5493282421403131254L;
         @Getter

@@ -12,16 +12,16 @@ import java.util.UUID;
 public class ActorMessageQueue
 {
     private final List<Message> queuedMessages = new ArrayList<>();
-    private final Map<UUID, Message> unacknowledgedMessages = new HashMap<>();
+    private final Map<UUID, Message> uncompletedMessages = new HashMap<>();
 
     public int size()
     {
-        return queuedMessages.size() + numberOfUnacknowledgedMessages();
+        return queuedMessages.size() + numberOfUncompletedMessages();
     }
 
-    public int numberOfUnacknowledgedMessages()
+    public int numberOfUncompletedMessages()
     {
-        return unacknowledgedMessages.size();
+        return uncompletedMessages.size();
     }
 
     public int enqueueFront(Message message)
@@ -44,15 +44,14 @@ public class ActorMessageQueue
         }
 
         val message = queuedMessages.remove(0);
-        unacknowledgedMessages.put(message.getId(), message);
+        uncompletedMessages.put(message.getId(), message);
 
         return message;
     }
 
     public boolean tryAcknowledge(UUID messageId)
     {
-        val message = unacknowledgedMessages.remove(messageId);
-
+        val message = uncompletedMessages.remove(messageId);
         return message != null;
     }
 }

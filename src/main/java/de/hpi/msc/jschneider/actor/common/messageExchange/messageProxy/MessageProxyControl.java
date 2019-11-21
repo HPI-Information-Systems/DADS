@@ -33,7 +33,7 @@ public class MessageProxyControl extends AbstractActorControl<MessageProxyModel>
         }
     }
 
-    public void onAcknowledge(MessageProxyMessages.AcknowledgeMessage message)
+    public void onMessageCompleted(MessageProxyMessages.MessageCompletedMessage message)
     {
         if (message.getReceiver().path().root() != getSelf().path().root())
         {
@@ -44,13 +44,13 @@ public class MessageProxyControl extends AbstractActorControl<MessageProxyModel>
         val messageQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (messageQueue == null) // did we send a message (that could be acknowledged) to that actor earlier?
         {
-            getLog().warn("Unexpected acknowledgement from an actor we have never seen before!");
+            getLog().warn("Unexpected message completion from an actor we have never seen before!");
             return;
         }
 
         if (!messageQueue.tryAcknowledge(message.getAcknowledgedMessageId())) // does the sender acknowledge a message we sent earlier?
         {
-            getLog().warn("Unexpected acknowledgement for a message we have never sent!");
+            getLog().warn("Unexpected message completion for a message we have never sent!");
             return;
         }
 
