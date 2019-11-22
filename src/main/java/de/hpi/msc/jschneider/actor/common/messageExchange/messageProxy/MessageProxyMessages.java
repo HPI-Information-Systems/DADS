@@ -15,4 +15,10 @@ public class MessageProxyMessages
         @Getter
         private UUID acknowledgedMessageId;
     }
+
+    @SuperBuilder
+    public static class BackPressureMessage extends AbstractMessage
+    {
+        private static final long serialVersionUID = -3874703752827167203L;
+    }
 }

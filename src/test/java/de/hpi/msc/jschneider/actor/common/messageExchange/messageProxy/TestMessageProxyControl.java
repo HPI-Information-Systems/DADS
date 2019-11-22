@@ -59,7 +59,22 @@ public class TestMessageProxyControl extends TestCase
                                                     {
                                                     })
                                 .build();
+    }
 
+    private MessageProxyModel dummyModelWithInstantBackPressure()
+    {
+        return MessageProxyModel.builder()
+                                .selfProvider(() -> self)
+                                .senderProvider(ActorRef::noSender)
+                                .messageDispatcherProvider(() -> localDispatcher.ref())
+                                .childFactory(props -> ActorRef.noSender())
+                                .remoteMessageDispatcher(remoteDispatcher.ref())
+                                .watchActorCallback(actorRef ->
+                                                    {
+                                                    })
+                                .singleQueueBackPressureThreshold(0)
+                                .totalQueueBackPressureThreshold(0)
+                                .build();
     }
 
     private Message enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver)
@@ -105,7 +120,7 @@ public class TestMessageProxyControl extends TestCase
         remoteDispatcher.expectMsg(message);
     }
 
-    public void testAcknowledgeLocalToLocalMessage()
+    public void testCompleteLocalToLocalMessage()
     {
         val control = new MessageProxyControl(dummyModel());
         val message = enqueueMessage(control, localActor.ref(), localActor.ref());
@@ -123,7 +138,7 @@ public class TestMessageProxyControl extends TestCase
         assertThat(control.getModel().getMessageQueues().get(localActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(0);
     }
 
-    public void testAcknowledgeLocalToRemoteMessage()
+    public void testCompleteLocalToRemoteMessage()
     {
         val control = new MessageProxyControl(dummyModel());
         val message = enqueueMessage(control, localActor.ref(), remoteActor.ref());
@@ -141,7 +156,7 @@ public class TestMessageProxyControl extends TestCase
         assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(0);
     }
 
-    public void testForwardAcknowledgeLocalToRemote()
+    public void testForwardCompletionLocalToRemote()
     {
         val control = new MessageProxyControl(dummyModel());
 
@@ -172,5 +187,22 @@ public class TestMessageProxyControl extends TestCase
         assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).size()).isEqualTo(1);
         assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(1);
         remoteDispatcher.expectMsg(secondMessage);
+    }
+
+    public void testApplyBackPressure()
+    {
+        val control = new MessageProxyControl(dummyModelWithInstantBackPressure());
+        val firstMessage = enqueueMessage(control, localActor.ref(), remoteActor.ref());
+        remoteDispatcher.expectMsg(firstMessage);
+        localActor.expectMsgClass(MessageProxyMessages.BackPressureMessage.class);
+    }
+
+    public void testDoNotApplyBackPressureToRemoteActors()
+    {
+        val control = new MessageProxyControl(dummyModelWithInstantBackPressure());
+        val firstMessage = enqueueMessage(control, remoteActor.ref(), localActor.ref());
+        localActor.expectMsg(firstMessage);
+
+        assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path())).isNull();
     }
 }

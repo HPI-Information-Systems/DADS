@@ -5,6 +5,8 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.testkit.TestActorRef;
+import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxyMessages;
 import junit.framework.TestCase;
 import lombok.val;
 
@@ -15,6 +17,7 @@ public class TestReaperControl extends TestCase
     private ActorSystem localActorSystem;
     private ActorSystem remoteActorSystem;
     private TestActorRef self;
+    private TestProbe localMessageDispatcher;
     private TestActorRef localActor;
     private TestActorRef remoteActor;
 
@@ -26,6 +29,8 @@ public class TestReaperControl extends TestCase
         localActorSystem = ActorSystem.create("Local");
         remoteActorSystem = ActorSystem.create("Remote");
         self = TestActorRef.create(localActorSystem, Props.empty());
+        localMessageDispatcher = TestProbe.apply(localActorSystem);
+
         localActor = TestActorRef.create(localActorSystem, Props.empty());
         remoteActor = TestActorRef.create(remoteActorSystem, Props.empty());
     }
@@ -43,7 +48,7 @@ public class TestReaperControl extends TestCase
         return ReaperModel.builder()
                           .selfProvider(() -> self)
                           .senderProvider(ActorRef::noSender)
-                          .messageDispatcherProvider(ActorRef::noSender)
+                          .messageDispatcherProvider(() -> localMessageDispatcher.ref())
                           .childFactory(props -> ActorRef.noSender())
                           .watchActorCallback(actorRef ->
                                               {
@@ -57,7 +62,7 @@ public class TestReaperControl extends TestCase
         return ReaperModel.builder()
                           .selfProvider(() -> self)
                           .senderProvider(() -> sender)
-                          .messageDispatcherProvider(ActorRef::noSender)
+                          .messageDispatcherProvider(() -> localMessageDispatcher.ref())
                           .childFactory(props -> ActorRef.noSender())
                           .watchActorCallback(actorRef ->
                                               {
@@ -68,7 +73,6 @@ public class TestReaperControl extends TestCase
 
     private void watch(ReaperControl control, ActorRef actor, int expectedWatchedActors)
     {
-
         control.onWatchMe(ReaperMessages.WatchMeMessage.builder()
                                                        .sender(actor)
                                                        .receiver(self)
@@ -76,6 +80,8 @@ public class TestReaperControl extends TestCase
 
         assertThat(control.getModel().getChildActors().isEmpty()).isTrue();
         assertThat(control.getModel().getWatchedActors().size()).isEqualTo(expectedWatchedActors);
+
+        localMessageDispatcher.expectMsgClass(MessageProxyMessages.MessageCompletedMessage.class);
     }
 
     public void testWatchMe()

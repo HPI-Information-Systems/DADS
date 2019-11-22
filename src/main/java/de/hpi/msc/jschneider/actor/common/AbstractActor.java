@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.actor.common;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.Terminated;
+import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxyMessages;
 import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 
 public abstract class AbstractActor<TActorModel extends ActorModel, TActorControl extends ActorControl<TActorModel>> extends AbstractLoggingActor
@@ -31,7 +32,8 @@ public abstract class AbstractActor<TActorModel extends ActorModel, TActorContro
 
     protected ImprovedReceiveBuilder defaultReceiveBuilder()
     {
-        return new ImprovedReceiveBuilder().match(Terminated.class, control()::onTerminated)
+        return new ImprovedReceiveBuilder().match(MessageProxyMessages.BackPressureMessage.class, control()::onBackPressure)
+                                           .match(Terminated.class, control()::onTerminated)
                                            .matchAny(control()::onAny);
     }
 }

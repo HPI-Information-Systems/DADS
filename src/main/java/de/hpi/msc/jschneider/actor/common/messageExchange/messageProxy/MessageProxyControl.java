@@ -16,20 +16,36 @@ public class MessageProxyControl extends AbstractActorControl<MessageProxyModel>
 
     public void onMessage(Message message)
     {
-        val messageQueue = getOrCreateMessageQueue(message.getReceiver());
-        val singleQueueSize = messageQueue.enqueueBack(message);
+        val receiverMessageQueue = getOrCreateMessageQueue(message.getReceiver());
+        val receiverMessageQueueSize = receiverMessageQueue.enqueueBack(message);
         val totalQueueSize = incrementTotalNumberOfEnqueuedMessages();
 
-        if (singleQueueSize == 1)
+        if (receiverMessageQueueSize == 1)
         {
-            sendMessage(messageQueue);
+            sendMessage(receiverMessageQueue);
         }
 
-        if (singleQueueSize >= getModel().getSingleQueueBackPressureThreshold() ||
-            totalQueueSize >= getModel().getTotalQueueBackPressureThreshold())
+        if (message.getSender().path().root() != getSelf().path().root())
         {
-            // TODO: apply back pressure
+            // sender is not a local actor, so we can not apply back pressure
             return;
+        }
+
+        if (receiverMessageQueueSize < getModel().getSingleQueueBackPressureThreshold() &&
+            totalQueueSize < getModel().getTotalQueueBackPressureThreshold())
+        {
+            return;
+        }
+
+        val senderMessageQueue = getOrCreateMessageQueue(message.getSender());
+        val senderMessageQueueSize = senderMessageQueue.enqueueFront(MessageProxyMessages.BackPressureMessage.builder()
+                                                                                                             .sender(getSelf())
+                                                                                                             .receiver(message.getSender())
+                                                                                                             .build());
+
+        if (senderMessageQueueSize == 1)
+        {
+            sendMessage(senderMessageQueue);
         }
     }
 
