@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.Terminated;
+import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxyMessages;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
@@ -43,9 +44,9 @@ public abstract class AbstractActorControl<TActorModel extends ActorModel> imple
         return getModel().getSender();
     }
 
-    protected final ActorRef getMessageSender()
+    protected final ActorRef getMessageDispatcher()
     {
-        return getModel().getMessageSenderProxy();
+        return getModel().getMessageDispatcher();
     }
 
     protected final Set<ActorRef> getChildActors()
@@ -107,7 +108,34 @@ public abstract class AbstractActorControl<TActorModel extends ActorModel> imple
 
     public void send(Message message)
     {
-        getMessageSender().tell(message, getSelf());
+        getMessageDispatcher().tell(message, getSelf());
+    }
+
+    public void complete(Message message)
+    {
+        val completedMessage = MessageProxyMessages.MessageCompletedMessage.builder()
+                                                                           .sender(getSelf())
+                                                                           .receiver(message.getSender())
+                                                                           .acknowledgedMessageId(message.getId())
+                                                                           .build();
+
+        send(completedMessage);
+    }
+
+    public void onBackPressure(MessageProxyMessages.BackPressureMessage message)
+    {
+        try
+        {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException interruptedException)
+        {
+            getLog().warn(interruptedException);
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 
     public void onTerminated(Terminated message)
@@ -124,5 +152,10 @@ public abstract class AbstractActorControl<TActorModel extends ActorModel> imple
     public void onAny(Object message)
     {
         getLog().warn(String.format("%1$s does not handle messages of type %2$s.", getClass().getName(), message.getClass().getName()));
+
+        if (message instanceof Message)
+        {
+            complete((Message) message);
+        }
     }
 }

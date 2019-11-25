@@ -33,18 +33,25 @@ public class ReaperControl extends AbstractActorControl<ReaperModel>
 
     public void onWatchMe(ReaperMessages.WatchMeMessage message)
     {
-        val sender = message.getSender();
-        if (sender.path().root() != getSelf().path().root())
+        try
         {
-            getLog().error(String.format("Remote actor wants to be watched by %1$s!", getClass().getName()));
-            return;
-        }
+            val sender = message.getSender();
+            if (sender.path().root() != getSelf().path().root())
+            {
+                getLog().error(String.format("Remote actor (%1$s) wants to be watched by %2$s!", sender.path(), getClass().getName()));
+                return;
+            }
 
-        if (!watch(sender))
+            if (!watch(sender))
+            {
+                return;
+            }
+
+            getLog().debug(String.format("%1$s now watches %2$s actors.", getClass().getName(), getWatchedActors().size()));
+        }
+        finally
         {
-            return;
+            complete(message);
         }
-
-        getLog().debug(String.format("%1$s now watches %2$s actors.", getClass().getName(), getWatchedActors().size()));
     }
 }

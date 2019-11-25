@@ -71,3 +71,4 @@ fabric.properties
 
 .idea/
 target/
+**/venv/**

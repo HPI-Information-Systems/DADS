@@ -23,7 +23,7 @@ public abstract class AbstractActorModel implements ActorModel
     @NonNull
     protected Callable<ActorRef> senderProvider;
     @NonNull
-    protected Callable<ActorRef> messageSenderProxyProvider;
+    protected Callable<ActorRef> messageDispatcherProvider;
 
     @NonNull @Getter
     protected Function<Props, ActorRef> childFactory;
@@ -70,11 +70,11 @@ public abstract class AbstractActorModel implements ActorModel
         }
     }
 
-    public final ActorRef getMessageSenderProxy()
+    public final ActorRef getMessageDispatcher()
     {
         try
         {
-            return messageSenderProxyProvider.call();
+            return messageDispatcherProvider.call();
         }
         catch (Exception exception)
         {

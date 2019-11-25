@@ -2,31 +2,23 @@ package de.hpi.msc.jschneider.actor.common;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.Terminated;
+import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxyMessages;
 import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 
 public abstract class AbstractActor<TActorModel extends ActorModel, TActorControl extends ActorControl<TActorModel>> extends AbstractLoggingActor
 {
-    private final TActorModel model;
-    private final TActorControl control;
+    private TActorModel model;
+    private TActorControl control;
 
-    protected AbstractActor()
+    protected final void setModel(TActorModel model)
     {
-        model = createModel();
-        if (model == null)
-        {
-            throw new NullPointerException("Model must not be null!");
-        }
-
-        control = createControl(model);
-        if (control == null)
-        {
-            throw new NullPointerException("Control must not be null!");
-        }
+        this.model = model;
     }
 
-    protected abstract TActorModel createModel();
-
-    protected abstract TActorControl createControl(TActorModel model);
+    protected final void setControl(TActorControl control)
+    {
+        this.control = control;
+    }
 
     protected final TActorModel model()
     {
@@ -40,7 +32,8 @@ public abstract class AbstractActor<TActorModel extends ActorModel, TActorContro
 
     protected ImprovedReceiveBuilder defaultReceiveBuilder()
     {
-        return new ImprovedReceiveBuilder().match(Terminated.class, control()::onTerminated)
+        return new ImprovedReceiveBuilder().match(MessageProxyMessages.BackPressureMessage.class, control()::onBackPressure)
+                                           .match(Terminated.class, control()::onTerminated)
                                            .matchAny(control()::onAny);
     }
 }

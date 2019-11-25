@@ -74,6 +74,11 @@ public class Main
             Log.error(fileNotFoundException);
             System.exit(1);
         }
+        catch (Exception exception)
+        {
+            Log.error(exception);
+            System.exit(1);
+        }
     }
 
 }
