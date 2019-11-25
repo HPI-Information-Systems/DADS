@@ -4,4 +4,5 @@ import java.util.Iterator;
 
 public interface SequenceReader extends Iterator<Float>
 {
+    long getSize();
 }

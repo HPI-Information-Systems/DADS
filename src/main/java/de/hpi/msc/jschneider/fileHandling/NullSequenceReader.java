@@ -21,4 +21,10 @@ public class NullSequenceReader implements SequenceReader
     {
         return 0.0f;
     }
+
+    @Override
+    public long getSize()
+    {
+        return 0;
+    }
 }

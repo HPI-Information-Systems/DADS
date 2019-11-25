@@ -24,6 +24,7 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     private final FileInputStream inputStream;
+    private final long size;
     private boolean isOpen = true;
 
     private BinarySequenceReader(File file) throws NullPointerException, IllegalArgumentException, FileNotFoundException
@@ -39,6 +40,7 @@ public class BinarySequenceReader implements SequenceReader
         }
 
         inputStream = new FileInputStream(file.getAbsolutePath());
+        size = tryGetSize() / Float.BYTES;
     }
 
     @Override
@@ -127,7 +129,9 @@ public class BinarySequenceReader implements SequenceReader
     {
         try
         {
-            return ByteBuffer.wrap(inputStream.readNBytes(Float.BYTES)).getFloat();
+            val bytes = new byte[Float.BYTES];
+            inputStream.read(bytes);
+            return ByteBuffer.wrap(bytes).getFloat();
         }
         catch (IOException e)
         {
@@ -135,5 +139,10 @@ public class BinarySequenceReader implements SequenceReader
             tryClose();
             return 0.0f;
         }
+    }
+
+    public long getSize()
+    {
+        return size;
     }
 }

@@ -1,7 +1,6 @@
-package de.hpi.msc.jschneider.utility;
+package de.hpi.msc.jschneider.actor.utility;
 
 import akka.japi.pf.FI;
-import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 import junit.framework.TestCase;
 import lombok.val;
 
