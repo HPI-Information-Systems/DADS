@@ -1,8 +1,11 @@
 package de.hpi.msc.jschneider.bootstrap;
 
 import akka.actor.ActorSystem;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
 import de.hpi.msc.jschneider.actor.common.reaper.Reaper;
+import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcher;
+import de.hpi.msc.jschneider.actor.master.nodeRegistry.NodeRegistry;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.bootstrap.command.SlaveCommand;
@@ -26,6 +29,8 @@ public class ActorSystemInitializer
     {
         val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME, masterCommand);
 
+        NodeRegistry.initializeSingleton(actorSystem);
+
         awaitTermination(actorSystem);
     }
 
@@ -38,10 +43,13 @@ public class ActorSystemInitializer
 
     private static ActorSystem initializeActorSystem(String name, AbstractCommand command) throws Exception
     {
-        val configuration = ConfigurationFactory.createRemoteConfiguration(command.getHost(), command.getPort());
+        SystemParameters.initialize(command);
+
+        val configuration = ConfigurationFactory.createRemoteConfiguration(command.getHost(), command.getPort(), command.getNumberOfThreads());
         val actorSystem = ActorSystem.create(name, configuration);
 
         MessageDispatcher.initializeSingleton(actorSystem);
+        WorkDispatcher.initializeSingleton(actorSystem);
         Reaper.initializeSingleton(actorSystem);
 
         return actorSystem;

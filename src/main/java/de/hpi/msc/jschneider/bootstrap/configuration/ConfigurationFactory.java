@@ -15,12 +15,14 @@ public class ConfigurationFactory
     private static final String DEFAULT_CONFIGURATION_NAME = "remote.conf";
     private static final String HOST_VARIABLE_PATTERN = "host";
     private static final String PORT_VARIABLE_PATTERN = "port";
+    private static final String NUMBER_OF_THREADS_VARIABLE_PATTERN = "threads";
 
-    public static Config createRemoteConfiguration(String host, int port) throws FileNotFoundException
+    public static Config createRemoteConfiguration(String host, int port, int numberOfThreads) throws FileNotFoundException
     {
         return loadConfiguration(DEFAULT_CONFIGURATION_NAME,
                                  new VariableBinding(HOST_VARIABLE_PATTERN, host),
-                                 new VariableBinding(PORT_VARIABLE_PATTERN, port));
+                                 new VariableBinding(PORT_VARIABLE_PATTERN, port),
+                                 new VariableBinding(NUMBER_OF_THREADS_VARIABLE_PATTERN, numberOfThreads));
     }
 
     private static Config loadConfiguration(String resourceName, VariableBinding... variables) throws FileNotFoundException

@@ -21,7 +21,7 @@ public class Reaper extends AbstractActor<ReaperModel, ReaperControl>
         singletonInstance = actorSystem.actorOf(Props.create(Reaper.class), NAME);
     }
 
-    public static ActorRef getLocalActor()
+    public static ActorRef getLocalSingleton()
     {
         return singletonInstance;
     }
