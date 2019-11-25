@@ -1,10 +1,13 @@
 package de.hpi.msc.jschneider.bootstrap;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Address;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
 import de.hpi.msc.jschneider.actor.common.reaper.Reaper;
 import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcher;
+import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcherMessages;
 import de.hpi.msc.jschneider.actor.master.nodeRegistry.NodeRegistry;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
@@ -37,6 +40,16 @@ public class ActorSystemInitializer
     public static void runSlave(SlaveCommand slaveCommand) throws Exception
     {
         val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand);
+
+        WorkDispatcher.getLocalSingleton().tell(WorkDispatcherMessages.RegisterAtMasterMessage.builder()
+                                                                                              .sender(WorkDispatcher.getLocalSingleton())
+                                                                                              .receiver(ActorRef.noSender())
+                                                                                              .masterAddress(new Address(
+                                                                                                      "akka.tcp",
+                                                                                                      MASTER_ACTOR_SYSTEM_NAME,
+                                                                                                      slaveCommand.getMasterHost(),
+                                                                                                      slaveCommand.getMasterPort()))
+                                                                                              .build(), ActorRef.noSender());
 
         awaitTermination(actorSystem);
     }

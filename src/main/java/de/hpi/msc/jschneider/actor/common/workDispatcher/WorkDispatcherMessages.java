@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.actor.common.workDispatcher;
 
+import akka.actor.Address;
 import de.hpi.msc.jschneider.actor.common.AbstractMessage;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ public class WorkDispatcherMessages
     public static class RegisterAtMasterMessage extends AbstractMessage
     {
         private static final long serialVersionUID = 256722332989409844L;
-        private String masterAddress;
+        private Address masterAddress;
     }
 
     @NoArgsConstructor @SuperBuilder
