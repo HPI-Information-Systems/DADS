@@ -15,7 +15,7 @@ public class WorkerNode
     public static WorkerNode fromRegistrationMessage(NodeRegistryMessages.RegisterWorkerNodeMessage message)
     {
         return builder().messageDispatcher(message.getMessageDispatcher())
-                        .workDispatcher(message.getWorkerDispatcher())
+                        .workDispatcher(message.getWorkDispatcher())
                         .numberOfWorkers(message.getNumberOfWorkers())
                         .maximumMemory(message.getMaximumMemory())
                         .build();

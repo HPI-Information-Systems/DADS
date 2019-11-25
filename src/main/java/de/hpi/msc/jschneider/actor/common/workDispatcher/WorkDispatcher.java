@@ -5,7 +5,6 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractReapedActor;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
-import de.hpi.msc.jschneider.actor.common.reaper.Reaper;
 
 public class WorkDispatcher extends AbstractReapedActor<WorkDispatcherModel, WorkDispatcherControl>
 {
@@ -52,6 +51,8 @@ public class WorkDispatcher extends AbstractReapedActor<WorkDispatcherModel, Wor
     @Override
     public Receive createReceive()
     {
-        return defaultReceiveBuilder().build();
+        return defaultReceiveBuilder().match(WorkDispatcherMessages.AcknowledgeRegistrationMessage.class, control()::onAcknowledgeRegistration)
+                                      .match(WorkDispatcherMessages.RegisterAtMasterMessage.class, control()::onRegisterAtMaster)
+                                      .build();
     }
 }

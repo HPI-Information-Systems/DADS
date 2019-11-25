@@ -13,7 +13,7 @@ public class NodeRegistryMessages
     {
         private static final long serialVersionUID = -6601179746857883050L;
         private ActorRef messageDispatcher;
-        private ActorRef workerDispatcher;
+        private ActorRef workDispatcher;
         private int numberOfWorkers;
         private long maximumMemory;
     }

@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.actor.common.AbstractActorControl;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcherMessages;
+import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcherMessages;
 import lombok.val;
 
 public class NodeRegistryControl extends AbstractActorControl<NodeRegistryModel>
@@ -26,6 +27,10 @@ public class NodeRegistryControl extends AbstractActorControl<NodeRegistryModel>
 
         introduceMessageDispatcher(message.getMessageDispatcher());
 
+        send(WorkDispatcherMessages.AcknowledgeRegistrationMessage.builder()
+                                                                  .sender(getSelf())
+                                                                  .receiver(message.getWorkDispatcher())
+                                                                  .build());
         getLog().info(String.format("%1$s just registered with %2$d available workers.", rootPath, message.getNumberOfWorkers()));
     }
 
