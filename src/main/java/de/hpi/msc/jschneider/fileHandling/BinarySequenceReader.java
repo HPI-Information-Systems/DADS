@@ -141,8 +141,15 @@ public class BinarySequenceReader implements SequenceReader
         }
     }
 
+    @Override
     public long getSize()
     {
         return size;
+    }
+
+    @Override
+    public boolean isNull()
+    {
+        return false;
     }
 }

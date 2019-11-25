@@ -27,4 +27,10 @@ public class NullSequenceReader implements SequenceReader
     {
         return 0;
     }
+
+    @Override
+    public boolean isNull()
+    {
+        return true;
+    }
 }

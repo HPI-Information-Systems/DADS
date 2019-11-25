@@ -1,6 +1,6 @@
 import struct
 
-values = [-1.1, 0.9, 1.0, 4.25]
+values = [4.4, 5.5, 6.6, 7.7]
 
 
 def main():
