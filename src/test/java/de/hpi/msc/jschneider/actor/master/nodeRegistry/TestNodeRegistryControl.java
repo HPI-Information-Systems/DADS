@@ -1,13 +1,10 @@
 package de.hpi.msc.jschneider.actor.master.nodeRegistry;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.testkit.TestActorRef;
-import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.actor.ActorTestCase;
+import de.hpi.msc.jschneider.actor.TestNode;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcherMessages;
 import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcherMessages;
-import junit.framework.TestCase;
 import lombok.val;
 
 import java.util.ArrayList;
@@ -15,122 +12,97 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestNodeRegistryControl extends TestCase
+public class TestNodeRegistryControl extends ActorTestCase
 {
-    private ActorSystem localActorSystem;
-    private ActorSystem existingActorSystem;
-    private ActorSystem newActorSystem;
-    private TestActorRef self;
-    private TestProbe localMessageDispatcher;
-    private TestActorRef existingMessageDispatcher;
-    private TestActorRef newMessageDispatcher;
-    private TestActorRef localWorkDispatcher;
-    private TestActorRef existingWorkDispatcher;
-    private TestActorRef newWorkDispatcher;
+    private TestNode existingNode;
+    private TestNode newNode;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        localActorSystem = ActorSystem.create("local");
-        existingActorSystem = ActorSystem.create("existing");
-        newActorSystem = ActorSystem.create("new");
-
-        self = TestActorRef.create(localActorSystem, Props.empty());
-        localMessageDispatcher = TestProbe.apply(localActorSystem);
-        existingMessageDispatcher = TestActorRef.create(existingActorSystem, Props.empty());
-        newMessageDispatcher = TestActorRef.create(newActorSystem, Props.empty());
-        localWorkDispatcher = TestActorRef.create(localActorSystem, Props.empty());
-        existingWorkDispatcher = TestActorRef.create(existingActorSystem, Props.empty());
-        newWorkDispatcher = TestActorRef.create(newActorSystem, Props.empty());
-    }
-
-    @Override
-    public void tearDown()
-    {
-        localActorSystem.terminate();
-        existingActorSystem.terminate();
-        newActorSystem.terminate();
+        existingNode = spawnNode("existing");
+        newNode = spawnNode("new");
     }
 
     private NodeRegistryModel dummyModel()
     {
         return NodeRegistryModel.builder()
-                                .selfProvider(() -> self)
+                                .selfProvider(() -> self.ref())
                                 .senderProvider(ActorRef::noSender)
-                                .messageDispatcherProvider(() -> localMessageDispatcher.ref())
+                                .messageDispatcherProvider(() -> localNode.getMessageDispatcher().ref())
                                 .childFactory(props -> ActorRef.noSender())
                                 .watchActorCallback(actorRef ->
                                                     {
                                                     })
-                                .workDispatcherProvider(() -> localWorkDispatcher)
+                                .workDispatcherProvider(() -> localNode.getWorkDispatcher().ref())
                                 .build();
     }
 
-    private NodeRegistryMessages.RegisterWorkerNodeMessage registrationMessage(ActorRef workDispatcher, ActorRef messageDispatcher)
+    private NodeRegistryMessages.RegisterWorkerNodeMessage registrationMessage(TestNode node)
     {
         return NodeRegistryMessages.RegisterWorkerNodeMessage.builder()
-                                                             .sender(workDispatcher)
-                                                             .receiver(self)
+                                                             .sender(node.getWorkDispatcher().ref())
+                                                             .receiver(self.ref())
                                                              .maximumMemory(1024 * 1024)
                                                              .numberOfWorkers(1)
-                                                             .messageDispatcher(messageDispatcher)
-                                                             .workDispatcher(workDispatcher)
+                                                             .messageDispatcher(node.getMessageDispatcher().ref())
+                                                             .workDispatcher(node.getWorkDispatcher().ref())
                                                              .build();
     }
 
     public void testRegisterRemoteNode()
     {
         val control = new NodeRegistryControl(dummyModel());
-        val registrationMessage = registrationMessage(newWorkDispatcher, newMessageDispatcher);
+        val registrationMessage = registrationMessage(newNode);
 
         control.onRegistration(registrationMessage);
-        assertThat(control.getModel().getWorkerNodes().containsKey(newMessageDispatcher.path().root())).isTrue();
+        assertThat(control.getModel().getWorkerNodes().containsKey(newNode.rootPath())).isTrue();
 
         // introduce the new message dispatcher to the existing message dispatchers (ours)
-        val localMessage = localMessageDispatcher.expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class);
+        val localMessage = localNode.getMessageDispatcher().expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class);
         assertThat(localMessage.getMessageDispatchers().length).isEqualTo(1);
-        assertThat(localMessage.getMessageDispatchers()[0]).isEqualTo(newMessageDispatcher);
+        assertThat(localMessage.getMessageDispatchers()[0]).isEqualTo(newNode.getMessageDispatcher().ref());
 
         // introduce existing message dispatchers (ours) to the new message dispatcher
-        val remoteMessage = localMessageDispatcher.expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class);
-        assertThat(remoteMessage.getReceiver()).isEqualTo(newMessageDispatcher);
+        val remoteMessage = localNode.getMessageDispatcher().expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class);
+        assertThat(remoteMessage.getReceiver()).isEqualTo(newNode.getMessageDispatcher().ref());
         assertThat(remoteMessage.getMessageDispatchers().length).isEqualTo(1);
-        assertThat(remoteMessage.getMessageDispatchers()[0]).isEqualTo(localMessageDispatcher.ref());
+        assertThat(remoteMessage.getMessageDispatchers()[0]).isEqualTo(localNode.getMessageDispatcher().ref());
 
         // acknowledge registration
-        localMessageDispatcher.expectMsgClass(WorkDispatcherMessages.AcknowledgeRegistrationMessage.class);
+        localNode.getMessageDispatcher().expectMsgClass(WorkDispatcherMessages.AcknowledgeRegistrationMessage.class);
     }
 
     public void testRegisterRemoteNodeWithExistingNodes()
     {
         val control = new NodeRegistryControl(dummyModel());
-        control.getModel().getWorkerNodes().put(existingMessageDispatcher.path().root(),
-                                                WorkerNode.fromRegistrationMessage(registrationMessage(existingWorkDispatcher, existingMessageDispatcher)));
-        val registrationMessage = registrationMessage(newWorkDispatcher, newMessageDispatcher);
+        control.getModel().getWorkerNodes().put(existingNode.rootPath(),
+                                                WorkerNode.fromRegistrationMessage(registrationMessage(existingNode)));
+        val registrationMessage = registrationMessage(newNode);
 
         control.onRegistration(registrationMessage);
-        assertThat(control.getModel().getWorkerNodes().containsKey(newMessageDispatcher.path().root())).isTrue();
+        assertThat(control.getModel().getWorkerNodes().containsKey(newNode.rootPath())).isTrue();
 
         val messages = new ArrayList<MessageDispatcherMessages.AddMessageDispatchersMessage>();
 
         // introduce the new message dispatcher to the existing message dispatchers (ours + existing)
-        messages.add(localMessageDispatcher.expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class));
-        messages.add(localMessageDispatcher.expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class));
-        assertThat(messages.stream().filter(message -> message.getReceiver() == localMessageDispatcher.ref()).count()).isEqualTo(1);
-        assertThat(messages.stream().filter(message -> message.getReceiver() == existingMessageDispatcher).count()).isEqualTo(1);
+        messages.add(localNode.getMessageDispatcher().expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class));
+        messages.add(localNode.getMessageDispatcher().expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class));
+        assertThat(messages.stream().filter(message -> message.getReceiver() == localNode.getMessageDispatcher().ref()).count()).isEqualTo(1);
+        assertThat(messages.stream().filter(message -> message.getReceiver() == existingNode.getMessageDispatcher().ref()).count()).isEqualTo(1);
 
         // introduce the existing message dispatcher to the new message dispatcher
-        val remoteMessage = localMessageDispatcher.expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class);
-        assertThat(remoteMessage.getReceiver()).isEqualTo(newMessageDispatcher);
+        val remoteMessage = localNode.getMessageDispatcher().expectMsgClass(MessageDispatcherMessages.AddMessageDispatchersMessage.class);
+        assertThat(remoteMessage.getReceiver()).isEqualTo(newNode.getMessageDispatcher().ref());
         assertThat(remoteMessage.getMessageDispatchers().length).isEqualTo(2);
 
         val existingMessageDispatchers = Arrays.asList(remoteMessage.getMessageDispatchers());
-        assertThat(existingMessageDispatchers.contains(localMessageDispatcher.ref())).isTrue();
-        assertThat(existingMessageDispatchers.contains(existingMessageDispatcher)).isTrue();
+        assertThat(existingMessageDispatchers.contains(localNode.getMessageDispatcher().ref())).isTrue();
+        assertThat(existingMessageDispatchers.contains(existingNode.getMessageDispatcher().ref())).isTrue();
 
         // acknowledge registration
-        localMessageDispatcher.expectMsgClass(WorkDispatcherMessages.AcknowledgeRegistrationMessage.class);
+        localNode.getMessageDispatcher().expectMsgClass(WorkDispatcherMessages.AcknowledgeRegistrationMessage.class);
     }
 }

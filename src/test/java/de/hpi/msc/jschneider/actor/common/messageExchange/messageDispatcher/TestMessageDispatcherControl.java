@@ -1,22 +1,17 @@
 package de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.actor.ActorTestCase;
+import de.hpi.msc.jschneider.actor.TestNode;
 import de.hpi.msc.jschneider.actor.common.MockMessage;
-import junit.framework.TestCase;
 import lombok.val;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestMessageDispatcherControl extends TestCase
+public class TestMessageDispatcherControl extends ActorTestCase
 {
-    private ActorSystem localActorSystem;
-    private ActorSystem remoteActorSystem;
-    private TestActorRef self;
-    private TestActorRef remoteActor;
+    private TestNode remoteNode;
     private TestProbe localMessageProxy;
 
     @Override
@@ -24,27 +19,16 @@ public class TestMessageDispatcherControl extends TestCase
     {
         super.setUp();
 
-        localActorSystem = ActorSystem.create("Local");
-        remoteActorSystem = ActorSystem.create("Remote");
-        self = TestActorRef.create(localActorSystem, Props.empty(), "Message Dispatcher");
-        remoteActor = TestActorRef.create(remoteActorSystem, Props.empty(), "Remote Actor");
-        localMessageProxy = TestProbe.apply(localActorSystem);
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        super.tearDown();
-
-        localActorSystem.terminate();
+        remoteNode = spawnNode("remote");
+        localMessageProxy = TestProbe.apply("MessageProxy", localNode.getActorSystem());
     }
 
     private MessageDispatcherModel dummyModel()
     {
         return MessageDispatcherModel.builder()
-                                     .selfProvider(() -> self)
+                                     .selfProvider(() -> self.ref())
                                      .senderProvider(ActorRef::noSender)
-                                     .messageDispatcherProvider(() -> self)
+                                     .messageDispatcherProvider(() -> self.ref())
                                      .childFactory(props -> localMessageProxy.ref())
                                      .watchActorCallback(actorRef ->
                                                          {
@@ -55,10 +39,10 @@ public class TestMessageDispatcherControl extends TestCase
     private MessageDispatcherModel modelWithActualChildFactory()
     {
         return MessageDispatcherModel.builder()
-                                     .selfProvider(() -> self)
+                                     .selfProvider(() -> self.ref())
                                      .senderProvider(ActorRef::noSender)
-                                     .messageDispatcherProvider(() -> self)
-                                     .childFactory(localActorSystem::actorOf)
+                                     .messageDispatcherProvider(() -> self.ref())
+                                     .childFactory(localNode.getActorSystem()::actorOf)
                                      .watchActorCallback(actorRef ->
                                                          {
                                                          })
@@ -70,7 +54,7 @@ public class TestMessageDispatcherControl extends TestCase
         val control = new MessageDispatcherControl(dummyModel());
 
         assertThat(control.getModel().getMessageDispatchers().size()).isEqualTo(1);
-        assertThat(control.getModel().getMessageDispatchers().get(self.path().root())).isEqualTo(self);
+        assertThat(control.getModel().getMessageDispatchers().get(localNode.rootPath())).isEqualTo(self.ref());
         assertThat(control.getModel().getMessageProxies().size()).isEqualTo(0);
     }
 
@@ -78,8 +62,8 @@ public class TestMessageDispatcherControl extends TestCase
     {
         val control = new MessageDispatcherControl(dummyModel());
         val messageProxy = control.getMessageProxy(MockMessage.builder()
-                                                              .sender(self)
-                                                              .receiver(self)
+                                                              .sender(self.ref())
+                                                              .receiver(self.ref())
                                                               .build());
 
         assertThat(messageProxy).isNotNull();
@@ -90,12 +74,12 @@ public class TestMessageDispatcherControl extends TestCase
     public void testGetExistingMessageProxy()
     {
         val model = dummyModel();
-        model.getMessageProxies().put(self.path().root(), localMessageProxy.ref());
+        model.getMessageProxies().put(localNode.rootPath(), localMessageProxy.ref());
 
         val control = new MessageDispatcherControl(model);
         val messageProxy = control.getMessageProxy(MockMessage.builder()
-                                                              .sender(self)
-                                                              .receiver(self)
+                                                              .sender(self.ref())
+                                                              .receiver(self.ref())
                                                               .build());
 
         assertThat(messageProxy).isNotNull();
@@ -107,29 +91,29 @@ public class TestMessageDispatcherControl extends TestCase
     {
         val control = new MessageDispatcherControl(dummyModel());
         val addRemoteDispatcher = MessageDispatcherMessages.AddMessageDispatchersMessage.builder()
-                                                                                        .sender(remoteActor)
-                                                                                        .receiver(self)
-                                                                                        .messageDispatchers(new ActorRef[]{remoteActor})
+                                                                                        .sender(remoteNode.getMessageDispatcher().ref())
+                                                                                        .receiver(self.ref())
+                                                                                        .messageDispatchers(new ActorRef[]{remoteNode.getMessageDispatcher().ref()})
                                                                                         .build();
 
         control.onAddMessageDispatchers(addRemoteDispatcher);
 
         assertThat(control.getModel().getMessageDispatchers().size()).isEqualTo(2);
-        assertThat(control.getModel().getMessageDispatchers().get(remoteActor.path().root())).isEqualTo(remoteActor);
+        assertThat(control.getModel().getMessageDispatchers().get(remoteNode.rootPath())).isEqualTo(remoteNode.getMessageDispatcher().ref());
     }
 
     public void testGetMessageProxyIsIndifferentOfDirection()
     {
         val control = new MessageDispatcherControl(modelWithActualChildFactory());
-        control.getModel().getMessageDispatchers().put(remoteActor.path().root(), remoteActor);
+        control.getModel().getMessageDispatchers().put(remoteNode.rootPath(), remoteNode.getMessageDispatcher().ref());
 
         val localToRemoteMessage = MockMessage.builder()
-                                              .sender(self)
-                                              .receiver(remoteActor)
+                                              .sender(self.ref())
+                                              .receiver(remoteNode.getMessageDispatcher().ref())
                                               .build();
         val remoteToLocalMessage = MockMessage.builder()
-                                              .sender(remoteActor)
-                                              .receiver(self)
+                                              .sender(remoteNode.getMessageDispatcher().ref())
+                                              .receiver(self.ref())
                                               .build();
 
         val messageProxy1 = control.getMessageProxy(localToRemoteMessage);
@@ -147,8 +131,8 @@ public class TestMessageDispatcherControl extends TestCase
     {
         val control = new MessageDispatcherControl(dummyModel());
         val message = MockMessage.builder()
-                                 .sender(self)
-                                 .receiver(self)
+                                 .sender(self.ref())
+                                 .receiver(self.ref())
                                  .build();
         control.onMessage(message);
         localMessageProxy.expectMsg(message);

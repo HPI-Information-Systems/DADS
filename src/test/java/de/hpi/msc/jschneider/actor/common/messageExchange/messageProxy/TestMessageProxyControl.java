@@ -1,26 +1,20 @@
 package de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.actor.ActorTestCase;
+import de.hpi.msc.jschneider.actor.TestNode;
 import de.hpi.msc.jschneider.actor.common.Message;
 import de.hpi.msc.jschneider.actor.common.MockMessage;
-import junit.framework.TestCase;
 import lombok.val;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestMessageProxyControl extends TestCase
+public class TestMessageProxyControl extends ActorTestCase
 {
-    private ActorSystem localActorSystem;
-    private ActorSystem remoteActorSystem;
-    private TestActorRef self;
-    private TestProbe localDispatcher;
-    private TestProbe remoteDispatcher;
+    private TestNode remoteNode;
     private TestProbe localActor;
     private TestProbe remoteActor;
 
@@ -29,32 +23,19 @@ public class TestMessageProxyControl extends TestCase
     {
         super.setUp();
 
-        localActorSystem = ActorSystem.create("Local");
-        remoteActorSystem = ActorSystem.create("Remote");
-
-        self = TestActorRef.create(localActorSystem, Props.empty(), "Local Message Proxy");
-        localDispatcher = TestProbe.apply(localActorSystem);
-        remoteDispatcher = TestProbe.apply(remoteActorSystem);
-        localActor = TestProbe.apply(localActorSystem);
-        remoteActor = TestProbe.apply(remoteActorSystem);
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        super.tearDown();
-        localActorSystem.terminate();
-        remoteActorSystem.terminate();
+        remoteNode = spawnNode("remote");
+        localActor = TestProbe.apply(localNode.getActorSystem());
+        remoteActor = TestProbe.apply(remoteNode.getActorSystem());
     }
 
     private MessageProxyModel dummyModel()
     {
         return MessageProxyModel.builder()
-                                .selfProvider(() -> self)
+                                .selfProvider(() -> self.ref())
                                 .senderProvider(ActorRef::noSender)
-                                .messageDispatcherProvider(() -> localDispatcher.ref())
+                                .messageDispatcherProvider(() -> localNode.getMessageDispatcher().ref())
                                 .childFactory(props -> ActorRef.noSender())
-                                .remoteMessageDispatcher(remoteDispatcher.ref())
+                                .remoteMessageDispatcher(remoteNode.getMessageDispatcher().ref())
                                 .watchActorCallback(actorRef ->
                                                     {
                                                     })
@@ -64,11 +45,11 @@ public class TestMessageProxyControl extends TestCase
     private MessageProxyModel dummyModelWithInstantBackPressure()
     {
         return MessageProxyModel.builder()
-                                .selfProvider(() -> self)
+                                .selfProvider(() -> self.ref())
                                 .senderProvider(ActorRef::noSender)
-                                .messageDispatcherProvider(() -> localDispatcher.ref())
+                                .messageDispatcherProvider(() -> localNode.getMessageDispatcher().ref())
                                 .childFactory(props -> ActorRef.noSender())
-                                .remoteMessageDispatcher(remoteDispatcher.ref())
+                                .remoteMessageDispatcher(remoteNode.getMessageDispatcher().ref())
                                 .watchActorCallback(actorRef ->
                                                     {
                                                     })
@@ -117,7 +98,7 @@ public class TestMessageProxyControl extends TestCase
         val control = new MessageProxyControl(dummyModel());
         val message = enqueueMessage(control, localActor.ref(), remoteActor.ref());
 
-        remoteDispatcher.expectMsg(message);
+        remoteNode.getMessageDispatcher().expectMsg(message);
     }
 
     public void testCompleteLocalToLocalMessage()
@@ -142,7 +123,7 @@ public class TestMessageProxyControl extends TestCase
     {
         val control = new MessageProxyControl(dummyModel());
         val message = enqueueMessage(control, localActor.ref(), remoteActor.ref());
-        remoteDispatcher.expectMsg(message);
+        remoteNode.getMessageDispatcher().expectMsg(message);
 
         val completed = MessageProxyMessages.MessageCompletedMessage.builder()
                                                                     .sender(remoteActor.ref())
@@ -167,14 +148,14 @@ public class TestMessageProxyControl extends TestCase
                                                                     .build();
 
         control.onMessageCompleted(completed);
-        remoteDispatcher.expectMsg(completed);
+        remoteNode.getMessageDispatcher().expectMsg(completed);
     }
 
     public void testQueueMultipleMessages()
     {
         val control = new MessageProxyControl(dummyModel());
         val firstMessage = enqueueMessage(control, localActor.ref(), remoteActor.ref());
-        remoteDispatcher.expectMsg(firstMessage);
+        remoteNode.getMessageDispatcher().expectMsg(firstMessage);
 
         val secondMessage = enqueueMessage(control, localActor.ref(), remoteActor.ref(), 2, 1);
 
@@ -186,14 +167,14 @@ public class TestMessageProxyControl extends TestCase
         control.onMessageCompleted(completed);
         assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).size()).isEqualTo(1);
         assertThat(control.getModel().getMessageQueues().get(remoteActor.ref().path()).numberOfUncompletedMessages()).isEqualTo(1);
-        remoteDispatcher.expectMsg(secondMessage);
+        remoteNode.getMessageDispatcher().expectMsg(secondMessage);
     }
 
     public void testApplyBackPressure()
     {
         val control = new MessageProxyControl(dummyModelWithInstantBackPressure());
         val firstMessage = enqueueMessage(control, localActor.ref(), remoteActor.ref());
-        remoteDispatcher.expectMsg(firstMessage);
+        remoteNode.getMessageDispatcher().expectMsg(firstMessage);
         localActor.expectMsgClass(MessageProxyMessages.BackPressureMessage.class);
     }
 
