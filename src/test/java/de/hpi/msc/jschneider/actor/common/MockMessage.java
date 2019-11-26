@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.UUID;
 
 @SuperBuilder @Getter @Setter
-public class MockMessage implements Message
+public class MockMessage implements CompletableMessage
 {
     private static final long serialVersionUID = 2511853284452384098L;
     @Builder.Default

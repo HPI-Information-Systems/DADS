@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.actor.common;
 
+import akka.actor.ActorRef;
 import akka.actor.Terminated;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxyMessages;
 
@@ -9,9 +10,11 @@ public interface ActorControl<TActorModel extends ActorModel>
 
     void setModel(TActorModel model);
 
-    void send(Message message);
+    void send(Object message, ActorRef receiver);
 
-    void complete(Message message);
+    void send(CompletableMessage message);
+
+    void complete(CompletableMessage message);
 
     void onBackPressure(MessageProxyMessages.BackPressureMessage message);
 

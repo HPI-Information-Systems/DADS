@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy;
 
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import de.hpi.msc.jschneider.actor.common.MockMessage;
 import junit.framework.TestCase;
 import lombok.val;
@@ -16,7 +16,7 @@ public class TestActorMessageQueue extends TestCase
         return MockMessage.builder().build();
     }
 
-    private MockMessage enqueueMessage(ActorMessageQueue queue, Function<Message, Integer> enqueueFunction)
+    private MockMessage enqueueMessage(ActorMessageQueue queue, Function<CompletableMessage, Integer> enqueueFunction)
     {
         val expectedSize = queue.size() + 1;
         val expectedUnacknowledgedMessages = queue.numberOfUncompletedMessages();
@@ -29,7 +29,7 @@ public class TestActorMessageQueue extends TestCase
         return message;
     }
 
-    private Message dequeueMessage(ActorMessageQueue queue, Message expectedMessage)
+    private CompletableMessage dequeueMessage(ActorMessageQueue queue, CompletableMessage expectedMessage)
     {
         val expectedSize = queue.size();
         val expectedUnacknowledgedMessages = queue.numberOfUncompletedMessages() < queue.size()

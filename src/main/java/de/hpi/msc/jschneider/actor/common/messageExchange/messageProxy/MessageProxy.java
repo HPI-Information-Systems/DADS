@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
 
 public class MessageProxy extends AbstractActor<MessageProxyModel, MessageProxyControl>
@@ -39,7 +39,7 @@ public class MessageProxy extends AbstractActor<MessageProxyModel, MessageProxyC
     @Override
     public Receive createReceive()
     {
-        return defaultReceiveBuilder().match(Message.class, control()::onMessage)
+        return defaultReceiveBuilder().match(CompletableMessage.class, control()::onMessage)
                                       .match(MessageProxyMessages.MessageCompletedMessage.class, control()::onMessageCompleted)
                                       .build();
     }

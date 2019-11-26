@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.actor.ActorTestCase;
 import de.hpi.msc.jschneider.actor.TestNode;
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import de.hpi.msc.jschneider.actor.common.MockMessage;
 import lombok.val;
 
@@ -58,12 +58,12 @@ public class TestMessageProxyControl extends ActorTestCase
                                 .build();
     }
 
-    private Message enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver)
+    private CompletableMessage enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver)
     {
         return enqueueMessage(control, sender, receiver, 1, 1);
     }
 
-    private Message enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver, int expectedMessages, int expectedUncompletedMessages)
+    private CompletableMessage enqueueMessage(MessageProxyControl control, ActorRef sender, ActorRef receiver, int expectedMessages, int expectedUncompletedMessages)
     {
         val message = MockMessage.builder()
                                  .sender(sender)

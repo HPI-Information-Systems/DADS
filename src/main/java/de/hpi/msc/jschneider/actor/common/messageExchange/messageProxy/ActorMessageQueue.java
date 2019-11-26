@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy;
 
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import lombok.val;
 
 import java.util.ArrayList;
@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public class ActorMessageQueue
 {
-    private final List<Message> queuedMessages = new ArrayList<>();
-    private final Map<UUID, Message> uncompletedMessages = new HashMap<>();
+    private final List<CompletableMessage> queuedMessages = new ArrayList<>();
+    private final Map<UUID, CompletableMessage> uncompletedMessages = new HashMap<>();
 
     public int size()
     {
@@ -24,19 +24,19 @@ public class ActorMessageQueue
         return uncompletedMessages.size();
     }
 
-    public int enqueueFront(Message message)
+    public int enqueueFront(CompletableMessage message)
     {
         queuedMessages.add(0, message);
         return size();
     }
 
-    public int enqueueBack(Message message)
+    public int enqueueBack(CompletableMessage message)
     {
         queuedMessages.add(message);
         return size();
     }
 
-    public Message dequeue()
+    public CompletableMessage dequeue()
     {
         if (queuedMessages.size() < 1)
         {

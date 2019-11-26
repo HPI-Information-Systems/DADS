@@ -5,7 +5,7 @@ import akka.actor.ActorRef;
 import java.io.Serializable;
 import java.util.UUID;
 
-public interface Message extends Serializable
+public interface CompletableMessage extends Serializable
 {
     UUID getId();
 

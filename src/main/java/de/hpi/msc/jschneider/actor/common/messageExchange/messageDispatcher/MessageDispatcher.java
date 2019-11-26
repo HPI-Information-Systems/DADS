@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractActor;
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 
 public class MessageDispatcher extends AbstractActor<MessageDispatcherModel, MessageDispatcherControl>
 {
@@ -52,7 +52,7 @@ public class MessageDispatcher extends AbstractActor<MessageDispatcherModel, Mes
     public Receive createReceive()
     {
         return defaultReceiveBuilder().match(MessageDispatcherMessages.AddMessageDispatchersMessage.class, control()::onAddMessageDispatchers)
-                                      .match(Message.class, control()::onMessage)
+                                      .match(CompletableMessage.class, control()::onMessage)
                                       .build();
     }
 }

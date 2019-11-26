@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.actor.common.AbstractActorControl;
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import lombok.val;
 import lombok.var;
 
@@ -14,7 +14,7 @@ public class MessageProxyControl extends AbstractActorControl<MessageProxyModel>
         super(model);
     }
 
-    public void onMessage(Message message)
+    public void onMessage(CompletableMessage message)
     {
         val receiverMessageQueue = getOrCreateMessageQueue(message.getReceiver());
         val receiverMessageQueueSize = receiverMessageQueue.enqueueBack(message);
@@ -120,7 +120,7 @@ public class MessageProxyControl extends AbstractActorControl<MessageProxyModel>
     }
 
     @Override
-    public void send(Message message)
+    public void send(CompletableMessage message)
     {
         if (message.getReceiver().path().root() == getSelf().path().root())
         {

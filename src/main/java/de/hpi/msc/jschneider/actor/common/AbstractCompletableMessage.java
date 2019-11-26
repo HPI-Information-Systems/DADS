@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.UUID;
 
 @NoArgsConstructor @SuperBuilder @Getter
-public abstract class AbstractMessage implements Message
+public abstract class AbstractCompletableMessage implements CompletableMessage
 {
     @NonNull @Getter @Builder.Default
     private final UUID id = UUID.randomUUID();

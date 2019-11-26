@@ -5,6 +5,7 @@ import akka.japi.pf.CaseStatement;
 import akka.japi.pf.FI;
 import akka.japi.pf.ReceiveBuilder;
 import lombok.val;
+import lombok.var;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 
@@ -35,12 +36,31 @@ public class ImprovedReceiveBuilder
             return new AbstractActor.Receive(EMPTY_CASE);
         }
 
+        val sortedMessageTypes = messageHandlers.keySet()
+                                                .stream()
+                                                .sorted((typeA, typeB) -> numberOfSuperClasses(typeB) - numberOfSuperClasses(typeA))
+                                                .toArray(Class<?>[]::new);
+
         val receiveBuilder = ReceiveBuilder.create();
-        for (val messageHandler : messageHandlers.entrySet())
+        for (val messageType : sortedMessageTypes)
         {
-            receiveBuilder.matchUnchecked(messageHandler.getKey(), messageHandler.getValue());
+            val messageHandler = messageHandlers.get(messageType);
+            receiveBuilder.matchUnchecked(messageType, messageHandler);
         }
 
         return receiveBuilder.build();
+    }
+
+    private int numberOfSuperClasses(Class type)
+    {
+        var currentType = type;
+        var count = 0;
+        while (currentType != null)
+        {
+            count++;
+            currentType = currentType.getSuperclass();
+        }
+
+        return count;
     }
 }

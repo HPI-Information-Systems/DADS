@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher;
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.actor.common.AbstractActorControl;
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxy;
 import lombok.val;
 import lombok.var;
@@ -24,13 +24,13 @@ public class MessageDispatcherControl extends AbstractActorControl<MessageDispat
         }
     }
 
-    public void onMessage(Message message)
+    public void onMessage(CompletableMessage message)
     {
         val proxy = getMessageProxy(message);
         proxy.tell(message, getSender());
     }
 
-    public ActorRef getMessageProxy(Message message)
+    public ActorRef getMessageProxy(CompletableMessage message)
     {
         var rootPath = message.getReceiver().path().root();
         if (rootPath == getSelf().path().root())

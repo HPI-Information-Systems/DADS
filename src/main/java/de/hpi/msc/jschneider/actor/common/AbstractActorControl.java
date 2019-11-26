@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.Terminated;
+import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageProxy.MessageProxyMessages;
 import lombok.Getter;
 import lombok.Setter;
@@ -106,12 +107,24 @@ public abstract class AbstractActorControl<TActorModel extends ActorModel> imple
         }
     }
 
-    public void send(Message message)
+    public void send(Object message, ActorRef receiver)
+    {
+        if (message instanceof CompletableMessage)
+        {
+            getLog().warn(String.format("Sending %1$s directly instead of using the %2$s!",
+                                        CompletableMessage.class.getName(),
+                                        MessageDispatcher.class.getName()));
+        }
+
+        receiver.tell(message, getSelf());
+    }
+
+    public void send(CompletableMessage message)
     {
         getMessageDispatcher().tell(message, getSelf());
     }
 
-    public void complete(Message message)
+    public void complete(CompletableMessage message)
     {
         val completedMessage = MessageProxyMessages.MessageCompletedMessage.builder()
                                                                            .sender(getSelf())
@@ -153,9 +166,9 @@ public abstract class AbstractActorControl<TActorModel extends ActorModel> imple
     {
         getLog().warn(String.format("%1$s does not handle messages of type %2$s.", getClass().getName(), message.getClass().getName()));
 
-        if (message instanceof Message)
+        if (message instanceof CompletableMessage)
         {
-            complete((Message) message);
+            complete((CompletableMessage) message);
         }
     }
 }

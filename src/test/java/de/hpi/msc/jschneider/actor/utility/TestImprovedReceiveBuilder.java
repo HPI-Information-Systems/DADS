@@ -10,6 +10,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestImprovedReceiveBuilder extends TestCase
 {
+    private static class Base
+    {
+        public boolean isInherited()
+        {
+            return false;
+        }
+    }
+
+    private static class Inherited extends Base
+    {
+        @Override
+        public boolean isInherited()
+        {
+            return true;
+        }
+    }
+
     public void testMatchMostSpecificFirst()
     {
         val builder = new ImprovedReceiveBuilder();
@@ -92,22 +109,5 @@ public class TestImprovedReceiveBuilder extends TestCase
         receive2.onMessage().apply("2");
         assertThat(numberOfCallsToHandler1.get()).isEqualTo(1);
         assertThat(numberOfCallsToHandler2.get()).isEqualTo(1);
-    }
-
-    private static class Base
-    {
-        public boolean isInherited()
-        {
-            return false;
-        }
-    }
-
-    private static class Inherited extends Base
-    {
-        @Override
-        public boolean isInherited()
-        {
-            return true;
-        }
     }
 }

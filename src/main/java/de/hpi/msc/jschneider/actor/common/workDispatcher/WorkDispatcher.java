@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import de.hpi.msc.jschneider.actor.common.AbstractReapedActor;
-import de.hpi.msc.jschneider.actor.common.Message;
+import de.hpi.msc.jschneider.actor.common.CompletableMessage;
 import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
 
 public class WorkDispatcher extends AbstractReapedActor<WorkDispatcherModel, WorkDispatcherControl>
@@ -54,7 +54,7 @@ public class WorkDispatcher extends AbstractReapedActor<WorkDispatcherModel, Wor
     {
         return defaultReceiveBuilder().match(WorkDispatcherMessages.AcknowledgeRegistrationMessage.class, control()::onAcknowledgeRegistration)
                                       .match(WorkDispatcherMessages.RegisterAtMasterMessage.class, control()::onRegisterAtMaster)
-                                      .match(Message.class, control()::send)
+                                      .match(CompletableMessage.class, control()::send)
                                       .build();
     }
 }
