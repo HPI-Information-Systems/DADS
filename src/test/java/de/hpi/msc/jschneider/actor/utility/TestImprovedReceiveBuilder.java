@@ -8,8 +8,50 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ImprovedReceiveBuilderTest extends TestCase
+public class TestImprovedReceiveBuilder extends TestCase
 {
+    public void testMatchMostSpecificFirst()
+    {
+        val builder = new ImprovedReceiveBuilder();
+
+        val numberOfCallsToBaseHandler = new AtomicInteger();
+        FI.UnitApply<Base> baseHandler = argument ->
+        {
+            assertThat(argument.isInherited()).isFalse();
+            numberOfCallsToBaseHandler.getAndIncrement();
+        };
+
+        val numberOfCallsToInheritedHandle = new AtomicInteger();
+        FI.UnitApply<Inherited> inheritedHandler = argument ->
+        {
+            assertThat(argument.isInherited()).isTrue();
+            numberOfCallsToInheritedHandle.getAndIncrement();
+        };
+
+        val receive = builder.match(Base.class, baseHandler)
+                             .match(Inherited.class, inheritedHandler)
+                             .build();
+
+        receive.onMessage().apply(new Inherited());
+
+        assertThat(numberOfCallsToBaseHandler.get()).isEqualTo(0);
+        assertThat(numberOfCallsToInheritedHandle.get()).isEqualTo(1);
+    }
+
+    public void testMatchSuperClass()
+    {
+        val builder = new ImprovedReceiveBuilder();
+
+        val numberOfCallsToBaseHandler = new AtomicInteger();
+        FI.UnitApply<Base> baseHandler = argument -> numberOfCallsToBaseHandler.getAndIncrement();
+
+        val receive = builder.match(Base.class, baseHandler).build();
+
+        receive.onMessage().apply(new Inherited());
+
+        assertThat(numberOfCallsToBaseHandler.get()).isEqualTo(1);
+    }
+
     public void testLatestMessageHandlerIsUsed()
     {
         val builder = new ImprovedReceiveBuilder();
@@ -50,5 +92,22 @@ public class ImprovedReceiveBuilderTest extends TestCase
         receive2.onMessage().apply("2");
         assertThat(numberOfCallsToHandler1.get()).isEqualTo(1);
         assertThat(numberOfCallsToHandler2.get()).isEqualTo(1);
+    }
+
+    private static class Base
+    {
+        public boolean isInherited()
+        {
+            return false;
+        }
+    }
+
+    private static class Inherited extends Base
+    {
+        @Override
+        public boolean isInherited()
+        {
+            return true;
+        }
     }
 }
