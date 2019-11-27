@@ -5,12 +5,14 @@ import akka.actor.Cancellable;
 import akka.actor.Scheduler;
 import de.hpi.msc.jschneider.protocol.messageExchange.AbstractMessageExchangeParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import scala.concurrent.ExecutionContextExecutor;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -27,6 +29,8 @@ public class ProcessorRegistryModel extends AbstractMessageExchangeParticipantMo
     private Callable<Scheduler> schedulerProvider;
     @NonNull
     private Callable<ExecutionContextExecutor> dispatcherProvider;
+    @Getter @Setter @Builder.Default
+    private Duration resendRegistrationInterval = Duration.ofSeconds(5);
 
     public final Scheduler getScheduler()
     {

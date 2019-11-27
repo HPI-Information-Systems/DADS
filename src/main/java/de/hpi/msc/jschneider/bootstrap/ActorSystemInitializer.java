@@ -4,15 +4,13 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
 import de.hpi.msc.jschneider.SystemParameters;
-import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
-import de.hpi.msc.jschneider.actor.common.reaper.Reaper;
-import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcher;
-import de.hpi.msc.jschneider.actor.common.workDispatcher.WorkDispatcherMessages;
-import de.hpi.msc.jschneider.actor.master.nodeRegistry.NodeRegistry;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.bootstrap.command.SlaveCommand;
 import de.hpi.msc.jschneider.bootstrap.configuration.ConfigurationFactory;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRole;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,8 +30,10 @@ public class ActorSystemInitializer
     {
         val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME, masterCommand);
 
-        NodeRegistry.initializeSingleton(actorSystem);
-
+        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker);
+        processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
+                                                                                                               .masterAddress(actorSystem.provider().getDefaultAddress())
+                                                                                                               .build(), ActorRef.noSender());
         awaitTermination(actorSystem);
     }
 
@@ -41,16 +41,14 @@ public class ActorSystemInitializer
     {
         val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand);
 
-        WorkDispatcher.getLocalSingleton().tell(WorkDispatcherMessages.RegisterAtMasterMessage.builder()
-                                                                                              .sender(WorkDispatcher.getLocalSingleton())
-                                                                                              .receiver(ActorRef.noSender())
-                                                                                              .masterAddress(new Address(
-                                                                                                      "akka.tcp",
-                                                                                                      MASTER_ACTOR_SYSTEM_NAME,
-                                                                                                      slaveCommand.getMasterHost(),
-                                                                                                      slaveCommand.getMasterPort()))
-                                                                                              .build(), ActorRef.noSender());
-
+        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker);
+        processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
+                                                                                                               .masterAddress(new Address(
+                                                                                                                       "akka.tcp",
+                                                                                                                       MASTER_ACTOR_SYSTEM_NAME,
+                                                                                                                       slaveCommand.getMasterHost(),
+                                                                                                                       slaveCommand.getMasterPort()))
+                                                                                                               .build(), ActorRef.noSender());
         awaitTermination(actorSystem);
     }
 
@@ -59,13 +57,7 @@ public class ActorSystemInitializer
         SystemParameters.initialize(command);
 
         val configuration = ConfigurationFactory.createRemoteConfiguration(command.getHost(), command.getPort(), command.getNumberOfThreads());
-        val actorSystem = ActorSystem.create(name, configuration);
-
-        MessageDispatcher.initializeSingleton(actorSystem);
-        WorkDispatcher.initializeSingleton(actorSystem);
-        Reaper.initializeSingleton(actorSystem);
-
-        return actorSystem;
+        return ActorSystem.create(name, configuration);
     }
 
     private static void awaitTermination(ActorSystem actorSystem)

@@ -2,9 +2,9 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageProxy;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
-import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
 
@@ -19,32 +19,28 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return builder.match(MessageExchangeMessages.MessageCompletedMessage.class, this::onMessageCompleted)
-                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onCompletableMessage);
+                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
     }
 
     private void onMessageCompleted(MessageExchangeMessages.MessageCompletedMessage message)
     {
-        if (message.getReceiver().path().root() != getModel().getSelf().path().root())
-        {
-            forward(message);
-            return;
-        }
-
         val senderQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (senderQueue == null)
         {
-            getLog().warn(String.format("Unable to get %1$s in order to complete earlier message!", ActorMessageQueue.class.getName()));
-            return;
+            getLog().error(String.format("Unable to get %1$s in order to complete earlier message!", ActorMessageQueue.class.getName()));
         }
-
-        if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
+        else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {
-            getLog().warn("Unexpected message completion for a message we never seen before!");
-            return;
+            getLog().error("Unexpected message completion for a message we never seen before!");
         }
 
         decrementTotalQueueSize();
         dequeueAndSend(senderQueue);
+
+        if (message.getReceiver().path().root() != getModel().getSelf().path().root())
+        {
+            forward(message);
+        }
     }
 
     private void decrementTotalQueueSize()
@@ -60,7 +56,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         getModel().getTotalNumberOfEnqueuedMessages().set(current - 1);
     }
 
-    private void onCompletableMessage(MessageExchangeMessages.MessageExchangeMessage message)
+    private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
         val receiverQueue = getOrCreateMessageQueue(message.getReceiver().path());
         val receiverQueueSize = receiverQueue.enqueueBack(message);
@@ -102,6 +98,11 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void dequeueAndSend(ActorMessageQueue queue)
     {
+        if (queue == null)
+        {
+            return;
+        }
+
         val message = queue.dequeue();
         if (message == null)
         {
@@ -125,6 +126,12 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void applyBackPressure(ActorRef receiver)
     {
+        if (receiver.path().root() != getModel().getSelf().path().root())
+        {
+            // apply back pressure only to local actors
+            return;
+        }
+
         val queue = getOrCreateMessageQueue(receiver.path());
         val message = MessageExchangeMessages.BackPressureMessage.builder()
                                                                  .sender(getModel().getSelf())

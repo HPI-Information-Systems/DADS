@@ -2,10 +2,10 @@ package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
-import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.protocol.messageExchange.AbstractMessageExchangeParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
+import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 
 import java.time.Duration;
@@ -75,7 +75,7 @@ public class ProcessorRegistryControl extends AbstractMessageExchangeParticipant
                                                                                 .build();
 
         return scheduler.scheduleAtFixedRate(Duration.ZERO,
-                                             Duration.ofSeconds(5),
+                                             getModel().getResendRegistrationInterval(),
                                              () -> masterProcessorRegistry.tell(message, getModel().getSelf()),
                                              dispatcher);
     }

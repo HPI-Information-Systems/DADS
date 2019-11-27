@@ -4,4 +4,5 @@ public enum ProtocolType
 {
     ProcessorRegistration,
     MessageExchange,
+    Reaper,
 }

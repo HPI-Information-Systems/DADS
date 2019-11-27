@@ -10,6 +10,7 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryModel;
+import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,9 +51,10 @@ public class ProcessorRegistrationProtocol
         return localProtocol;
     }
 
-    private static Set<Protocol> initializeProtocols(ActorSystem actorSystem, ProcessorRole role)
+    private static Protocol[] initializeProtocols(ActorSystem actorSystem, ProcessorRole role)
     {
         val protocols = new HashSet<Protocol>();
+        protocols.add(ReaperProtocol.initialize(actorSystem));
 
         switch (role)
         {
@@ -68,7 +70,7 @@ public class ProcessorRegistrationProtocol
             }
         }
 
-        return protocols;
+        return protocols.toArray(new Protocol[0]);
     }
 
     private static Set<Protocol> initializeWorkerProtocols(ActorSystem actorSystem)
@@ -97,6 +99,11 @@ public class ProcessorRegistrationProtocol
     {
         // TODO: add event dispatcher model and control
         return ActorRef.noSender();
+    }
+
+    public static boolean isInitialized()
+    {
+        return localProtocol != null;
     }
 
     public static ActorRef getLocalRootActor()

@@ -8,6 +8,8 @@ import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Optional;
+
 public abstract class AbstractProtocolParticipantControl<TModel extends ProtocolParticipantModel> implements ProtocolParticipantControl<TModel>
 {
     private Logger log;
@@ -83,7 +85,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
     }
 
-    public final ActorRef spawnChild(Props props)
+    public final Optional<ActorRef> trySpawnChild(Props props)
     {
         try
         {
@@ -92,22 +94,22 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
             {
                 child.tell(PoisonPill.getInstance(), getModel().getSelf());
                 getLog().error("Unable to add newly created child! This should never happen!");
-                return ActorRef.noSender();
+                return Optional.empty();
             }
 
             if (!tryWatch(child))
             {
                 child.tell(PoisonPill.getInstance(), getModel().getSelf());
                 getLog().error("Unable to watch newly created child! This should never happen!");
-                return ActorRef.noSender();
+                return Optional.empty();
             }
 
-            return child;
+            return Optional.ofNullable(child);
         }
         catch (Exception exception)
         {
             getLog().error("Unable to create a new child!", exception);
-            return ActorRef.noSender();
+            return Optional.empty();
         }
     }
 

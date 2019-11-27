@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.messageExchange;
 
+import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import lombok.val;
 
@@ -25,7 +26,12 @@ public abstract class AbstractMessageExchangeParticipantControl<TModel extends M
     @Override
     public void send(MessageExchangeMessages.MessageExchangeMessage message)
     {
-        val messageDispatcher = getModel().getMessageDispatcher();
+        if (message == null || message.getReceiver() == null || message.getReceiver() == ActorRef.noSender())
+        {
+            return;
+        }
+
+        val messageDispatcher = getModel().getMessageDispatcher(message);
         messageDispatcher.tell(message, message.getSender());
     }
 }

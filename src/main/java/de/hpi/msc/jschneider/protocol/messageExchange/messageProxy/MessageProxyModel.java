@@ -6,6 +6,7 @@ import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantMo
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.agrona.collections.MutableLong;
 
@@ -21,8 +22,8 @@ public class MessageProxyModel extends AbstractProtocolParticipantModel
     private final Map<ActorPath, ActorMessageQueue> messageQueues = new HashMap<>();
     @NonNull @Getter
     private ActorRef messageDispatcher;
-    @Getter @Builder.Default
+    @Getter @Setter @Builder.Default
     private int singleQueueBackPressureThreshold = 100;
-    @Getter @Builder.Default
+    @Getter @Setter @Builder.Default
     private int totalQueueBackPressureThreshold = 10000;
 }

@@ -18,11 +18,11 @@ import java.util.function.Function;
 @SuperBuilder
 public abstract class AbstractProtocolParticipantModel implements ProtocolParticipantModel
 {
+    private Logger log;
     @NonNull @Getter
-    private final Set<ActorRef> watchedActors;
+    private final Set<ActorRef> watchedActors = new HashSet<>();
     @NonNull @Getter
     private final Set<ActorRef> childActors = new HashSet<>();
-    private Logger log;
     @Setter
     private Callable<ActorRef> selfProvider;
     @Setter

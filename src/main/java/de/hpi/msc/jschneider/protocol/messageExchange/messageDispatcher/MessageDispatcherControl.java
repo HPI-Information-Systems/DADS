@@ -2,15 +2,16 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageDispatcher;
 
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
-import de.hpi.msc.jschneider.actor.common.messageExchange.messageDispatcher.MessageDispatcher;
-import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.messageExchange.messageProxy.MessageProxyControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.messageProxy.MessageProxyModel;
+import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
+
+import java.util.Optional;
 
 public class MessageDispatcherControl extends AbstractProtocolParticipantControl<MessageDispatcherModel>
 {
@@ -22,16 +23,16 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(MessageExchangeMessages.MessageExchangeMessage.class, this::onCompletableMessage);
+        return builder.match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
     }
 
-    private void onCompletableMessage(MessageExchangeMessages.MessageExchangeMessage message)
+    private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
         val proxy = getMessageProxy(message);
-        proxy.tell(message, message.getSender());
+        proxy.ifPresent(actorRef -> actorRef.tell(message, message.getSender()));
     }
 
-    private ActorRef getMessageProxy(MessageExchangeMessages.MessageExchangeMessage message)
+    private Optional<ActorRef> getMessageProxy(MessageExchangeMessages.MessageExchangeMessage message)
     {
         var rootPath = message.getReceiver().path().root();
         if (rootPath == getModel().getSelf().path().root())
@@ -42,28 +43,27 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         return getOrCreateMessageProxy(rootPath);
     }
 
-    private ActorRef getOrCreateMessageProxy(RootActorPath actorSystem)
+    private Optional<ActorRef> getOrCreateMessageProxy(RootActorPath actorSystem)
     {
-        var messageProxy = getModel().getMessageProxies().get(actorSystem);
-        if (messageProxy == null)
+        var messageProxy = Optional.ofNullable(getModel().getMessageProxies().get(actorSystem));
+        if (!messageProxy.isPresent())
         {
-            messageProxy = createMessageProxy(actorSystem);
-            getModel().getMessageProxies().put(actorSystem, messageProxy);
+            messageProxy = tryCreateMessageProxy(actorSystem);
+            messageProxy.ifPresent(actorRef -> getModel().getMessageProxies().put(actorSystem, actorRef));
         }
 
         return messageProxy;
     }
 
-    private ActorRef createMessageProxy(RootActorPath actorSystem)
+    private Optional<ActorRef> tryCreateMessageProxy(RootActorPath actorSystem)
     {
         val remoteMessageDispatcher = getModel().getMessageDispatchers().get(actorSystem);
         if (remoteMessageDispatcher == null)
         {
-            getLog().error(String.format("Unable to get the %1$s for (remote) actor system at \"%2$s\"!",
-                                         MessageDispatcher.class.getName(),
+            getLog().error(String.format("Unable to get the MessageExchange root actor for (remote) actor system at \"%1$s\"!",
                                          actorSystem));
 
-            return ActorRef.noSender();
+            return Optional.empty();
         }
 
         val model = MessageProxyModel.builder()
@@ -72,6 +72,6 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
         val control = new MessageProxyControl(model);
 
-        return spawnChild(ProtocolParticipant.props(control));
+        return trySpawnChild(ProtocolParticipant.props(control));
     }
 }

@@ -5,19 +5,19 @@ import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantMo
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 @SuperBuilder
 public abstract class AbstractMessageExchangeParticipantModel extends AbstractProtocolParticipantModel implements MessageExchangeParticipantModel
 {
     @Setter
-    private Callable<ActorRef> messageDispatcherProvider;
+    private Function<MessageExchangeMessages.MessageExchangeMessage, ActorRef> messageDispatcherProvider;
 
-    public final ActorRef getMessageDispatcher()
+    public final ActorRef getMessageDispatcher(MessageExchangeMessages.MessageExchangeMessage message)
     {
         try
         {
-            return messageDispatcherProvider.call();
+            return messageDispatcherProvider.apply(message);
         }
         catch (Exception exception)
         {

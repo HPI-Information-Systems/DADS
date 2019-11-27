@@ -7,8 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.Set;
-
 @Builder @Getter
 public class BaseProcessor implements Processor
 {
@@ -19,5 +17,5 @@ public class BaseProcessor implements Processor
     @NonNull @Builder.Default
     private int numberOfThreads = SystemParameters.getNumberOfThreads();
     @NonNull
-    private Set<Protocol> protocols;
+    private Protocol[] protocols;
 }

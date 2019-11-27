@@ -3,11 +3,11 @@ package de.hpi.msc.jschneider.protocol.messageExchange;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 
-import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 public interface MessageExchangeParticipantModel extends ProtocolParticipantModel
 {
-    void setMessageDispatcherProvider(Callable<ActorRef> provider);
+    void setMessageDispatcherProvider(Function<MessageExchangeMessages.MessageExchangeMessage, ActorRef> provider);
 
-    ActorRef getMessageDispatcher();
+    ActorRef getMessageDispatcher(MessageExchangeMessages.MessageExchangeMessage message);
 }

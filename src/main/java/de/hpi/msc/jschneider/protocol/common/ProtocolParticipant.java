@@ -2,9 +2,9 @@ package de.hpi.msc.jschneider.protocol.common;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.Props;
-import de.hpi.msc.jschneider.actor.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
 public class ProtocolParticipant<TModel extends ProtocolParticipantModel, TControl extends ProtocolParticipantControl<TModel>> extends AbstractLoggingActor
 {
