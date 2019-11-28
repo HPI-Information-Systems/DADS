@@ -4,6 +4,8 @@ import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherControl;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeParticipantModel;
@@ -82,6 +84,12 @@ public abstract class ProtocolTestCase extends TestCase
         return model;
     }
 
+    protected <TModel extends EventDispatcherModel> TModel finalizeModel(TModel model)
+    {
+        model.setMessageDispatcherProvider(message -> localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).ref());
+        return model;
+    }
+
     protected <TModel extends ProtocolParticipantModel, TControl extends ProtocolParticipantControl<TModel>> PartialFunction<Object, BoxedUnit> messageInterface(TControl control)
     {
         val receiveBuilder = new ImprovedReceiveBuilder();
@@ -90,7 +98,15 @@ public abstract class ProtocolTestCase extends TestCase
         return receiveBuilder.build().onMessage();
     }
 
-    protected MessageExchangeMessages.MessageCompletedMessage assertMessageCompleted(MessageExchangeMessages.MessageExchangeMessage message)
+    protected <TModel extends EventDispatcherModel, TControl extends EventDispatcherControl<TModel>> PartialFunction<Object, BoxedUnit> messageInterface(TControl control)
+    {
+        val receiveBuilder = new ImprovedReceiveBuilder();
+        control.complementReceiveBuilder(receiveBuilder);
+
+        return receiveBuilder.build().onMessage();
+    }
+
+    protected MessageExchangeMessages.MessageCompletedMessage assertThatMessageIsCompleted(MessageExchangeMessages.MessageExchangeMessage message)
     {
         val localMessageDispatcher = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange);
         val completedMessage = localMessageDispatcher.expectMsgClass(MessageExchangeMessages.MessageCompletedMessage.class);

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
@@ -21,7 +22,7 @@ public class MessageExchangeMessages
         private UUID id = UUID.randomUUID();
         @NotNull
         private ActorRef sender;
-        @NotNull
+        @NotNull @Setter
         private ActorRef receiver;
     }
 

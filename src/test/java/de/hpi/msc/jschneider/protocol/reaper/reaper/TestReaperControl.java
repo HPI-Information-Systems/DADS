@@ -66,7 +66,7 @@ public class TestReaperControl extends ProtocolTestCase
 
         assertThat(control.getModel().getWatchedActors().size()).isEqualTo(1);
         assertThat(control.getModel().getWatchedActors()).contains(localActor.ref());
-        assertMessageCompleted(message);
+        assertThatMessageIsCompleted(message);
     }
 
     public void testDoNotWatchRemoteActor()
@@ -78,7 +78,7 @@ public class TestReaperControl extends ProtocolTestCase
         messageInterface.apply(message);
 
         assertThat(control.getModel().getWatchedActors()).isEmpty();
-        assertMessageCompleted(message);
+        assertThatMessageIsCompleted(message);
     }
 
     public void testTerminateSystem()
