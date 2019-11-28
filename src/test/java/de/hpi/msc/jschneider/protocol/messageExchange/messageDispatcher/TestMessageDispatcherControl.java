@@ -36,42 +36,34 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     }
 
 
-    private MessageDispatcherModel dummyModel()
+    private MessageDispatcherControl control(TestProcessor... knownProcessors)
     {
-        return finalizeModel(MessageDispatcherModel.builder().build());
+        val model = connectedModel(knownProcessors);
+        return new MessageDispatcherControl(model);
     }
 
     private MessageDispatcherModel connectedModel(TestProcessor... knownProcessors)
     {
-        val model = dummyModel();
+        val model = finalizeModel(MessageDispatcherModel.builder().build());
+        model.setProcessorProvider(actorSystem ->
+                                   {
+                                       for (val processor : knownProcessors)
+                                       {
+                                           if (processor.getRootPath().equals(actorSystem))
+                                           {
+                                               return processor;
+                                           }
+                                       }
 
-        for (val processor : knownProcessors)
-        {
-            val messageExchangeProtocol = processor.getProtocol(ProtocolType.MessageExchange);
-            if (messageExchangeProtocol == null)
-            {
-                continue;
-            }
-
-            model.getMessageDispatchers().put(processor.getRootPath(), messageExchangeProtocol.getRootActor());
-        }
+                                       return null;
+                                   });
 
         return model;
     }
 
-    private MessageDispatcherControl control()
-    {
-        return control(dummyModel());
-    }
-
-    private MessageDispatcherControl control(MessageDispatcherModel model)
-    {
-        return new MessageDispatcherControl(model);
-    }
-
     public void testCreateMessageProxyForNewConnection()
     {
-        val control = control(connectedModel(remoteProcessor));
+        val control = control(remoteProcessor);
         control.getModel().setChildFactory(props -> localToRemoteMessageProxy.ref());
         val messageInterface = messageInterface(control);
 
@@ -88,7 +80,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
 
     public void testChooseSameMessageProxyForBothDirections()
     {
-        val control = control(connectedModel(remoteProcessor));
+        val control = control(remoteProcessor);
         control.getModel().getMessageProxies().put(remoteProcessor.getRootPath(), localToRemoteMessageProxy.ref());
         val messageInterface = messageInterface(control);
 
@@ -124,7 +116,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
 
     public void testLocalMessagesAreAlsoProxied()
     {
-        val control = control(connectedModel(localProcessor));
+        val control = control(localProcessor);
         control.getModel().setChildFactory(props -> localToLocalMessageProxy.ref());
         val messageInterface = messageInterface(control);
 

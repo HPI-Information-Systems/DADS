@@ -5,6 +5,7 @@ import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
+import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
 import lombok.val;
 
@@ -87,8 +88,8 @@ public class TestReaperControl extends ProtocolTestCase
         val messageInterface = messageInterface(control);
         val secondLocalActor = localProcessor.createActor("actor2");
 
-        messageInterface.apply(watchMe(localActor));
-        messageInterface.apply(watchMe(secondLocalActor));
+        control.getModel().getWatchedActors().add(localActor.ref());
+        control.getModel().getWatchedActors().add(secondLocalActor.ref());
 
         val numberOfCalls = new AtomicInteger();
         control.getModel().setTerminateActorSystemCallback(numberOfCalls::getAndIncrement);
@@ -98,5 +99,7 @@ public class TestReaperControl extends ProtocolTestCase
 
         messageInterface.apply(new Terminated(secondLocalActor.ref(), true, true));
         assertThat(numberOfCalls.get()).isEqualTo(1);
+
+        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ReaperEvents.ActorSystemReapedEvents.class);
     }
 }

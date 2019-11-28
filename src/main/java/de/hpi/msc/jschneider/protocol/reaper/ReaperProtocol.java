@@ -5,6 +5,14 @@ import akka.actor.ActorSystem;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcher;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocolParticipant;
+import de.hpi.msc.jschneider.protocol.reaper.reaper.ReaperControl;
+import de.hpi.msc.jschneider.protocol.reaper.reaper.ReaperModel;
+import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,28 +44,17 @@ public class ReaperProtocol
 
     private static ActorRef createRootActor(ActorSystem actorSystem)
     {
-        // TODO:
-        return ActorRef.noSender();
+        val model = ReaperModel.builder()
+                               .terminateActorSystemCallback(actorSystem::terminate)
+                               .build();
+        val control = new ReaperControl(model);
+        return actorSystem.actorOf(MessageExchangeProtocolParticipant.props(control), ROOT_ACTOR_NAME);
     }
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        // TODO: add event dispatcher model and control
-        return ActorRef.noSender();
-    }
-
-    public static boolean isInitialized()
-    {
-        return localProtocol != null;
-    }
-
-    public static ActorRef getLocalRootActor()
-    {
-        return localProtocol.getRootActor();
-    }
-
-    public static ActorRef getLocalEventDispatcher()
-    {
-        return localProtocol.getEventDispatcher();
+        val model = BaseEventDispatcherModel.create(ReaperEvents.ActorSystemReapedEvents.class);
+        val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
+        return actorSystem.actorOf(EventDispatcher.props(control), EVENT_DISPATCHER_NAME);
     }
 }

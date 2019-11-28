@@ -122,4 +122,18 @@ public class TestEventDispatcherControl extends ProtocolTestCase
         assertThat(dispatchedEvent.getReceiver()).isEqualTo(localActor.ref());
         assertThatMessageIsCompleted(event);
     }
+
+    public void testDoNotDispatchEventWithoutSubscribers()
+    {
+        val control = control();
+        val messageInterface = messageInterface(control);
+
+        val event = TestMessage.builder()
+                               .sender(localActor.ref())
+                               .receiver(self.ref())
+                               .build();
+        messageInterface.apply(event);
+
+        assertThatMessageIsCompleted(event);
+    }
 }

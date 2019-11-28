@@ -2,6 +2,9 @@ package de.hpi.msc.jschneider.protocol.common.control;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.protocol.common.Protocol;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
@@ -14,6 +17,10 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
     void setModel(TModel model) throws NullPointerException;
 
     ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder);
+
+    Optional<Protocol> getLocalProtocol(ProtocolType protocolType);
+
+    Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType);
 
     boolean tryWatch(ActorRef subject);
 

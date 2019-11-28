@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageDispatcher;
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.messageExchange.messageProxy.MessageProxyControl;
@@ -57,8 +58,8 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
     private Optional<ActorRef> tryCreateMessageProxy(RootActorPath actorSystem)
     {
-        val remoteMessageDispatcher = getModel().getMessageDispatchers().get(actorSystem);
-        if (remoteMessageDispatcher == null)
+        val remoteMessageDispatcher = getProtocol(actorSystem, ProtocolType.MessageExchange);
+        if (!remoteMessageDispatcher.isPresent())
         {
             getLog().error(String.format("Unable to get the MessageExchange root actor for (remote) actor system at \"%1$s\"!",
                                          actorSystem));
@@ -67,7 +68,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         val model = MessageProxyModel.builder()
-                                     .messageDispatcher(remoteMessageDispatcher)
+                                     .messageDispatcher(remoteMessageDispatcher.get().getRootActor())
                                      .build();
 
         val control = new MessageProxyControl(model);

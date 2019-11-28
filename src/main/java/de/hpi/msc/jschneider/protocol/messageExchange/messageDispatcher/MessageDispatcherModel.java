@@ -14,7 +14,5 @@ import java.util.Map;
 public class MessageDispatcherModel extends AbstractProtocolParticipantModel
 {
     @NonNull @Getter
-    private final Map<RootActorPath, ActorRef> messageDispatchers = new HashMap<>();
-    @NonNull @Getter
     private final Map<RootActorPath, ActorRef> messageProxies = new HashMap<>();
 }

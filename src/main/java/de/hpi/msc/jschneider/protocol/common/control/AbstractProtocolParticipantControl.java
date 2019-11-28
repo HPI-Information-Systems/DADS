@@ -33,12 +33,14 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         return log;
     }
 
-    protected final Optional<Protocol> getLocalProtocol(ProtocolType protocolType)
+    @Override
+    public final Optional<Protocol> getLocalProtocol(ProtocolType protocolType)
     {
         return getProtocol(getModel().getSelf().path().root(), protocolType);
     }
 
-    protected final Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType)
+    @Override
+    public final Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType)
     {
         val processor = getModel().getProcessor(actorSystem);
         if (processor == null)

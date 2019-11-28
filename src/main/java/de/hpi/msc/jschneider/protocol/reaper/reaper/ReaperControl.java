@@ -1,7 +1,9 @@
 package de.hpi.msc.jschneider.protocol.reaper.reaper;
 
 import akka.actor.Terminated;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.messageExchange.AbstractMessageExchangeParticipantControl;
+import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
@@ -61,6 +63,14 @@ public class ReaperControl extends AbstractMessageExchangeParticipantControl<Rea
     {
         try
         {
+            getLocalProtocol(ProtocolType.Reaper).ifPresent(protocol ->
+                                                            {
+                                                                send(ReaperEvents.ActorSystemReapedEvents.builder()
+                                                                                                         .sender(getModel().getSelf())
+                                                                                                         .receiver(protocol.getEventDispatcher())
+                                                                                                         .build());
+                                                            });
+
             getModel().getTerminateActorSystemCallback().run();
         }
         catch (Exception exception)
