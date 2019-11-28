@@ -1,7 +1,10 @@
 package de.hpi.msc.jschneider.protocol.common.model;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -14,9 +17,15 @@ public interface ProtocolParticipantModel
 
     void setSenderProvider(Callable<ActorRef> provider);
 
+    void setProcessorProvider(Function<RootActorPath, Processor> provider);
+
     ActorRef getSelf();
 
     ActorRef getSender();
+
+    Processor getLocalProcessor();
+
+    Processor getProcessor(RootActorPath actorSystem);
 
     Consumer<ActorRef> getWatchActorCallback();
 

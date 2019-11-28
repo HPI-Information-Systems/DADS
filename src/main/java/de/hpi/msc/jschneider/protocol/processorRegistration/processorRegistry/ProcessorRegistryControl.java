@@ -2,7 +2,10 @@ package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.messageExchange.AbstractMessageExchangeParticipantControl;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
@@ -21,7 +24,8 @@ public class ProcessorRegistryControl extends AbstractMessageExchangeParticipant
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return builder.match(ProcessorRegistrationMessages.RegisterAtMasterMessage.class, this::onRegisterAtMaster)
-                      .match(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.class, this::onAcknowledgeRegistration);
+                      .match(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.class, this::onAcknowledgeRegistration)
+                      .match(ProcessorRegistrationMessages.ProcessorRegistrationMessage.class, this::onRegistration);
     }
 
     private void onRegisterAtMaster(ProcessorRegistrationMessages.RegisterAtMasterMessage message)
@@ -84,5 +88,28 @@ public class ProcessorRegistryControl extends AbstractMessageExchangeParticipant
     {
         cancelRegistrationSchedule();
         getLog().info("Processor registration acknowledged.");
+    }
+
+    private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
+    {
+        val rootPath = message.getProcessor().getRootPath();
+
+        getModel().getProcessors().put(rootPath, message.getProcessor());
+        val existingProcessors = getModel().getProcessors().values().toArray(new Processor[0]);
+
+
+        getModel().getSender().tell(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
+                                                                                                .existingProcessors(existingProcessors)
+                                                                                                .build(), getModel().getSelf());
+
+        getLocalProtocol(ProtocolType.ProcessorRegistration).ifPresent(protocol ->
+                                                                       {
+                                                                           send(ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
+                                                                                                                                .sender(getModel().getSelf())
+                                                                                                                                .receiver(protocol.getEventDispatcher())
+                                                                                                                                .processor(message.getProcessor())
+                                                                                                                                .build());
+                                                                       });
+
     }
 }

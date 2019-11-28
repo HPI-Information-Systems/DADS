@@ -30,5 +30,7 @@ public class ProcessorRegistrationMessages
     public static class AcknowledgeRegistrationMessage implements Serializable
     {
         private static final long serialVersionUID = 3881986201955442030L;
+        @NonNull
+        private Processor[] existingProcessors;
     }
 }

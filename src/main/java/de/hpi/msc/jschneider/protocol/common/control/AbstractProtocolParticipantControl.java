@@ -3,6 +3,9 @@ package de.hpi.msc.jschneider.protocol.common.control;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.protocol.common.Protocol;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +31,30 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
 
         return log;
+    }
+
+    protected final Optional<Protocol> getLocalProtocol(ProtocolType protocolType)
+    {
+        return getProtocol(getModel().getSelf().path().root(), protocolType);
+    }
+
+    protected final Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType)
+    {
+        val processor = getModel().getProcessor(actorSystem);
+        if (processor == null)
+        {
+            return Optional.empty();
+        }
+
+        for (val protocol : processor.getProtocols())
+        {
+            if (protocol.getType() == protocolType)
+            {
+                return Optional.of(protocol);
+            }
+        }
+
+        return Optional.empty();
     }
 
     @Override

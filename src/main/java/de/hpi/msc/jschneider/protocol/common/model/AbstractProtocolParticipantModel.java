@@ -2,6 +2,8 @@ package de.hpi.msc.jschneider.protocol.common.model;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -27,6 +29,8 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     private Callable<ActorRef> selfProvider;
     @Setter
     private Callable<ActorRef> senderProvider;
+    @Setter
+    private Function<RootActorPath, Processor> processorProvider;
     @Getter @Setter
     private Consumer<ActorRef> watchActorCallback;
     @Getter @Setter
@@ -54,6 +58,24 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         {
             getLog().error("Unable to retrieve self!", exception);
             return ActorRef.noSender();
+        }
+    }
+
+    public final Processor getLocalProcessor()
+    {
+        return getProcessor(getSelf().path().root());
+    }
+
+    public final Processor getProcessor(RootActorPath actorSystem)
+    {
+        try
+        {
+            return processorProvider.apply(actorSystem);
+        }
+        catch (Exception exception)
+        {
+            getLog().error("Unable to retrieve local processor!", exception);
+            return null;
         }
     }
 

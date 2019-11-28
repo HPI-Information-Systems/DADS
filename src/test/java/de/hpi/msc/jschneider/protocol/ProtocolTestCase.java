@@ -60,7 +60,7 @@ public abstract class ProtocolTestCase extends TestCase
         {
             TestProtocol.create(processor, protocolType);
         }
-
+        processors.add(processor);
         return processor;
     }
 
@@ -68,6 +68,18 @@ public abstract class ProtocolTestCase extends TestCase
     {
         model.setSelfProvider(() -> self.ref());
         model.setSenderProvider(ActorRef::noSender);
+        model.setProcessorProvider(actorSystem ->
+                                   {
+                                       for (val processor : processors)
+                                       {
+                                           if (processor.getRootPath().equals(actorSystem))
+                                           {
+                                               return processor;
+                                           }
+                                       }
+
+                                       return null;
+                                   });
         model.setWatchActorCallback(subject ->
                                     {
                                     });

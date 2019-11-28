@@ -2,6 +2,8 @@ package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import lombok.val;
 
@@ -14,7 +16,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
     @Override
     protected ProtocolType[] getProcessorProtocols()
     {
-        return new ProtocolType[]{ProtocolType.ProcessorRegistration};
+        return new ProtocolType[]{ProtocolType.ProcessorRegistration, ProtocolType.MessageExchange};
     }
 
     private ProcessorRegistryControl control()
@@ -28,7 +30,6 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
         val selection = localProcessor.getActorSystem().actorSelection(processorRegistry.ref().path());
 
         return finalizeModel(ProcessorRegistryModel.builder()
-                                                   .localProcessor(localProcessor)
                                                    .dispatcherProvider(() -> localProcessor.getActorSystem().dispatcher())
                                                    .schedulerProvider(() -> localProcessor.getActorSystem().scheduler())
                                                    .actorSelectionCallback(path -> selection)
@@ -66,8 +67,28 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
         val secondRegistrationMessage = localProcessor.getProtocolRootActor(ProtocolType.ProcessorRegistration).expectMsgClass(ProcessorRegistrationMessages.ProcessorRegistrationMessage.class);
         assertThat(secondRegistrationMessage).isSameAs(firstRegistrationMessage);
 
-        messageInterface.apply(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder().build());
+        messageInterface.apply(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
+                                                                                           .existingProcessors(new Processor[]{localProcessor})
+                                                                                           .build());
 
         localProcessor.getProtocolRootActor(ProtocolType.ProcessorRegistration).expectNoMessage();
+    }
+
+    public void testOnRegistration()
+    {
+        val control = control();
+        control.getModel().setSenderProvider(self::ref);
+        val messageInterface = messageInterface(control);
+
+        val message = ProcessorRegistrationMessages.ProcessorRegistrationMessage.builder()
+                                                                                .processor(localProcessor)
+                                                                                .build();
+        messageInterface.apply(message);
+
+        val acknowledgeRegistration = self.expectMsgClass(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.class);
+        assertThat(acknowledgeRegistration.getExistingProcessors().length).isOne();
+        assertThat(acknowledgeRegistration.getExistingProcessors()).contains(localProcessor);
+
+        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
     }
 }
