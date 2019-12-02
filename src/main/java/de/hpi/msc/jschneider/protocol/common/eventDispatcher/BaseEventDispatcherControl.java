@@ -1,48 +1,15 @@
 package de.hpi.msc.jschneider.protocol.common.eventDispatcher;
 
-import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> implements EventDispatcherControl<TModel>
+public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> extends AbstractProtocolParticipantControl<TModel> implements EventDispatcherControl<TModel>
 {
-    private Logger log;
-
-    protected final Logger getLog()
-    {
-        if (log == null)
-        {
-            log = LogManager.getLogger(getClass());
-        }
-
-        return log;
-    }
-
-    private TModel model;
-
-    @Override
-    public final TModel getModel()
-    {
-        return model;
-    }
-
-    @Override
-    public final void setModel(TModel model)
-    {
-        if (model == null)
-        {
-            throw new NullPointerException();
-        }
-
-        this.model = model;
-    }
-
     public BaseEventDispatcherControl(TModel model)
     {
-        setModel(model);
+        super(model);
     }
 
     @Override
@@ -135,35 +102,5 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> imp
         {
             complete(message);
         }
-    }
-
-    protected void onAny(Object message)
-    {
-        getLog().warn(String.format("%1$s received unmatched message of type %2$s!",
-                                    getClass().getName(),
-                                    message.getClass().getName()));
-    }
-
-    protected void complete(MessageExchangeMessages.MessageExchangeMessage message)
-    {
-        val completedMessage = MessageExchangeMessages.MessageCompletedMessage.builder()
-                                                                              .sender(message.getReceiver())
-                                                                              .receiver(message.getSender())
-                                                                              .completedMessageId(message.getId())
-                                                                              .build();
-
-        send(completedMessage);
-    }
-
-
-    protected void send(MessageExchangeMessages.MessageExchangeMessage message)
-    {
-        if (message == null || message.getReceiver() == null || message.getReceiver() == ActorRef.noSender())
-        {
-            return;
-        }
-
-        val messageDispatcher = getModel().getMessageDispatcher(message);
-        messageDispatcher.tell(message, message.getSender());
     }
 }

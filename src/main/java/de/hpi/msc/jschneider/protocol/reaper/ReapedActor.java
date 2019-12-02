@@ -1,14 +1,14 @@
 package de.hpi.msc.jschneider.protocol.reaper;
 
 import akka.actor.Props;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeParticipantControl;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeParticipantModel;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocolParticipant;
+import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 
-public class ReapedActor<TModel extends MessageExchangeParticipantModel, TControl extends MessageExchangeParticipantControl<TModel>> extends MessageExchangeProtocolParticipant<TModel, TControl>
+public class ReapedActor<TModel extends ProtocolParticipantModel, TControl extends ProtocolParticipantControl<TModel>> extends ProtocolParticipant<TModel, TControl>
 {
-    public static <TModel extends MessageExchangeParticipantModel, TControl extends MessageExchangeParticipantControl<TModel>> Props props(TControl control)
+    public static <TModel extends ProtocolParticipantModel, TControl extends ProtocolParticipantControl<TModel>> Props props(TControl control)
     {
         return Props.create(ReapedActor.class, () -> new ReapedActor(control));
     }

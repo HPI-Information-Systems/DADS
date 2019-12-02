@@ -7,6 +7,7 @@ import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -133,7 +134,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
                 return Optional.empty();
             }
 
-            return Optional.ofNullable(child);
+            return Optional.of(child);
         }
         catch (Exception exception)
         {
@@ -147,5 +148,59 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         getLog().warn(String.format("%1$s received unmatched message of type %2$s!",
                                     getClass().getName(),
                                     message.getClass().getName()));
+    }
+
+    public void send(Object message, ActorRef receiver)
+    {
+        if (message == null || receiver == null || receiver == ActorRef.noSender())
+        {
+            return;
+        }
+
+        if (message instanceof MessageExchangeMessages.MessageExchangeMessage)
+        {
+            send((MessageExchangeMessages.MessageExchangeMessage) message);
+            return;
+        }
+
+        receiver.tell(message, getModel().getSelf());
+    }
+
+    public void send(MessageExchangeMessages.MessageExchangeMessage message)
+    {
+        if (message == null)
+        {
+            return;
+        }
+
+        val protocol = getLocalProtocol(ProtocolType.MessageExchange);
+        if (protocol.isPresent())
+        {
+            protocol.get().getRootActor().tell(message, getModel().getSelf());
+        }
+        else
+        {
+            message.getReceiver().tell(message, getModel().getSelf());
+        }
+    }
+
+    public void complete(MessageExchangeMessages.MessageExchangeMessage message)
+    {
+        if (message == null)
+        {
+            return;
+        }
+
+        val protocol = getLocalProtocol(ProtocolType.MessageExchange);
+        if (!protocol.isPresent())
+        {
+            return;
+        }
+
+        send(MessageExchangeMessages.MessageCompletedMessage.builder()
+                                                            .sender(message.getReceiver())
+                                                            .receiver(message.getSender())
+                                                            .completedMessageId(message.getId())
+                                                            .build());
     }
 }

@@ -6,6 +6,7 @@ import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
 import java.util.Optional;
@@ -29,4 +30,10 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
     Optional<ActorRef> trySpawnChild(Props props);
 
     void onAny(Object message);
+
+    void send(MessageExchangeMessages.MessageExchangeMessage message);
+
+    void send(Object message, ActorRef receiver);
+
+    void complete(MessageExchangeMessages.MessageExchangeMessage message);
 }

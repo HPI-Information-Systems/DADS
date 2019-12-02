@@ -4,12 +4,11 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
-import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcher;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.reaper.reaper.ReaperControl;
 import de.hpi.msc.jschneider.protocol.reaper.reaper.ReaperModel;
 import lombok.val;
@@ -48,13 +47,13 @@ public class ReaperProtocol
                                .terminateActorSystemCallback(actorSystem::terminate)
                                .build();
         val control = new ReaperControl(model);
-        return actorSystem.actorOf(MessageExchangeProtocolParticipant.props(control), ROOT_ACTOR_NAME);
+        return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);
     }
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
         val model = BaseEventDispatcherModel.create(ReaperEvents.ActorSystemReapedEvents.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
-        return actorSystem.actorOf(EventDispatcher.props(control), EVENT_DISPATCHER_NAME);
+        return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }
 }

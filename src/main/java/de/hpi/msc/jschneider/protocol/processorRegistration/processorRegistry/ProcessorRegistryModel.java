@@ -4,7 +4,7 @@ import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
 import akka.actor.RootActorPath;
 import akka.actor.Scheduler;
-import de.hpi.msc.jschneider.protocol.messageExchange.AbstractMessageExchangeParticipantModel;
+import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 @SuperBuilder
-public class ProcessorRegistryModel extends AbstractMessageExchangeParticipantModel
+public class ProcessorRegistryModel extends AbstractProtocolParticipantModel
 {
     @Getter @Setter
     private Cancellable registrationSchedule;

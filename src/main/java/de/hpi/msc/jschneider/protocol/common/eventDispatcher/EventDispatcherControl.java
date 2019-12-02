@@ -1,12 +1,7 @@
 package de.hpi.msc.jschneider.protocol.common.eventDispatcher;
 
-import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 
-public interface EventDispatcherControl<TModel extends EventDispatcherModel>
+public interface EventDispatcherControl<TModel extends EventDispatcherModel> extends ProtocolParticipantControl<TModel>
 {
-    TModel getModel();
-
-    void setModel(TModel model);
-
-    ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder);
 }

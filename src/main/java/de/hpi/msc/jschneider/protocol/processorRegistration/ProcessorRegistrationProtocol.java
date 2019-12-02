@@ -5,13 +5,12 @@ import akka.actor.ActorSystem;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
-import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcher;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryModel;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
@@ -95,7 +94,7 @@ public class ProcessorRegistrationProtocol
                                                .build();
         val control = new ProcessorRegistryControl(rootActorModel);
 
-        return actorSystem.actorOf(MessageExchangeProtocolParticipant.props(control), ROOT_ACTOR_NAME);
+        return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);
     }
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
@@ -103,7 +102,7 @@ public class ProcessorRegistrationProtocol
         val model = BaseEventDispatcherModel.create(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
 
-        return actorSystem.actorOf(EventDispatcher.props(control));
+        return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }
 
     public static boolean isInitialized()

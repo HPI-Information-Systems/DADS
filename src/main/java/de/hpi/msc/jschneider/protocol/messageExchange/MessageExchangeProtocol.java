@@ -8,7 +8,6 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
-import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcher;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.messageDispatcher.MessageDispatcherControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.messageDispatcher.MessageDispatcherModel;
@@ -55,7 +54,7 @@ public class MessageExchangeProtocol
         val model = BaseEventDispatcherModel.create(); // TODO: add event message classes
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
 
-        return actorSystem.actorOf(EventDispatcher.props(control));
+        return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }
 
     public static boolean isInitialized()

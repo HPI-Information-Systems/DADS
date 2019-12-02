@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
-import de.hpi.msc.jschneider.protocol.messageExchange.AbstractMessageExchangeParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
@@ -13,7 +13,7 @@ import lombok.val;
 
 import java.time.Duration;
 
-public class ProcessorRegistryControl extends AbstractMessageExchangeParticipantControl<ProcessorRegistryModel>
+public class ProcessorRegistryControl extends AbstractProtocolParticipantControl<ProcessorRegistryModel>
 {
     public ProcessorRegistryControl(ProcessorRegistryModel model)
     {

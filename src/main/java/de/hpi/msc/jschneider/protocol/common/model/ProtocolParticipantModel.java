@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.common.model;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
