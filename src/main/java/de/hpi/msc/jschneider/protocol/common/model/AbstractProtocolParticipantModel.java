@@ -8,10 +8,12 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -30,7 +32,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     @Setter
     private Callable<ActorRef> senderProvider;
     @Setter
-    private Function<RootActorPath, Processor> processorProvider;
+    private Callable<Processor[]> processorProvider;
     @Getter @Setter
     private Consumer<ActorRef> watchActorCallback;
     @Getter @Setter
@@ -63,19 +65,48 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
 
     public final Processor getLocalProcessor()
     {
-        return getProcessor(getSelf().path().root());
+        return getProcessor(getSelf().path().root()).get();
     }
 
-    public final Processor getProcessor(RootActorPath actorSystem)
+    public final Optional<Processor> getMasterProcessor()
     {
         try
         {
-            return processorProvider.apply(actorSystem);
+            for (val processor : processorProvider.call())
+            {
+                if (processor.isMaster())
+                {
+                    return Optional.of(processor);
+                }
+            }
+
+            return Optional.empty();
         }
         catch (Exception exception)
         {
-            getLog().error("Unable to retrieve local processor!", exception);
-            return null;
+            getLog().error("Unable to retrieve master processor!", exception);
+            return Optional.empty();
+        }
+    }
+
+    public final Optional<Processor> getProcessor(RootActorPath actorSystem)
+    {
+        try
+        {
+            for (val processor : processorProvider.call())
+            {
+                if (processor.getRootPath().equals(actorSystem))
+                {
+                    return Optional.of(processor);
+                }
+            }
+
+            return Optional.empty();
+        }
+        catch (Exception exception)
+        {
+            getLog().error("Unable to retrieve (remote) processor!", exception);
+            return Optional.empty();
         }
     }
 

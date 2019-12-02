@@ -30,7 +30,7 @@ public class ActorSystemInitializer
     {
         val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME, masterCommand);
 
-        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker);
+        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, true);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                                                                .masterAddress(actorSystem.provider().getDefaultAddress())
                                                                                                                .build(), ActorRef.noSender());
@@ -41,7 +41,7 @@ public class ActorSystemInitializer
     {
         val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand);
 
-        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker);
+        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, false);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                                                                .masterAddress(new Address(
                                                                                                                        "akka.tcp",

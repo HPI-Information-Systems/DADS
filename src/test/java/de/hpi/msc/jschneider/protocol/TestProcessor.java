@@ -19,6 +19,8 @@ import java.util.Set;
 public class TestProcessor implements Processor
 {
     @Setter @Getter
+    private boolean isMaster;
+    @Setter @Getter
     private ActorSystem actorSystem;
     @Setter
     private Set<Protocol> protocols = new HashSet<>();
@@ -30,6 +32,7 @@ public class TestProcessor implements Processor
         val actorSystem = ActorSystem.create(actorSystemName);
         val processor = new TestProcessor();
 
+        processor.setMaster(false);
         processor.setActorSystem(actorSystem);
         processor.setProtocols(new HashSet<>(Arrays.asList(protocols)));
 

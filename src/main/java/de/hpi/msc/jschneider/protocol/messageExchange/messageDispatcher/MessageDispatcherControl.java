@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageDispatcher;
 
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -24,7 +25,13 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
+        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
+    }
+
+    private void onSetUp(CommonMessages.SetUpProtocolMessage message)
+    {
+
     }
 
     private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)

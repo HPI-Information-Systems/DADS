@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.reaper.reaper;
 
 import akka.actor.Terminated;
+import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
@@ -17,8 +18,14 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(ReaperMessages.WatchMeMessage.class, this::onWatchMe)
+        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                      .match(ReaperMessages.WatchMeMessage.class, this::onWatchMe)
                       .match(Terminated.class, this::onTerminated);
+    }
+
+    private void onSetUp(CommonMessages.SetUpProtocolMessage message)
+    {
+
     }
 
     private void onWatchMe(ReaperMessages.WatchMeMessage message)
@@ -27,7 +34,7 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
         {
             if (message.getSender().path().root() != getModel().getSelf().path().root())
             {
-                getLog().error("Actor of remote system (%1$s) wants to be watched!");
+                getLog().error(String.format("Actor of remote system (%1$s) wants to be watched!", message.getSender().path().root()));
                 return;
             }
 

@@ -89,6 +89,21 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
         assertThat(acknowledgeRegistration.getExistingProcessors().length).isOne();
         assertThat(acknowledgeRegistration.getExistingProcessors()).contains(localProcessor);
 
-        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+        expectEvent(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+    }
+
+    public void testSubscribeToEventsOnRegistrationAcknowledged()
+    {
+        val control = control();
+        val messageInterface = messageInterface(control);
+
+        val message = ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
+                                                                                  .existingProcessors(new Processor[]{localProcessor})
+                                                                                  .build();
+        messageInterface.apply(message);
+
+        assertThat(control.getModel().getProcessors()).isNotEmpty();
+        expectEventSubscription(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+        expectEvent(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
     }
 }

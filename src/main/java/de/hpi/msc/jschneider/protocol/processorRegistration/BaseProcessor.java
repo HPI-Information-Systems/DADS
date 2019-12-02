@@ -11,6 +11,8 @@ import lombok.NonNull;
 public class BaseProcessor implements Processor
 {
     @NonNull
+    private boolean isMaster;
+    @NonNull
     private RootActorPath rootPath;
     @NonNull @Builder.Default
     private long maximumMemoryInBytes = SystemParameters.getMaximumMemory();

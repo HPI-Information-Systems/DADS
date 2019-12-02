@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
+import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -30,7 +31,7 @@ public class ProcessorRegistrationProtocol
     private static Processor localProcessor;
     private static Protocol localProtocol;
 
-    public static Protocol initialize(ActorSystem actorSystem, ProcessorRole role)
+    public static Protocol initialize(ActorSystem actorSystem, ProcessorRole role, boolean isMaster)
     {
         if (localProtocol != null)
         {
@@ -39,6 +40,7 @@ public class ProcessorRegistrationProtocol
         }
 
         localProcessor = BaseProcessor.builder()
+                                      .isMaster(isMaster)
                                       .rootPath(RootActorPath.apply(actorSystem.provider().getDefaultAddress(), actorSystem.name()))
                                       .protocols(initializeProtocols(actorSystem, role))
                                       .build();
@@ -49,6 +51,7 @@ public class ProcessorRegistrationProtocol
                                     .eventDispatcher(createEventDispatcher(actorSystem))
                                     .build();
 
+        setUpProtocols(localProcessor);
 
         Log.info(String.format("%1$s successfully initialized.", ProcessorRegistrationProtocol.class.getName()));
         return localProtocol;
@@ -105,23 +108,20 @@ public class ProcessorRegistrationProtocol
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }
 
-    public static boolean isInitialized()
+    private static void setUpProtocols(Processor localProcessor)
     {
-        return localProtocol != null;
+        val message = CommonMessages.SetUpProtocolMessage.builder()
+                                                         .localProcessor(localProcessor)
+                                                         .build();
+
+        for (val protocol : localProcessor.getProtocols())
+        {
+            protocol.getRootActor().tell(message, ActorRef.noSender());
+        }
     }
 
-    public static ActorRef getLocalRootActor()
+    public static Processor[] getProcessors()
     {
-        return localProtocol.getRootActor();
-    }
-
-    public static ActorRef getLocalEventDispatcher()
-    {
-        return localProtocol.getEventDispatcher();
-    }
-
-    public static Processor getProcessor(RootActorPath actorSystem)
-    {
-        return rootActorModel.getProcessors().get(actorSystem);
+        return rootActorModel.getProcessors().values().toArray(new Processor[0]);
     }
 }

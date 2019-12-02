@@ -21,6 +21,8 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     Optional<Protocol> getLocalProtocol(ProtocolType protocolType);
 
+    Optional<Protocol> getMasterProtocol(ProtocolType protocolType);
+
     Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType);
 
     boolean tryWatch(ActorRef subject);
@@ -34,6 +36,14 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
     void send(MessageExchangeMessages.MessageExchangeMessage message);
 
     void send(Object message, ActorRef receiver);
+
+    void sendEvent(ProtocolType protocolType, MessageExchangeMessages.MessageExchangeMessage event);
+
+    void subscribeToLocalEvent(ProtocolType protocolType, Class<?> eventType);
+
+    void subscribeToMasterEvent(ProtocolType protocolType, Class<?> eventType);
+
+    void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<?> eventType);
 
     void complete(MessageExchangeMessages.MessageExchangeMessage message);
 }

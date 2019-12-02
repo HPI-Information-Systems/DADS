@@ -20,10 +20,10 @@ public class MessageExchangeMessages
         private static final long serialVersionUID = -5714914705070819888L;
         @NotNull @Builder.Default
         private UUID id = UUID.randomUUID();
-        @NotNull
-        private ActorRef sender;
-        @NotNull @Setter
-        private ActorRef receiver;
+        @Setter @Builder.Default
+        private ActorRef sender = ActorRef.noSender();
+        @Setter @Builder.Default
+        private ActorRef receiver = ActorRef.noSender();
     }
 
     @NoArgsConstructor @SuperBuilder

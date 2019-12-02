@@ -6,8 +6,10 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,15 +43,37 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public final Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType)
+    public final Optional<Protocol> getMasterProtocol(ProtocolType protocolType)
     {
-        val processor = getModel().getProcessor(actorSystem);
-        if (processor == null)
+        val processor = getModel().getMasterProcessor();
+        if (!processor.isPresent())
         {
             return Optional.empty();
         }
 
-        for (val protocol : processor.getProtocols())
+        return getProtocol(processor, protocolType);
+    }
+
+    @Override
+    public final Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType)
+    {
+        val processor = getModel().getProcessor(actorSystem);
+        if (!processor.isPresent())
+        {
+            return Optional.empty();
+        }
+
+        return getProtocol(processor, protocolType);
+    }
+
+    private Optional<Protocol> getProtocol(Optional<Processor> processor, ProtocolType protocolType)
+    {
+        if (!processor.isPresent())
+        {
+            return Optional.empty();
+        }
+
+        for (val protocol : processor.get().getProtocols())
         {
             if (protocol.getType() == protocolType)
             {
@@ -77,6 +101,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         this.model = model;
     }
 
+    @Override
     public final boolean tryWatch(ActorRef subject)
     {
         if (subject == null || subject == ActorRef.noSender())
@@ -96,6 +121,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
     }
 
+    @Override
     public final boolean tryUnwatch(ActorRef subject)
     {
         if (subject == null || subject == ActorRef.noSender())
@@ -115,6 +141,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
     }
 
+    @Override
     public final Optional<ActorRef> trySpawnChild(Props props)
     {
         try
@@ -143,6 +170,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
     }
 
+    @Override
     public void onAny(Object message)
     {
         getLog().warn(String.format("%1$s received unmatched message of type %2$s!",
@@ -150,6 +178,37 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
                                     message.getClass().getName()));
     }
 
+    @Override
+    public void subscribeToLocalEvent(ProtocolType protocolType, Class<?> eventType)
+    {
+        subscribeToEvent(getLocalProtocol(protocolType), eventType);
+    }
+
+    @Override
+    public void subscribeToMasterEvent(ProtocolType protocolType, Class<?> eventType)
+    {
+        subscribeToEvent(getMasterProtocol(protocolType), eventType);
+    }
+
+    @Override
+    public void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<?> eventType)
+    {
+        subscribeToEvent(getProtocol(actorSystem, protocolType), eventType);
+    }
+
+    private void subscribeToEvent(Optional<Protocol> protocol, Class<?> eventType)
+    {
+        protocol.ifPresent(actualProtocol ->
+                           {
+                               send(EventDispatcherMessages.SubscribeToEventMessage.builder()
+                                                                                   .sender(getModel().getSelf())
+                                                                                   .receiver(actualProtocol.getEventDispatcher())
+                                                                                   .eventType(eventType)
+                                                                                   .build());
+                           });
+    }
+
+    @Override
     public void send(Object message, ActorRef receiver)
     {
         if (message == null || receiver == null || receiver == ActorRef.noSender())
@@ -166,9 +225,21 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         receiver.tell(message, getModel().getSelf());
     }
 
+    @Override
+    public void sendEvent(ProtocolType protocolType, MessageExchangeMessages.MessageExchangeMessage event)
+    {
+        getLocalProtocol(protocolType).ifPresent(protocol ->
+                                                 {
+                                                     event.setSender(getModel().getSelf());
+                                                     event.setReceiver(protocol.getEventDispatcher());
+                                                     send(event);
+                                                 });
+    }
+
+    @Override
     public void send(MessageExchangeMessages.MessageExchangeMessage message)
     {
-        if (message == null)
+        if (message == null || message.getReceiver() == ActorRef.noSender())
         {
             return;
         }
@@ -184,6 +255,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
     }
 
+    @Override
     public void complete(MessageExchangeMessages.MessageExchangeMessage message)
     {
         if (message == null)

@@ -15,4 +15,10 @@ public class ProcessorRegistrationEvents
         @NonNull
         private Processor processor;
     }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class RegistrationAcknowledgedEvent extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = 2070149295388244936L;
+    }
 }

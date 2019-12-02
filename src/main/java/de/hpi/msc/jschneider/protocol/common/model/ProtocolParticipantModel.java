@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -16,7 +17,7 @@ public interface ProtocolParticipantModel
 
     void setSenderProvider(Callable<ActorRef> provider);
 
-    void setProcessorProvider(Function<RootActorPath, Processor> provider);
+    void setProcessorProvider(Callable<Processor[]> provider);
 
     ActorRef getSelf();
 
@@ -24,7 +25,9 @@ public interface ProtocolParticipantModel
 
     Processor getLocalProcessor();
 
-    Processor getProcessor(RootActorPath actorSystem);
+    Optional<Processor> getMasterProcessor();
+
+    Optional<Processor> getProcessor(RootActorPath actorSystem);
 
     Consumer<ActorRef> getWatchActorCallback();
 

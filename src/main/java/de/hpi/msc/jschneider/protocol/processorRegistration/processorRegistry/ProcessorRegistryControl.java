@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
+import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
@@ -23,9 +24,16 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(ProcessorRegistrationMessages.RegisterAtMasterMessage.class, this::onRegisterAtMaster)
+        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                      .match(ProcessorRegistrationMessages.RegisterAtMasterMessage.class, this::onRegisterAtMaster)
                       .match(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.class, this::onAcknowledgeRegistration)
-                      .match(ProcessorRegistrationMessages.ProcessorRegistrationMessage.class, this::onRegistration);
+                      .match(ProcessorRegistrationMessages.ProcessorRegistrationMessage.class, this::onRegistration)
+                      .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined);
+    }
+
+    private void onSetUp(CommonMessages.SetUpProtocolMessage message)
+    {
+
     }
 
     private void onRegisterAtMaster(ProcessorRegistrationMessages.RegisterAtMasterMessage message)
@@ -88,6 +96,28 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     {
         cancelRegistrationSchedule();
         getLog().info("Processor registration acknowledged.");
+
+        for (val processor : message.getExistingProcessors())
+        {
+            getModel().getProcessors().put(processor.getRootPath(), processor);
+        }
+
+        subscribeToMasterEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+        sendEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.builder()
+                                                                                                               .build());
+    }
+
+    private void onProcessorJoined(ProcessorRegistrationEvents.ProcessorJoinedEvent message)
+    {
+        try
+        {
+            getModel().getProcessors().put(message.getProcessor().getRootPath(), message.getProcessor());
+            getLog().info(String.format("%1$s just joined.", message.getProcessor().getRootPath()));
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 
     private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
@@ -102,14 +132,8 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
                                                                                                 .existingProcessors(existingProcessors)
                                                                                                 .build(), getModel().getSelf());
 
-        getLocalProtocol(ProtocolType.ProcessorRegistration).ifPresent(protocol ->
-                                                                       {
-                                                                           send(ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
-                                                                                                                                .sender(getModel().getSelf())
-                                                                                                                                .receiver(protocol.getEventDispatcher())
-                                                                                                                                .processor(message.getProcessor())
-                                                                                                                                .build());
-                                                                       });
-
+        sendEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
+                                                                                                      .processor(message.getProcessor())
+                                                                                                      .build());
     }
 }

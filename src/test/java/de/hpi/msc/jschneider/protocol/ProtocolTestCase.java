@@ -4,8 +4,10 @@ import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import junit.framework.TestCase;
 import lombok.val;
@@ -29,6 +31,7 @@ public abstract class ProtocolTestCase extends TestCase
         super.setUp();
 
         localProcessor = createProcessor("local", getProcessorProtocols());
+        localProcessor.setMaster(true);
         self = localProcessor.createActor("self");
     }
 
@@ -65,18 +68,7 @@ public abstract class ProtocolTestCase extends TestCase
     {
         model.setSelfProvider(() -> self.ref());
         model.setSenderProvider(ActorRef::noSender);
-        model.setProcessorProvider(actorSystem ->
-                                   {
-                                       for (val processor : processors)
-                                       {
-                                           if (processor.getRootPath().equals(actorSystem))
-                                           {
-                                               return processor;
-                                           }
-                                       }
-
-                                       return null;
-                                   });
+        model.setProcessorProvider(() -> processors.toArray(new Processor[0]));
         model.setWatchActorCallback(subject ->
                                     {
                                     });
@@ -104,5 +96,21 @@ public abstract class ProtocolTestCase extends TestCase
         assertThat(completedMessage.getCompletedMessageId()).isEqualTo(message.getId());
 
         return completedMessage;
+    }
+
+    protected <TEvent extends MessageExchangeMessages.MessageExchangeMessage> TEvent expectEvent(Class<TEvent> eventType)
+    {
+        val localMessageDispatcher = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange);
+        return localMessageDispatcher.expectMsgClass(eventType);
+    }
+
+    protected MessageExchangeMessages.MessageExchangeMessage expectEventSubscription(Class<?> eventType)
+    {
+        val localMessageDispatcher = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange);
+        val subscriptionMessage = localMessageDispatcher.expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
+
+        assertThat(subscriptionMessage.getEventType()).isEqualTo(eventType);
+
+        return subscriptionMessage;
     }
 }

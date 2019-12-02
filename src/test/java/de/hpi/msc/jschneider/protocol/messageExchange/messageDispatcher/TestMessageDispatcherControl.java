@@ -45,18 +45,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     private MessageDispatcherModel connectedModel(TestProcessor... knownProcessors)
     {
         val model = finalizeModel(MessageDispatcherModel.builder().build());
-        model.setProcessorProvider(actorSystem ->
-                                   {
-                                       for (val processor : knownProcessors)
-                                       {
-                                           if (processor.getRootPath().equals(actorSystem))
-                                           {
-                                               return processor;
-                                           }
-                                       }
-
-                                       return null;
-                                   });
+        model.setProcessorProvider(() -> knownProcessors);
 
         return model;
     }

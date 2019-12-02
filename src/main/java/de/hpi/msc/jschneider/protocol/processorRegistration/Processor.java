@@ -5,6 +5,8 @@ import de.hpi.msc.jschneider.protocol.common.Protocol;
 
 public interface Processor
 {
+    boolean isMaster();
+
     RootActorPath getRootPath();
 
     long getMaximumMemoryInBytes();

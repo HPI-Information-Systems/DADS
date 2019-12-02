@@ -57,7 +57,7 @@ public class ProtocolParticipant<TModel extends ProtocolParticipantModel, TContr
     {
         model.setSelfProvider(this::self);
         model.setSenderProvider(this::self);
-        model.setProcessorProvider(ProcessorRegistrationProtocol::getProcessor);
+        model.setProcessorProvider(ProcessorRegistrationProtocol::getProcessors);
         model.setWatchActorCallback(context()::watch);
         model.setUnwatchActorCallback(context()::unwatch);
         model.setChildFactory(context()::actorOf);
