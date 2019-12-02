@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.fileHandling;
+package de.hpi.msc.jschneider.fileHandling.reading;
 
 import lombok.val;
 
@@ -94,15 +94,20 @@ public class BinarySequenceReader implements SequenceReader
 
     private void tryClose()
     {
+        if (!isOpen)
+        {
+            return;
+        }
+
         isOpen = false;
 
         try
         {
             inputStream.close();
         }
-        catch (IOException e)
+        catch (IOException ioException)
         {
-            e.printStackTrace();
+            ioException.printStackTrace();
         }
     }
 

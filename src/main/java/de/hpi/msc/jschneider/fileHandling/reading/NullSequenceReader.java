@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.fileHandling;
+package de.hpi.msc.jschneider.fileHandling.reading;
 
 public class NullSequenceReader implements SequenceReader
 {
