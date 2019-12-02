@@ -8,6 +8,7 @@ import lombok.var;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -100,12 +101,12 @@ public class BinaryDirectoryReader implements SequenceReader
     }
 
     @Override
-    public Collection<? extends Float> read(long start, int length)
+    public float[] read(long start, int length)
     {
         val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
         val end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
 
-        val floats = new ArrayList<Float>();
+        val floats = FloatBuffer.allocate((int) (end - begin + 1));
         var first = true;
         for (val wrapper : readers(begin, end))
         {
@@ -116,10 +117,10 @@ public class BinaryDirectoryReader implements SequenceReader
                 first = false;
             }
 
-            floats.addAll(wrapper.getSequenceReader().read(beginRead, length - floats.size()));
+            floats.put(wrapper.getSequenceReader().read(beginRead, length - floats.position()));
         }
 
-        return floats;
+        return floats.array();
     }
 
     private Collection<? extends SequenceReaderWrapper> readers(long begin, long end)

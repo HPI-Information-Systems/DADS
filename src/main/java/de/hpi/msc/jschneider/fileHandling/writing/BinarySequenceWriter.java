@@ -65,7 +65,7 @@ public class BinarySequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(Float[] records)
+    public void write(float[] records)
     {
         if (!isOpen)
         {

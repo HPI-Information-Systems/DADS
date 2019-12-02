@@ -35,7 +35,7 @@ public class TestBinarySequenceWriter extends TestCase
         }
     }
 
-    private void expectSequence(File file, Float[] sequence)
+    private void expectSequence(File file, float[] sequence)
     {
         val reader = BinarySequenceReader.fromFile(file);
 
@@ -48,7 +48,7 @@ public class TestBinarySequenceWriter extends TestCase
         val file = createFile();
         val writer = BinarySequenceWriter.fromFile(file);
 
-        val sequence = new Float[]{-1.1f, 0.9f, 1.0f, 4.25f};
+        val sequence = new float[]{-1.1f, 0.9f, 1.0f, 4.25f};
 
         writer.write(sequence);
 

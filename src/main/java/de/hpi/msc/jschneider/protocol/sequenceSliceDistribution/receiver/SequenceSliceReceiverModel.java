@@ -18,7 +18,7 @@ import java.util.Map;
 public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
 {
     @NonNull @Getter
-    private final Map<Integer, Float[]> sliceParts = new HashMap<>();
+    private final Map<Integer, float[]> sliceParts = new HashMap<>();
     @NonNull @Getter
     private final MutableInteger expectedNextSliceIndex = new MutableInteger(0);
     @NonNull @Getter @Builder.Default

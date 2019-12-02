@@ -42,7 +42,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         }
     }
 
-    private void forNextSlices(Consumer<Float[]> callback)
+    private void forNextSlices(Consumer<float[]> callback)
     {
         var slicePartIndex = getModel().getExpectedNextSliceIndex().getValue();
         var slicePart = getModel().getSliceParts().get(slicePartIndex);

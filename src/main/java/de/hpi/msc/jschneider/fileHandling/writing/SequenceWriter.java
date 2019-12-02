@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.fileHandling.writing;
 
 public interface SequenceWriter
 {
-    void write(Float[] records);
+    void write(float[] records);
 
     boolean isNull();
 

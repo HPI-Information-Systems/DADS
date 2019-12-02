@@ -11,6 +11,6 @@ public class SequenceSliceDistributionEvents
     public static class SequenceSlicePartReceivedEvent extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = 5976452976979532797L;
-        private Float[] slicePart;
+        private float[] slicePart;
     }
 }

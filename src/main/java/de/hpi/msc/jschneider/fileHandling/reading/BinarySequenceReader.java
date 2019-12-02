@@ -8,8 +8,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
 
 public class BinarySequenceReader implements SequenceReader
 {
@@ -125,22 +123,23 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
-    public Collection<? extends Float> read(long start, int length)
+    public float[] read(long start, int length)
     {
         val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
         var end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
         return tryRead(begin, end);
     }
 
-    private Collection<? extends Float> tryRead(long begin, long end)
+    private float[] tryRead(long begin, long end)
     {
-        val floats = new ArrayList<Float>();
+        val length = end - begin + 1;
+        val floats = new float[(int) length];
         try
         {
             inputStream.getChannel().position(begin * Float.BYTES);
-            for (var i = 0; i <= end - begin; ++i)
+            for (var i = 0; i < length; ++i)
             {
-                floats.add(tryReadNext());
+                floats[i] = tryReadNext();
             }
         }
         catch (IOException ioException)
