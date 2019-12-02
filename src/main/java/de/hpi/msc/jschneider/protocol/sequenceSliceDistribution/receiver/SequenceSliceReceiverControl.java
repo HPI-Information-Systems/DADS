@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 public class SequenceSliceReceiverControl extends AbstractProtocolParticipantControl<SequenceSliceReceiverModel>
 {
-    protected SequenceSliceReceiverControl(SequenceSliceReceiverModel model)
+    public SequenceSliceReceiverControl(SequenceSliceReceiverModel model)
     {
         super(model);
     }

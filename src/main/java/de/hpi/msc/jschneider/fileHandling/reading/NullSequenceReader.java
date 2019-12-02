@@ -1,5 +1,8 @@
 package de.hpi.msc.jschneider.fileHandling.reading;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 public class NullSequenceReader implements SequenceReader
 {
     public static SequenceReader get()
@@ -8,18 +11,7 @@ public class NullSequenceReader implements SequenceReader
     }
 
     private NullSequenceReader()
-    { }
-
-    @Override
-    public boolean hasNext()
     {
-        return false;
-    }
-
-    @Override
-    public Float next()
-    {
-        return 0.0f;
     }
 
     @Override
@@ -32,5 +24,17 @@ public class NullSequenceReader implements SequenceReader
     public boolean isNull()
     {
         return true;
+    }
+
+    @Override
+    public Collection<? extends Float> read(long start, int length)
+    {
+        return new ArrayList<Float>();
+    }
+
+    @Override
+    public SequenceReader subReader(long start, long length)
+    {
+        return NullSequenceReader.get();
     }
 }

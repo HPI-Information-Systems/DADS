@@ -1,10 +1,14 @@
 package de.hpi.msc.jschneider.fileHandling.reading;
 
-import java.util.Iterator;
+import java.util.Collection;
 
-public interface SequenceReader extends Iterator<Float>
+public interface SequenceReader
 {
     long getSize();
 
     boolean isNull();
+
+    Collection<? extends Float> read(long start, int length);
+
+    SequenceReader subReader(long start, long length);
 }

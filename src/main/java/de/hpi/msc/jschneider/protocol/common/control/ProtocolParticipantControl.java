@@ -33,6 +33,8 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     void onAny(Object message);
 
+    void forward(MessageExchangeMessages.MessageExchangeMessage message, ActorRef receiver);
+
     void send(MessageExchangeMessages.MessageExchangeMessage message);
 
     void send(Object message, ActorRef receiver);

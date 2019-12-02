@@ -209,6 +209,20 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
+    public void forward(MessageExchangeMessages.MessageExchangeMessage message, ActorRef receiver)
+    {
+        try
+        {
+            message.setReceiver(receiver);
+            send(message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    @Override
     public void send(Object message, ActorRef receiver)
     {
         if (message == null || receiver == null || receiver == ActorRef.noSender())

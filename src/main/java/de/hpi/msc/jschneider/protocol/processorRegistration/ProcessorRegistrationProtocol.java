@@ -28,28 +28,20 @@ public class ProcessorRegistrationProtocol
     public static final String EVENT_DISPATCHER_NAME = "ProcessorRegistrationEventDispatcher";
     private static final Logger Log = LogManager.getLogger(ProcessorRegistrationProtocol.class);
     private static ProcessorRegistryModel rootActorModel;
-    private static Processor localProcessor;
-    private static Protocol localProtocol;
 
     public static Protocol initialize(ActorSystem actorSystem, ProcessorRole role, boolean isMaster)
     {
-        if (localProtocol != null)
-        {
-            Log.warn(String.format("%1$s has already been initialized!", ProcessorRegistrationProtocol.class.getName()));
-            return localProtocol;
-        }
+        val localProcessor = BaseProcessor.builder()
+                                          .isMaster(isMaster)
+                                          .rootPath(RootActorPath.apply(actorSystem.provider().getDefaultAddress(), actorSystem.name()))
+                                          .protocols(initializeProtocols(actorSystem, role))
+                                          .build();
 
-        localProcessor = BaseProcessor.builder()
-                                      .isMaster(isMaster)
-                                      .rootPath(RootActorPath.apply(actorSystem.provider().getDefaultAddress(), actorSystem.name()))
-                                      .protocols(initializeProtocols(actorSystem, role))
-                                      .build();
-
-        localProtocol = BaseProtocol.builder()
-                                    .type(ProtocolType.ProcessorRegistration)
-                                    .rootActor(createRootActor(actorSystem, localProcessor))
-                                    .eventDispatcher(createEventDispatcher(actorSystem))
-                                    .build();
+        val localProtocol = BaseProtocol.builder()
+                                        .type(ProtocolType.ProcessorRegistration)
+                                        .rootActor(createRootActor(actorSystem, localProcessor))
+                                        .eventDispatcher(createEventDispatcher(actorSystem))
+                                        .build();
 
         setUpProtocols(localProcessor);
 

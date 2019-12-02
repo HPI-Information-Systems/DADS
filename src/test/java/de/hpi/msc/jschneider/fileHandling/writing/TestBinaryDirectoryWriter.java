@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.fileHandling.writing;
 import de.hpi.msc.jschneider.fileHandling.reading.BinaryDirectoryReader;
 import junit.framework.TestCase;
 import lombok.val;
+import lombok.var;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -38,13 +39,11 @@ public class TestBinaryDirectoryWriter extends TestCase
     private void expectSequences(File directory, Float[]... sequences)
     {
         val reader = BinaryDirectoryReader.fromDirectory(directory);
-
+        var start = 0;
         for (val sequence : sequences)
         {
-            for (val record : sequence)
-            {
-                assertThat(reader.next()).isEqualTo(record);
-            }
+            assertThat(reader.read(start, sequence.length)).containsExactly(sequence);
+            start += sequence.length;
         }
     }
 

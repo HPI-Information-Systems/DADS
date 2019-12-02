@@ -21,17 +21,32 @@ public class TestBinarySequenceReader extends TestCase
         val reader = readerFromSimpleSequence();
 
         assertThat(reader.getSize()).isEqualTo(4);
-        assertThat(reader.hasNext()).isTrue();
     }
 
     public void testReadSimpleSequence()
     {
         val reader = readerFromSimpleSequence();
 
-        assertThat(reader.next()).isEqualTo(-1.1f);
-        assertThat(reader.next()).isEqualTo(0.9f);
-        assertThat(reader.next()).isEqualTo(1.0f);
-        assertThat(reader.next()).isEqualTo(4.25f);
-        assertThat(reader.hasNext()).isFalse();
+        assertThat(reader.read(0, 4)).containsExactly(-1.1f, 0.9f, 1.0f, 4.25f);
+    }
+
+    public void testReadPartly()
+    {
+        val reader = readerFromSimpleSequence();
+        assertThat(reader.read(0, 2)).containsExactly(-1.1f, 0.9f);
+        assertThat(reader.read(2, 2)).containsExactly(1.0f, 4.25f);
+    }
+
+    public void testSubReader()
+    {
+        val reader = readerFromSimpleSequence();
+        val subReader = reader.subReader(2, 2);
+
+        assertThat(subReader.getSize()).isEqualTo(2);
+        assertThat(subReader.read(0, 2)).containsExactly(1.0f, 4.25f);
+
+        val subSubReader = subReader.subReader(1, 1);
+        assertThat(subSubReader.getSize()).isEqualTo(1);
+        assertThat(subSubReader.read(0, 1)).containsExactly(4.25f);
     }
 }

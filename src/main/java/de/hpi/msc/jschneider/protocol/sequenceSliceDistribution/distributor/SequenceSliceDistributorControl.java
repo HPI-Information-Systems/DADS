@@ -5,7 +5,7 @@ import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
 public class SequenceSliceDistributorControl extends AbstractProtocolParticipantControl<SequenceSliceDistributorModel>
 {
-    protected SequenceSliceDistributorControl(SequenceSliceDistributorModel model)
+    public SequenceSliceDistributorControl(SequenceSliceDistributorModel model)
     {
         super(model);
     }

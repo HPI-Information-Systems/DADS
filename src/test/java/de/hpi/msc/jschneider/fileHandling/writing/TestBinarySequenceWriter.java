@@ -40,10 +40,7 @@ public class TestBinarySequenceWriter extends TestCase
         val reader = BinarySequenceReader.fromFile(file);
 
         assertThat(reader.getSize()).isEqualTo(sequence.length);
-        for (val record : sequence)
-        {
-            assertThat(reader.next()).isEqualTo(record);
-        }
+        assertThat(reader.read(0, sequence.length)).containsExactly(sequence);
     }
 
     public void testWriteSimpleSequence()

@@ -6,32 +6,33 @@ import java.nio.file.Path;
 
 public class SystemParameters
 {
-    private static int numberOfThreads;
-    private static int numberOfWorkers;
-    private static Path workingDirectory;
+    private static AbstractCommand command;
     private static long maximumMemory;
 
     public static void initialize(AbstractCommand command)
     {
-        numberOfThreads = command.getNumberOfThreads();
-        numberOfWorkers = command.getNumberOfWorkers();
-        workingDirectory = command.getWorkingDirectory();
+        SystemParameters.command = command;
         maximumMemory = Runtime.getRuntime().maxMemory();
+    }
+
+    public static AbstractCommand getCommand()
+    {
+        return command;
     }
 
     public static int getNumberOfThreads()
     {
-        return numberOfThreads;
+        return command.getNumberOfThreads();
     }
 
     public static int getNumberOfWorkers()
     {
-        return numberOfWorkers;
+        return command.getNumberOfWorkers();
     }
 
     public static Path getWorkingDirectory()
     {
-        return workingDirectory;
+        return command.getWorkingDirectory();
     }
 
     public static long getMaximumMemory()

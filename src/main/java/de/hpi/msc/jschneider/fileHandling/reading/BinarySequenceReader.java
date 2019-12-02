@@ -1,12 +1,15 @@
 package de.hpi.msc.jschneider.fileHandling.reading;
 
 import lombok.val;
+import lombok.var;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class BinarySequenceReader implements SequenceReader
 {
@@ -23,9 +26,11 @@ public class BinarySequenceReader implements SequenceReader
         }
     }
 
+    private final File file;
     private final FileInputStream inputStream;
-    private final long size;
     private boolean isOpen = true;
+    private final long minimumPosition;
+    private final long maximumPosition;
 
     private BinarySequenceReader(File file) throws NullPointerException, IllegalArgumentException, FileNotFoundException
     {
@@ -39,38 +44,18 @@ public class BinarySequenceReader implements SequenceReader
             throw new IllegalArgumentException(String.format("Unable to process the given file \"%1$s\"!", file.getAbsolutePath()));
         }
 
+        this.file = file;
         inputStream = new FileInputStream(file.getAbsolutePath());
-        size = tryGetSize() / Float.BYTES;
+        maximumPosition = tryGetSize() / Float.BYTES - 1;
+        minimumPosition = 0L;
     }
 
-    @Override
-    public boolean hasNext()
+    private BinarySequenceReader(File file, long minimumPosition, long maximumPosition) throws FileNotFoundException
     {
-        if (!isOpen)
-        {
-            return false;
-        }
-
-        return tryGetPosition() <= tryGetSize() - Float.BYTES;
-    }
-
-    private long tryGetPosition()
-    {
-        if (!isOpen)
-        {
-            return 0;
-        }
-
-        try
-        {
-            return inputStream.getChannel().position();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            tryClose();
-            return 0;
-        }
+        this.file = file;
+        this.inputStream = new FileInputStream(file.getAbsolutePath());
+        this.minimumPosition = minimumPosition;
+        this.maximumPosition = maximumPosition;
     }
 
     private long tryGetSize()
@@ -111,25 +96,6 @@ public class BinarySequenceReader implements SequenceReader
         }
     }
 
-    @Override
-    public Float next()
-    {
-        if (!hasNext())
-        {
-            tryClose();
-            return 0.0f;
-        }
-
-        val next = tryReadNext();
-
-        if (!hasNext())
-        {
-            tryClose();
-        }
-
-        return next;
-    }
-
     private Float tryReadNext()
     {
         try
@@ -138,9 +104,9 @@ public class BinarySequenceReader implements SequenceReader
             inputStream.read(bytes);
             return ByteBuffer.wrap(bytes).getFloat();
         }
-        catch (IOException e)
+        catch (IOException ioException)
         {
-            e.printStackTrace();
+            ioException.printStackTrace();
             tryClose();
             return 0.0f;
         }
@@ -149,12 +115,57 @@ public class BinarySequenceReader implements SequenceReader
     @Override
     public long getSize()
     {
-        return size;
+        return maximumPosition - minimumPosition + 1;
     }
 
     @Override
     public boolean isNull()
     {
         return false;
+    }
+
+    @Override
+    public Collection<? extends Float> read(long start, int length)
+    {
+        val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
+        var end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
+        return tryRead(begin, end);
+    }
+
+    private Collection<? extends Float> tryRead(long begin, long end)
+    {
+        val floats = new ArrayList<Float>();
+        try
+        {
+            inputStream.getChannel().position(begin * Float.BYTES);
+            for (var i = 0; i <= end - begin; ++i)
+            {
+                floats.add(tryReadNext());
+            }
+        }
+        catch (IOException ioException)
+        {
+            ioException.printStackTrace();
+            tryClose();
+        }
+
+        return floats;
+    }
+
+    @Override
+    public SequenceReader subReader(long start, long length)
+    {
+        try
+        {
+            val min = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
+            val max = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
+
+            return new BinarySequenceReader(file, min, max);
+        }
+        catch (FileNotFoundException fileNotFoundException)
+        {
+            fileNotFoundException.printStackTrace();
+            return NullSequenceReader.get();
+        }
     }
 }
