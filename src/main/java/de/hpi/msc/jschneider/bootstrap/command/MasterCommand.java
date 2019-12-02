@@ -12,6 +12,9 @@ import java.nio.file.Path;
 @Parameters(commandDescription = "starts a master actor system")
 public class MasterCommand extends AbstractCommand
 {
+    @Parameter(names = "--min-slaves", description = "minimum number of slaves to start processing", required = true)
+    private int minimumNumberOfSlaves;
+
     @Parameter(names = "--sequence", description = "record sequence to analyze", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
     private Path sequenceFilePath;
 }

@@ -6,13 +6,12 @@ import de.hpi.msc.jschneider.bootstrap.command.validation.StringToPathConverter;
 import lombok.Getter;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Getter
 public abstract class AbstractCommand
 {
+    private static final int DEFAULT_NUMBER_OF_THREADS = 4;
     private static final int DEFAULT_NUMBER_OF_WORKERS = 4;
-    private static final Path DEFAULT_WORKING_DIRECTORY = Paths.get("");
     protected static final int DEFAULT_PORT = 7788;
 
     @Parameter(names = "--host", description = "host address of THIS actor system", required = true)
@@ -21,9 +20,12 @@ public abstract class AbstractCommand
     @Parameter(names = "--port", description = "port of THIS actor system")
     private int port = DEFAULT_PORT;
 
-    @Parameter(names = "--workers", description = "number of worker threads to utilize")
+    @Parameter(names = "--threads", description = "number of threads to utilize")
+    private int numberOfThreads = DEFAULT_NUMBER_OF_THREADS;
+
+    @Parameter(names = "--workers", description = "number of workers to spawn")
     private int numberOfWorkers = DEFAULT_NUMBER_OF_WORKERS;
 
-    @Parameter(names = "--working-dir", description = "working directory", converter = StringToPathConverter.class, validateValueWith = DirectoryValidator.class)
-    private Path workingDirectory = DEFAULT_WORKING_DIRECTORY;
+    @Parameter(names = "--working-dir", description = "working directory", required = true, converter = StringToPathConverter.class, validateValueWith = DirectoryValidator.class)
+    private Path workingDirectory;
 }
