@@ -51,24 +51,9 @@ public class MessageExchangeProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(); // TODO: add event message classes
+        val model = BaseEventDispatcherModel.create();
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
-    }
-
-    public static boolean isInitialized()
-    {
-        return localProtocol != null;
-    }
-
-    public static ActorRef getLocalRootActor()
-    {
-        return localProtocol.getRootActor();
-    }
-
-    public static ActorRef getLocalEventDispatcher()
-    {
-        return localProtocol.getEventDispatcher();
     }
 }

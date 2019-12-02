@@ -102,7 +102,8 @@ public class ProcessorRegistrationProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+        val model = BaseEventDispatcherModel.create(ProcessorRegistrationEvents.ProcessorJoinedEvent.class,
+                                                    ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
