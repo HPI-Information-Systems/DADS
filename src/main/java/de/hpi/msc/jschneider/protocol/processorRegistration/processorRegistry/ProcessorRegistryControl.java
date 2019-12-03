@@ -103,8 +103,10 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
         }
 
         subscribeToMasterEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
-        sendEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.builder()
-                                                                                                               .build());
+        trySendEvent(ProtocolType.ProcessorRegistration, eventDispatcher -> ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.builder()
+                                                                                                                                     .sender(getModel().getSelf())
+                                                                                                                                     .receiver(eventDispatcher)
+                                                                                                                                     .build());
     }
 
     private void onProcessorJoined(ProcessorRegistrationEvents.ProcessorJoinedEvent message)
@@ -132,8 +134,10 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
                                                                                                 .existingProcessors(existingProcessors)
                                                                                                 .build(), getModel().getSelf());
 
-        sendEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
-                                                                                                      .processor(message.getProcessor())
-                                                                                                      .build());
+        trySendEvent(ProtocolType.ProcessorRegistration, eventDispatcher -> ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
+                                                                                                                            .sender(getModel().getSelf())
+                                                                                                                            .receiver(eventDispatcher)
+                                                                                                                            .processor(message.getProcessor())
+                                                                                                                            .build());
     }
 }

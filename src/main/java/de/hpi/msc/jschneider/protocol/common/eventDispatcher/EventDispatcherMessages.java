@@ -13,7 +13,7 @@ public class EventDispatcherMessages
     {
         private static final long serialVersionUID = 7644079275799521967L;
         @NonNull
-        private Class<?> eventType;
+        private Class<? extends MessageExchangeMessages.RedirectableMessage> eventType;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
@@ -21,6 +21,6 @@ public class EventDispatcherMessages
     {
         private static final long serialVersionUID = 6007153563477079326L;
         @NonNull
-        private Class<?> eventType;
+        private Class<? extends MessageExchangeMessages.RedirectableMessage> eventType;
     }
 }

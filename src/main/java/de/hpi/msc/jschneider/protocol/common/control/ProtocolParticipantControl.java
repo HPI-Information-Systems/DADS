@@ -10,6 +10,7 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public interface ProtocolParticipantControl<TModel extends ProtocolParticipantModel>
 {
@@ -33,23 +34,23 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     boolean tryUnwatch(ActorRef subject);
 
-    Optional<ActorRef> trySpawnChild(Props props);
+    Optional<ActorRef> trySpawnChild(Props props, String name);
 
     void onAny(Object message);
 
-    void forward(MessageExchangeMessages.MessageExchangeMessage message, ActorRef receiver);
+    void forward(MessageExchangeMessages.RedirectableMessage message, ActorRef receiver);
 
     void send(MessageExchangeMessages.MessageExchangeMessage message);
 
     void send(Object message, ActorRef receiver);
 
-    void sendEvent(ProtocolType protocolType, MessageExchangeMessages.MessageExchangeMessage event);
+    boolean trySendEvent(ProtocolType protocolType, Function<ActorRef, MessageExchangeMessages.RedirectableMessage> eventFactory);
 
-    void subscribeToLocalEvent(ProtocolType protocolType, Class<?> eventType);
+    void subscribeToLocalEvent(ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);
 
-    void subscribeToMasterEvent(ProtocolType protocolType, Class<?> eventType);
+    void subscribeToMasterEvent(ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);
 
-    void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<?> eventType);
+    void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);
 
     void complete(MessageExchangeMessages.MessageExchangeMessage message);
 }

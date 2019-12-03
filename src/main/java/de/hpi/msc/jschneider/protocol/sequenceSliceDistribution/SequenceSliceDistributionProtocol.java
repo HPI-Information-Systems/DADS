@@ -46,7 +46,8 @@ public class SequenceSliceDistributionProtocol
         {
             val masterCommand = (MasterCommand) SystemParameters.getCommand();
             distributorFactory = new EqualSequenceSliceDistributorFactory(masterCommand.getMinimumNumberOfSlaves(),
-                                                                          BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile()));
+                                                                          BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile()),
+                                                                          masterCommand.getSubSequenceLength());
         }
 
         val model = SequenceSliceDistributionRootActorModel.builder()

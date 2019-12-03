@@ -17,4 +17,7 @@ public class MasterCommand extends AbstractCommand
 
     @Parameter(names = "--sequence", description = "record sequence to analyze", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
     private Path sequenceFilePath;
+
+    @Parameter(names = "--sub-sequence-length", description = "length for the sub sequences", required = true)
+    private int subSequenceLength;
 }

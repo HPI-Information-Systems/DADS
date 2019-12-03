@@ -24,7 +24,7 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
     {
         return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                       .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined)
-                      .match(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class, message -> forward(message, getModel().getSliceReceiver()));
+                      .match(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.class, message -> forward(message, getModel().getSliceReceiver()));
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)
@@ -44,7 +44,7 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
         val model = SequenceSliceReceiverModel.builder()
                                               .build();
         val control = new SequenceSliceReceiverControl(model);
-        val sliceReceiver = trySpawnChild(ProtocolParticipant.props(control));
+        val sliceReceiver = trySpawnChild(ProtocolParticipant.props(control), "SequenceSliceReceiver");
 
         if (!sliceReceiver.isPresent())
         {
@@ -60,7 +60,7 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
     {
         for (val props : getModel().getSliceDistributorFactory().createDistributorsFromNewProcessor(message.getProcessor()))
         {
-            trySpawnChild(props);
+            trySpawnChild(props, "SequenceSliceDistributor");
         }
     }
 }

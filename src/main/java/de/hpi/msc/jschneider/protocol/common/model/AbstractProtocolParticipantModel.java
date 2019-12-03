@@ -38,7 +38,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     @Getter @Setter
     private Consumer<ActorRef> unwatchActorCallback;
     @Getter @Setter
-    private Function<Props, ActorRef> childFactory;
+    private ActorFactory childFactory;
 
     protected final Logger getLog()
     {

@@ -18,16 +18,30 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
     public void preStart()
     {
         super.preStart();
-        sendInitialSlicePart();
+
+        val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution);
+        if (!protocol.isPresent())
+        {
+            getLog().error(String.format("Unable to initialize slice part transfer to %1$s, because the receiver does not provide the SequenceSliceDistribution protocol!",
+                                         getModel().getSliceReceiverActorSystem()));
+            return;
+        }
+
+        send(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.builder()
+                                                                             .sender(getModel().getSelf())
+                                                                             .receiver(protocol.get().getRootActor())
+                                                                             .subSequenceLength(getModel().getSubSequenceLength())
+                                                                             .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                             .build());
     }
 
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.class, this::onAcknowledgeSlicePart);
+        return builder.match(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.class, this::onRequestNextSlicePart);
     }
 
-    private void onAcknowledgeSlicePart(SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage message)
+    private void onRequestNextSlicePart(SequenceSliceDistributionMessages.RequestNextSlicePartMessage message)
     {
         try
         {
@@ -39,37 +53,20 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         }
     }
 
-    private void sendInitialSlicePart()
-    {
-        val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution);
-        if (!protocol.isPresent())
-        {
-            getLog().error(String.format("Unable to send initial slice part to %1$s, because the receiver does not provide the SequenceSliceDistribution protocol!",
-                                         getModel().getSliceReceiverActorSystem()));
-            return;
-        }
-
-        sendNextSlicePart(protocol.get().getRootActor());
-    }
-
     private void sendNextSlicePart(ActorRef receiver)
     {
-        val index = getModel().getNextSliceIndex().get();
-        val startIndex = getModel().getNextSliceStartIndex().get();
-        val length = (int) Math.min(getModel().getSliceSizeFactor() * getModel().getMaximumMessageSize() / Float.BYTES,
-                                    getModel().getSequenceReader().getSize() - startIndex);
+        val readLength = (int) Math.min(getModel().getSliceSizeFactor() * getModel().getMaximumMessageSize() / Float.BYTES,
+                                        getModel().getSequenceReader().getSize() - getModel().getSequenceReader().getPosition());
 
-        if (length < 1)
+        if (readLength < 1)
         {
-            getLog().info(String.format("Done sending sequence slice parts to %1$s.", receiver.path()));
             return;
         }
 
-        val records = getModel().getSequenceReader().read(startIndex, length);
-        val isLast = startIndex + records.length >= getModel().getSequenceReader().getSize();
+        val records = getModel().getSequenceReader().read(readLength);
+        val isLast = getModel().getSequenceReader().isAtEnd();
 
-        getLog().info(String.format("Sending sequence slice part (index = %1$d, length = %2$d, isLast = %3$s) to %4$s.",
-                                    index,
+        getLog().info(String.format("Sending sequence slice part (length = %1$d, isLast = %2$s) to %3$s.",
                                     records.length,
                                     isLast,
                                     receiver.path()));
@@ -77,13 +74,14 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         val message = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
                                                                                 .sender(getModel().getSelf())
                                                                                 .receiver(receiver)
-                                                                                .partIndex(index)
                                                                                 .slicePart(records)
                                                                                 .isLastPart(isLast)
                                                                                 .build();
         send(message);
 
-        getModel().getNextSliceIndex().set(index + 1);
-        getModel().getNextSliceStartIndex().set(startIndex + records.length);
+        if (isLast)
+        {
+            getLog().info(String.format("Done sending sequence slice parts to %1$s.", receiver.path()));
+        }
     }
 }

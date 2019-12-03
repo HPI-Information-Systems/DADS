@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.fileHandling;
 
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
+import lombok.val;
 import lombok.var;
 
 import java.util.Arrays;
@@ -8,6 +9,7 @@ import java.util.Arrays;
 public class MockSequenceReader implements SequenceReader
 {
     private final float[] values;
+    private long currentPosition = 0L;
 
     public MockSequenceReader(int length)
     {
@@ -30,9 +32,29 @@ public class MockSequenceReader implements SequenceReader
     }
 
     @Override
+    public long getPosition()
+    {
+        return currentPosition;
+    }
+
+    @Override
+    public boolean isAtEnd()
+    {
+        return currentPosition >= values.length;
+    }
+
+    @Override
     public boolean isNull()
     {
         return false;
+    }
+
+    @Override
+    public float[] read(int length)
+    {
+        val values = read(currentPosition, length);
+        currentPosition += values.length;
+        return values;
     }
 
     @Override

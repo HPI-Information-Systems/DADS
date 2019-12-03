@@ -7,14 +7,15 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder @Getter @Setter
-public class TestMessage extends MessageExchangeMessages.MessageExchangeMessage
+public class TestMessage extends MessageExchangeMessages.RedirectableMessage
 {
     private static final long serialVersionUID = -3615953200640061693L;
 
-    public static TestMessage empty()
+    @Override
+    public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
     {
-        return builder().sender(ActorRef.noSender())
-                        .receiver(ActorRef.noSender())
+        return builder().sender(getSender())
+                        .receiver(newReceiver)
                         .build();
     }
 }

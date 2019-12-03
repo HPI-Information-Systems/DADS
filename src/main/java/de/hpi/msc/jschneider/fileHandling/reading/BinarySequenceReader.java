@@ -27,6 +27,7 @@ public class BinarySequenceReader implements SequenceReader
     private final File file;
     private final FileInputStream inputStream;
     private boolean isOpen = true;
+    private long currentPosition;
     private final long minimumPosition;
     private final long maximumPosition;
 
@@ -46,6 +47,7 @@ public class BinarySequenceReader implements SequenceReader
         inputStream = new FileInputStream(file.getAbsolutePath());
         maximumPosition = tryGetSize() / Float.BYTES - 1;
         minimumPosition = 0L;
+        currentPosition = minimumPosition;
     }
 
     private BinarySequenceReader(File file, long minimumPosition, long maximumPosition) throws FileNotFoundException
@@ -54,6 +56,7 @@ public class BinarySequenceReader implements SequenceReader
         this.inputStream = new FileInputStream(file.getAbsolutePath());
         this.minimumPosition = minimumPosition;
         this.maximumPosition = maximumPosition;
+        currentPosition = minimumPosition;
     }
 
     private long tryGetSize()
@@ -94,7 +97,7 @@ public class BinarySequenceReader implements SequenceReader
         }
     }
 
-    private Float tryReadNext()
+    private float tryReadNext()
     {
         try
         {
@@ -117,9 +120,29 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
+    public long getPosition()
+    {
+        return currentPosition - minimumPosition;
+    }
+
+    @Override
+    public boolean isAtEnd()
+    {
+        return currentPosition >= maximumPosition;
+    }
+
+    @Override
     public boolean isNull()
     {
         return false;
+    }
+
+    @Override
+    public float[] read(int length)
+    {
+        val values = read(currentPosition, length);
+        currentPosition += values.length;
+        return values;
     }
 
     @Override

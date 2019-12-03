@@ -17,7 +17,7 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
     {
         return builder.match(EventDispatcherMessages.SubscribeToEventMessage.class, this::onSubscribe)
                       .match(EventDispatcherMessages.UnsubscribeFromEventMessage.class, this::onUnsubscribe)
-                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onDispatchEvent)
+                      .match(MessageExchangeMessages.RedirectableMessage.class, this::onDispatchEvent)
                       .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure)
                       .matchAny(this::onAny);
     }
@@ -72,7 +72,7 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
         }
     }
 
-    protected void onDispatchEvent(MessageExchangeMessages.MessageExchangeMessage message)
+    protected void onDispatchEvent(MessageExchangeMessages.RedirectableMessage message)
     {
         try
         {
@@ -90,8 +90,7 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
 
             for (val subscriber : subscribers)
             {
-                message.setReceiver(subscriber);
-                send(message);
+                send(message.redirectTo(subscriber));
             }
         }
         finally

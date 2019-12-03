@@ -33,6 +33,7 @@ public class BinaryDirectoryReader implements SequenceReader
         }
     }
 
+    private long currentPosition;
     private final long minimumPosition;
     private final long maximumPosition;
 
@@ -51,6 +52,7 @@ public class BinaryDirectoryReader implements SequenceReader
         createSequenceReaders(directory);
         minimumPosition = 0L;
         maximumPosition = sequenceReaders.stream().mapToLong(reader -> reader.getSequenceReader().getSize()).sum() - 1;
+        currentPosition = minimumPosition;
     }
 
     private BinaryDirectoryReader(Collection<SequenceReaderWrapper> sequenceReaders, long minimumPosition, long maximumPosition)
@@ -58,6 +60,7 @@ public class BinaryDirectoryReader implements SequenceReader
         this.sequenceReaders.addAll(sequenceReaders);
         this.minimumPosition = minimumPosition;
         this.maximumPosition = maximumPosition;
+        currentPosition = minimumPosition;
     }
 
     private void createSequenceReaders(File directory)
@@ -95,9 +98,29 @@ public class BinaryDirectoryReader implements SequenceReader
     }
 
     @Override
+    public long getPosition()
+    {
+        return currentPosition - minimumPosition;
+    }
+
+    @Override
+    public boolean isAtEnd()
+    {
+        return currentPosition >= maximumPosition;
+    }
+
+    @Override
     public boolean isNull()
     {
         return false;
+    }
+
+    @Override
+    public float[] read(int length)
+    {
+        val values = read(currentPosition, length);
+        currentPosition += values.length;
+        return values;
     }
 
     @Override

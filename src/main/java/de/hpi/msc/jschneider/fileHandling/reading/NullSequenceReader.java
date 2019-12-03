@@ -18,9 +18,27 @@ public class NullSequenceReader implements SequenceReader
     }
 
     @Override
+    public long getPosition()
+    {
+        return 0;
+    }
+
+    @Override
+    public boolean isAtEnd()
+    {
+        return true;
+    }
+
+    @Override
     public boolean isNull()
     {
         return true;
+    }
+
+    @Override
+    public float[] read(int length)
+    {
+        return new float[0];
     }
 
     @Override

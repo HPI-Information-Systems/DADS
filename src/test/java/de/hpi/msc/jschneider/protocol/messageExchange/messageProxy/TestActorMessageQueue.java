@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.protocol.messageExchange.messageProxy;
 
+import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.TestMessage;
+import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import junit.framework.TestCase;
 import lombok.val;
@@ -11,11 +13,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestActorMessageQueue extends TestCase
 {
+    private TestProcessor localProcessor;
+    private TestProbe localSender;
+    private TestProbe localReceiver;
+
+    @Override
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        localProcessor = TestProcessor.create("local");
+        localSender = localProcessor.createActor("sender");
+        localReceiver = localProcessor.createActor("receiver");
+    }
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        localProcessor.terminate();
+    }
+
     private MessageExchangeMessages.MessageExchangeMessage enqueueMessage(ActorMessageQueue queue, Function<MessageExchangeMessages.MessageExchangeMessage, Integer> enqueueFunction)
     {
         val expectedSize = queue.size() + 1;
         val expectedUnacknowledgedMessages = queue.numberOfUncompletedMessages();
-        val message = TestMessage.empty();
+        val message = TestMessage.builder()
+                                 .sender(localSender.ref())
+                                 .receiver(localReceiver.ref())
+                                 .build();
 
         assertThat(enqueueFunction.apply(message)).isEqualTo(expectedSize);
         assertThat(queue.size()).isEqualTo(expectedSize);

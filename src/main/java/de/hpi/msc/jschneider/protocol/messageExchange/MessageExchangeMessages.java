@@ -20,10 +20,18 @@ public class MessageExchangeMessages
         private static final long serialVersionUID = -5714914705070819888L;
         @NotNull @Builder.Default
         private UUID id = UUID.randomUUID();
-        @Setter @Builder.Default
-        private ActorRef sender = ActorRef.noSender();
-        @Setter @Builder.Default
-        private ActorRef receiver = ActorRef.noSender();
+        @NonNull
+        private ActorRef sender;
+        @NonNull
+        private ActorRef receiver;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static abstract class RedirectableMessage extends MessageExchangeMessage
+    {
+        private static final long serialVersionUID = -2387997933538751338L;
+
+        public abstract RedirectableMessage redirectTo(ActorRef newReceiver);
     }
 
     @NoArgsConstructor @SuperBuilder

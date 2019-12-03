@@ -22,12 +22,12 @@ public class SequenceSliceDistributorModel extends AbstractProtocolParticipantMo
     private SequenceReader sequenceReader;
     @NonNull @Setter
     private Callable<Long> maximumMessageSizeProvider;
+    @NonNull @Getter
+    private long firstSubSequenceIndex;
+    @NonNull @Getter
+    private int subSequenceLength;
     @Getter @Setter @Builder.Default
     private float sliceSizeFactor = 0.75f;
-    @NonNull @Getter
-    private final MutableLong nextSliceStartIndex = new MutableLong(0L);
-    @NonNull @Getter
-    private final MutableInteger nextSliceIndex = new MutableInteger(0);
 
     public final long getMaximumMessageSize()
     {

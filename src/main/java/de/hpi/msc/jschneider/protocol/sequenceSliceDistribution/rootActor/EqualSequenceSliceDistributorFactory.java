@@ -25,13 +25,18 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
     private final SequenceReader sequenceReaderTemplate;
     private final Map<RootActorPath, SequenceReader> sequenceReaders = new HashMap<>();
     private long nextSequenceReaderStartIndex = 0L;
+    private long nextSubSequenceStartIndex = 0L;
+    private final int subSequenceLength;
+    private final int sliceOverlap;
     private final long sliceLength;
 
-    public EqualSequenceSliceDistributorFactory(int expectedNumberOfProcessors, SequenceReader sequenceReader)
+    public EqualSequenceSliceDistributorFactory(int expectedNumberOfProcessors, SequenceReader sequenceReader, int subSequenceLength)
     {
         this.expectedNumberOfProcessors = expectedNumberOfProcessors;
         sequenceReaderTemplate = sequenceReader;
-        sliceLength = (long) Math.ceil(sequenceReader.getSize() / (double) expectedNumberOfProcessors);
+        this.subSequenceLength = subSequenceLength;
+        sliceOverlap = subSequenceLength - 1;
+        sliceLength = (long) Math.ceil(sequenceReader.getSize() / (double) expectedNumberOfProcessors) + sliceOverlap;
     }
 
     private Logger getLog()
@@ -67,11 +72,23 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
 
     private Props createProps(RootActorPath sliceReceiverActorSystem, SequenceReader reader)
     {
+        val currentSubSequenceStartIndex = nextSubSequenceStartIndex;
+        nextSubSequenceStartIndex += Math.max(1, reader.getSize() - (subSequenceLength - 1));
+
+        getLog().info(String.format("Creating SequenceSliceDistributor for %1$s, responsible for subsequences [%2$d, %3$d).",
+                                    sliceReceiverActorSystem,
+                                    currentSubSequenceStartIndex,
+                                    nextSequenceReaderStartIndex));
+
         val model = SequenceSliceDistributorModel.builder()
                                                  .sliceReceiverActorSystem(sliceReceiverActorSystem)
                                                  .sequenceReader(reader)
                                                  .maximumMessageSizeProvider(SystemParameters::getMaximumMessageSize)
+                                                 .firstSubSequenceIndex(currentSubSequenceStartIndex)
+                                                 .subSequenceLength(subSequenceLength)
                                                  .build();
+
+
         val control = new SequenceSliceDistributorControl(model);
         return ReapedActor.props(control);
     }
@@ -79,7 +96,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
     private SequenceReader createNextSequenceReader()
     {
         val reader = sequenceReaderTemplate.subReader(nextSequenceReaderStartIndex, sliceLength);
-        nextSequenceReaderStartIndex += reader.getSize();
+        nextSequenceReaderStartIndex += Math.max(1, reader.getSize() - sliceOverlap);
 
         return reader;
     }

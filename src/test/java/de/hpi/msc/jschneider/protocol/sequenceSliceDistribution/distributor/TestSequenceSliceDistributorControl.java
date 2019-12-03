@@ -12,7 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSequenceSliceDistributorControl extends ProtocolTestCase
 {
-    private final int SEQUENCE_SIZE = 100;
+    private final int SEQUENCE_LENGTH = 100;
+    private final int SUB_SEQUENCE_LENGTH = 10;
 
     private TestProbe localSliceReceiver;
 
@@ -33,8 +34,10 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     {
         return finalizeModel(SequenceSliceDistributorModel.builder()
                                                           .sliceReceiverActorSystem(localProcessor.getRootPath())
-                                                          .sequenceReader(new MockSequenceReader(SEQUENCE_SIZE))
-                                                          .maximumMessageSizeProvider(() -> (long) (SEQUENCE_SIZE / 2))
+                                                          .sequenceReader(new MockSequenceReader(SEQUENCE_LENGTH))
+                                                          .maximumMessageSizeProvider(() -> (long) (SEQUENCE_LENGTH / 2))
+                                                          .firstSubSequenceIndex(0L)
+                                                          .subSequenceLength(SUB_SEQUENCE_LENGTH)
                                                           .build());
     }
 
@@ -54,110 +57,86 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         return values;
     }
 
-    public void testPreStartSendsFirstSlicePart()
+    public void testPreStartSendsInitialization()
     {
         val control = control();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_SIZE * Float.BYTES);
-        control.getModel().setSliceSizeFactor(1.0f);
-
         control.preStart();
 
-        val message = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(message.getPartIndex()).isZero();
-        assertThat(message.isLastPart()).isTrue();
-        assertThat(message.getSlicePart()).containsExactly(range(0, 100));
+        val message = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.class);
         assertThat(message.getReceiver()).isEqualTo(localProcessor.getProtocolRootActor(ProtocolType.SequenceSliceDistribution).ref());
+        assertThat(message.getSubSequenceLength()).isEqualTo(SUB_SEQUENCE_LENGTH);
+        assertThat(message.getFirstSubSequenceIndex()).isEqualTo(0L);
     }
 
-    public void testSendNextSlicePartOnAcknowledge()
+    public void testSendEntireSliceOnRequest()
     {
         val control = control();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_SIZE * Float.BYTES);
+        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Float.BYTES);
         control.getModel().setSliceSizeFactor(1.0f);
         val messageInterface = messageInterface(control);
 
-        val ack = SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
-                                                                                       .sender(localSliceReceiver.ref())
-                                                                                       .receiver(self.ref())
-                                                                                       .build();
-        messageInterface.apply(ack);
+        val request = SequenceSliceDistributionMessages.RequestNextSlicePartMessage.builder()
+                                                                                   .sender(localSliceReceiver.ref())
+                                                                                   .receiver(self.ref())
+                                                                                   .build();
+        messageInterface.apply(request);
 
-        val message = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(message.getPartIndex()).isZero();
-        assertThat(message.isLastPart()).isTrue();
-        assertThat(message.getSlicePart()).containsExactly(range(0, 100));
-
-        assertThatMessageIsCompleted(ack);
+        val slicePartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
+        assertThat(slicePartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
+        assertThat(slicePartMessage.isLastPart()).isTrue();
+        assertThat(slicePartMessage.getSlicePart()).containsExactly(range(0, SEQUENCE_LENGTH));
+        assertThatMessageIsCompleted(request);
     }
 
-    public void testSendTwoSliceParts()
+    public void testSendSlicePartOnRequest()
     {
         val control = control();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) (SEQUENCE_SIZE * 0.5f * Float.BYTES));
-        control.getModel().setSliceSizeFactor(1.0f);
+        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Float.BYTES);
+        control.getModel().setSliceSizeFactor(0.5f);
         val messageInterface = messageInterface(control);
+        var sequenceLengthHalf = (int)(SEQUENCE_LENGTH * 0.5f);
 
-        control.preStart();
-        val firstMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(firstMessage.getPartIndex()).isZero();
-        assertThat(firstMessage.isLastPart()).isFalse();
-        assertThat(firstMessage.getSlicePart()).containsExactly(range(0, 50));
+        val request = SequenceSliceDistributionMessages.RequestNextSlicePartMessage.builder()
+                                                                                   .sender(localSliceReceiver.ref())
+                                                                                   .receiver(self.ref())
+                                                                                   .build();
+        messageInterface.apply(request);
 
-        val ack = SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
-                                                                                       .sender(localSliceReceiver.ref())
-                                                                                       .receiver(self.ref())
-                                                                                       .build();
-        messageInterface.apply(ack);
-        val secondMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(secondMessage.getPartIndex()).isOne();
-        assertThat(secondMessage.isLastPart()).isTrue();
-        assertThat(secondMessage.getSlicePart()).containsExactly(range(50, 50));
-        assertThat(secondMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
-    }
+        val firstPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
+        assertThat(firstPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
+        assertThat(firstPartMessage.isLastPart()).isFalse();
+        assertThat(firstPartMessage.getSlicePart()).containsExactly(range(0, sequenceLengthHalf));
+        assertThatMessageIsCompleted(request);
 
-    public void testOddMessageSize()
-    {
-        val control = control();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_SIZE * Float.BYTES);
-        control.getModel().setSliceSizeFactor(0.75f);
-        val messageInterface = messageInterface(control);
+        messageInterface.apply(request);
 
-        control.preStart();
-        val firstMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(firstMessage.getPartIndex()).isZero();
-        assertThat(firstMessage.isLastPart()).isFalse();
-        assertThat(firstMessage.getSlicePart()).containsExactly(range(0, 75));
-
-        val ack = SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
-                                                                                       .sender(localSliceReceiver.ref())
-                                                                                       .receiver(self.ref())
-                                                                                       .build();
-        messageInterface.apply(ack);
-        val secondMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(secondMessage.getPartIndex()).isOne();
-        assertThat(secondMessage.isLastPart()).isTrue();
-        assertThat(secondMessage.getSlicePart()).containsExactly(range(75, 25));
-        assertThat(secondMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
+        val secondPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
+        assertThat(secondPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
+        assertThat(secondPartMessage.isLastPart()).isTrue();
+        assertThat(secondPartMessage.getSlicePart()).containsExactly(range(sequenceLengthHalf, sequenceLengthHalf));
+        assertThatMessageIsCompleted(request);
     }
 
     public void testDoNotSendEmptySlicePart()
     {
         val control = control();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_SIZE * Float.BYTES);
+        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Float.BYTES);
         control.getModel().setSliceSizeFactor(1.0f);
         val messageInterface = messageInterface(control);
 
-        control.preStart();
-        val firstMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
-        assertThat(firstMessage.getPartIndex()).isZero();
-        assertThat(firstMessage.isLastPart()).isTrue();
-        assertThat(firstMessage.getSlicePart()).containsExactly(range(0, 100));
+        val request = SequenceSliceDistributionMessages.RequestNextSlicePartMessage.builder()
+                                                                                   .sender(localSliceReceiver.ref())
+                                                                                   .receiver(self.ref())
+                                                                                   .build();
+        messageInterface.apply(request);
 
-        val ack = SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
-                                                                                       .sender(localSliceReceiver.ref())
-                                                                                       .receiver(self.ref())
-                                                                                       .build();
-        messageInterface.apply(ack);
-        assertThatMessageIsCompleted(ack);
+        val slicePartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
+        assertThat(slicePartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
+        assertThat(slicePartMessage.isLastPart()).isTrue();
+        assertThat(slicePartMessage.getSlicePart()).containsExactly(range(0, SEQUENCE_LENGTH));
+        assertThatMessageIsCompleted(request);
+
+        messageInterface.apply(request);
+        assertThatMessageIsCompleted(request);
     }
 }

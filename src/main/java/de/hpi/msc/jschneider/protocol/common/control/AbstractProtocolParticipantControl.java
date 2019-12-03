@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public abstract class AbstractProtocolParticipantControl<TModel extends ProtocolParticipantModel> implements ProtocolParticipantControl<TModel>
 {
@@ -154,11 +155,11 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public final Optional<ActorRef> trySpawnChild(Props props)
+    public final Optional<ActorRef> trySpawnChild(Props props, String name)
     {
         try
         {
-            val child = getModel().getChildFactory().apply(props);
+            val child = getModel().getChildFactory().create(props, name);
             if (!getModel().getChildActors().add(child))
             {
                 child.tell(PoisonPill.getInstance(), getModel().getSelf());
@@ -191,24 +192,24 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public void subscribeToLocalEvent(ProtocolType protocolType, Class<?> eventType)
+    public void subscribeToLocalEvent(ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)
     {
         subscribeToEvent(getLocalProtocol(protocolType), eventType);
     }
 
     @Override
-    public void subscribeToMasterEvent(ProtocolType protocolType, Class<?> eventType)
+    public void subscribeToMasterEvent(ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)
     {
         subscribeToEvent(getMasterProtocol(protocolType), eventType);
     }
 
     @Override
-    public void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<?> eventType)
+    public void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)
     {
         subscribeToEvent(getProtocol(actorSystem, protocolType), eventType);
     }
 
-    private void subscribeToEvent(Optional<Protocol> protocol, Class<?> eventType)
+    private void subscribeToEvent(Optional<Protocol> protocol, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)
     {
         protocol.ifPresent(actualProtocol ->
                            {
@@ -221,12 +222,11 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public void forward(MessageExchangeMessages.MessageExchangeMessage message, ActorRef receiver)
+    public void forward(MessageExchangeMessages.RedirectableMessage message, ActorRef receiver)
     {
         try
         {
-            message.setReceiver(receiver);
-            send(message);
+            send(message.redirectTo(receiver));
         }
         finally
         {
@@ -252,17 +252,6 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public void sendEvent(ProtocolType protocolType, MessageExchangeMessages.MessageExchangeMessage event)
-    {
-        getLocalProtocol(protocolType).ifPresent(protocol ->
-                                                 {
-                                                     event.setSender(getModel().getSelf());
-                                                     event.setReceiver(protocol.getEventDispatcher());
-                                                     send(event);
-                                                 });
-    }
-
-    @Override
     public void send(MessageExchangeMessages.MessageExchangeMessage message)
     {
         if (message == null || message.getReceiver() == ActorRef.noSender())
@@ -273,11 +262,28 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         val protocol = getLocalProtocol(ProtocolType.MessageExchange);
         if (protocol.isPresent())
         {
-            protocol.get().getRootActor().tell(message, getModel().getSelf());
+            protocol.get().getRootActor().tell(message, message.getSender());
         }
         else
         {
-            message.getReceiver().tell(message, getModel().getSelf());
+            message.getReceiver().tell(message, message.getSender());
+        }
+    }
+
+    @Override
+    public boolean trySendEvent(ProtocolType protocolType, Function<ActorRef, MessageExchangeMessages.RedirectableMessage> eventFactory)
+    {
+        try
+        {
+            val protocol = getLocalProtocol(protocolType);
+            protocol.ifPresent(p -> send(eventFactory.apply(p.getEventDispatcher())));
+
+            return protocol.isPresent();
+        }
+        catch (Exception exception)
+        {
+            getLog().error("Unable to send event!", exception);
+            return false;
         }
     }
 
@@ -289,16 +295,13 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
             return;
         }
 
-        val protocol = getLocalProtocol(ProtocolType.MessageExchange);
-        if (!protocol.isPresent())
-        {
-            return;
-        }
-
-        send(MessageExchangeMessages.MessageCompletedMessage.builder()
-                                                            .sender(message.getReceiver())
-                                                            .receiver(message.getSender())
-                                                            .completedMessageId(message.getId())
-                                                            .build());
+        getLocalProtocol(ProtocolType.MessageExchange).ifPresent(protocol ->
+                                                                 {
+                                                                     send(MessageExchangeMessages.MessageCompletedMessage.builder()
+                                                                                                                         .sender(message.getReceiver())
+                                                                                                                         .receiver(message.getSender())
+                                                                                                                         .completedMessageId(message.getId())
+                                                                                                                         .build());
+                                                                 });
     }
 }

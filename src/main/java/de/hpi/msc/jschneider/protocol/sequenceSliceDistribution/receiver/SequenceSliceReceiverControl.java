@@ -5,9 +5,6 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import lombok.var;
-
-import java.util.function.Consumer;
 
 public class SequenceSliceReceiverControl extends AbstractProtocolParticipantControl<SequenceSliceReceiverModel>
 {
@@ -19,7 +16,26 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class, this::onSlicePart);
+        return builder.match(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.class, this::onInitializeTransfer)
+                      .match(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class, this::onSlicePart);
+    }
+
+    private void onInitializeTransfer(SequenceSliceDistributionMessages.InitializeSliceTransferMessage message)
+    {
+        try
+        {
+            getModel().getNextSubSequenceIndex().set(message.getFirstSubSequenceIndex());
+            getModel().setSubSequenceLength(message.getSubSequenceLength());
+
+            send(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.builder()
+                                                                              .sender(getModel().getSelf())
+                                                                              .receiver(message.getSender())
+                                                                              .build());
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 
     private void onSlicePart(SequenceSliceDistributionMessages.SequenceSlicePartMessage message)
@@ -32,38 +48,26 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                 return;
             }
 
-            getModel().getSliceParts().put(message.getPartIndex(), message.getSlicePart());
-            forNextSlices(slicePart ->
-                          {
-                              getModel().getSequenceWriter().write(slicePart);
-                              sendEvent(ProtocolType.SequenceSliceDistribution, SequenceSliceDistributionEvents.SequenceSlicePartReceivedEvent.builder()
-                                                                                                                                              .slicePart(slicePart)
-                                                                                                                                              .build());
-                          });
+            getModel().getSequenceWriter().write(message.getSlicePart());
+            trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.SequenceSlicePartReceivedEvent.builder()
+                                                                                                                                                  .sender(getModel().getSelf())
+                                                                                                                                                  .receiver(eventDispatcher)
+                                                                                                                                                  .slicePart(message.getSlicePart())
+                                                                                                                                                  .build());
 
+            if (message.isLastPart())
+            {
+                return;
+            }
+
+            send(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.builder()
+                                                                              .sender(getModel().getSelf())
+                                                                              .receiver(message.getSender())
+                                                                              .build());
         }
         finally
         {
-            send(SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
-                                                                                      .sender(getModel().getSelf())
-                                                                                      .receiver(message.getSender())
-                                                                                      .build());
             complete(message);
         }
-    }
-
-    private void forNextSlices(Consumer<float[]> callback)
-    {
-        var slicePartIndex = getModel().getExpectedNextSliceIndex().get();
-        var slicePart = getModel().getSliceParts().get(slicePartIndex);
-        while (slicePart != null)
-        {
-            callback.accept(slicePart);
-            getModel().getSliceParts().remove(slicePartIndex);
-            slicePartIndex++;
-            slicePart = getModel().getSliceParts().get(slicePartIndex);
-        }
-
-        getModel().getExpectedNextSliceIndex().set(slicePartIndex);
     }
 }

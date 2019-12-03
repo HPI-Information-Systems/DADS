@@ -7,20 +7,19 @@ import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantMo
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.agrona.collections.MutableInteger;
+import org.agrona.collections.MutableLong;
 
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 @SuperBuilder
 public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
 {
     @NonNull @Getter
-    private final Map<Integer, float[]> sliceParts = new HashMap<>();
-    @NonNull @Getter
-    private final MutableInteger expectedNextSliceIndex = new MutableInteger(0);
+    private final MutableLong nextSubSequenceIndex = new MutableLong(0L);
+    @Setter @Getter
+    private int subSequenceLength;
     @NonNull @Getter @Builder.Default
     private SequenceWriter sequenceWriter = BinaryDirectoryWriter.fromDirectory(Paths.get(SystemParameters.getWorkingDirectory().toString(), "sequence-slices/").toFile());
 }
