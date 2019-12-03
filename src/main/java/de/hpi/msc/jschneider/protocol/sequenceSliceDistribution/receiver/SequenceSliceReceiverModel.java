@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
-import sun.java2d.xr.MutableInteger;
+import org.agrona.collections.MutableInteger;
 
 import java.nio.file.Paths;
 import java.util.HashMap;

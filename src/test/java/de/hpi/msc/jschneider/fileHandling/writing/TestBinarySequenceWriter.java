@@ -5,6 +5,7 @@ import junit.framework.TestCase;
 import lombok.val;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +17,10 @@ public class TestBinarySequenceWriter extends TestCase
 {
     private final List<File> files = new ArrayList<>();
 
-    private File createFile()
+    private File createFile() throws URISyntaxException
     {
-        val resourceFolder = getClass().getClassLoader().getResource(".").getFile();
-        val file = Paths.get(resourceFolder, String.format("%1$s.bin", UUID.randomUUID())).toFile();
+        val resourceFolder = getClass().getClassLoader().getResource(".").toURI();
+        val file = Paths.get(Paths.get(resourceFolder).toString(), String.format("%1$s.bin", UUID.randomUUID())).toFile();
         files.add(file);
 
         return file;
@@ -43,7 +44,7 @@ public class TestBinarySequenceWriter extends TestCase
         assertThat(reader.read(0, sequence.length)).containsExactly(sequence);
     }
 
-    public void testWriteSimpleSequence()
+    public void testWriteSimpleSequence() throws URISyntaxException
     {
         val file = createFile();
         val writer = BinarySequenceWriter.fromFile(file);

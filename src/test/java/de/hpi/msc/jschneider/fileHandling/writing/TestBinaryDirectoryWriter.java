@@ -6,6 +6,7 @@ import lombok.val;
 import lombok.var;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,10 +18,10 @@ public class TestBinaryDirectoryWriter extends TestCase
 {
     private final List<File> directories = new ArrayList<>();
 
-    private File createDirectory()
+    private File createDirectory() throws URISyntaxException
     {
-        val resourceFolder = getClass().getClassLoader().getResource(".").getFile();
-        val file = Paths.get(resourceFolder, String.format("%1$s/", UUID.randomUUID())).toFile();
+        val resourceFolder = getClass().getClassLoader().getResource(".").toURI();
+        val file = Paths.get(Paths.get(resourceFolder).toString(), String.format("%1$s", UUID.randomUUID())).toFile();
         directories.add(file);
 
         return file;
@@ -47,7 +48,7 @@ public class TestBinaryDirectoryWriter extends TestCase
         }
     }
 
-    public void testWriteSequences()
+    public void testWriteSequences() throws URISyntaxException
     {
         val directory = createDirectory();
         val writer = BinaryDirectoryWriter.fromDirectory(directory);
