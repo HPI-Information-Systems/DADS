@@ -54,9 +54,9 @@ public class ActorSystemInitializer
 
     private static ActorSystem initializeActorSystem(String name, AbstractCommand command) throws Exception
     {
-        SystemParameters.initialize(command);
-
         val configuration = ConfigurationFactory.createRemoteConfiguration(command.getHost(), command.getPort(), command.getNumberOfThreads());
+
+        SystemParameters.initialize(command, configuration);
         return ActorSystem.create(name, configuration);
     }
 

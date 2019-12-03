@@ -15,4 +15,10 @@ public class SequenceSliceDistributionMessages
         private int partIndex;
         private boolean isLastPart;
     }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class AcknowledgeSequenceSlicePartMessage extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = -7010936527056987490L;
+    }
 }

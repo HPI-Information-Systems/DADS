@@ -27,7 +27,6 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         try
         {
             getModel().getSliceParts().put(message.getPartIndex(), message.getSlicePart());
-
             forNextSlices(slicePart ->
                           {
                               getModel().getSequenceWriter().write(slicePart);
@@ -35,6 +34,10 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                               .slicePart(slicePart)
                                                                                                                                               .build());
                           });
+            send(SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
+                                                                                      .sender(getModel().getSelf())
+                                                                                      .receiver(message.getSender())
+                                                                                      .build());
         }
         finally
         {
@@ -49,6 +52,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         while (slicePart != null)
         {
             callback.accept(slicePart);
+            getModel().getSliceParts().remove(slicePartIndex);
             slicePartIndex++;
             slicePart = getModel().getSliceParts().get(slicePartIndex);
         }

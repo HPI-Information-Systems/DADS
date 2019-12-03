@@ -17,6 +17,10 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     void setModel(TModel model) throws NullPointerException;
 
+    void preStart();
+
+    void postStop();
+
     ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder);
 
     Optional<Protocol> getLocalProtocol(ProtocolType protocolType);

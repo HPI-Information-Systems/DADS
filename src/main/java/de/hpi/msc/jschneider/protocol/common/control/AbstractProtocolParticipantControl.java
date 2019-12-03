@@ -37,6 +37,18 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
+    public void preStart()
+    {
+
+    }
+
+    @Override
+    public void postStop()
+    {
+
+    }
+
+    @Override
     public final Optional<Protocol> getLocalProtocol(ProtocolType protocolType)
     {
         return getProtocol(getModel().getSelf().path().root(), protocolType);

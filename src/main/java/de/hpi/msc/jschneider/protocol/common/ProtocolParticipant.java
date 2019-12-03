@@ -73,4 +73,18 @@ public class ProtocolParticipant<TModel extends ProtocolParticipantModel, TContr
     {
         return getControl().complementReceiveBuilder(defaultReceiveBuilder()).build();
     }
+
+    @Override
+    public void preStart() throws Exception
+    {
+        super.preStart();
+        getControl().preStart();
+    }
+
+    @Override
+    public void postStop() throws Exception
+    {
+        super.postStop();
+        getControl().postStop();
+    }
 }

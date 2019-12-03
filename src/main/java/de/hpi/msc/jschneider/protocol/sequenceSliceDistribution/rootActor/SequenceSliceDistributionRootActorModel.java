@@ -16,6 +16,8 @@ public class SequenceSliceDistributionRootActorModel extends AbstractProtocolPar
 {
     @NonNull @Getter
     private final Map<RootActorPath, ActorRef> sliceDistributors = new HashMap<>();
+    @NonNull @Getter
+    private SequenceSliceDistributorFactory sliceDistributorFactory;
     @Setter @Getter
     private ActorRef sliceReceiver;
 }
