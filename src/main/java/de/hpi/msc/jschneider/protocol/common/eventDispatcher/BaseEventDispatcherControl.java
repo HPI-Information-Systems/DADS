@@ -36,7 +36,10 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
                 return;
             }
 
-            subscribers.add(message.getSender());
+            if (subscribers.add(message.getSender()))
+            {
+                getLog().info(String.format("%1$s just subscribed to %2$s.", message.getSender().path(), message.getEventType().getName()));
+            }
         }
         finally
         {
@@ -58,7 +61,10 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
                 return;
             }
 
-            subscribers.remove(message.getSender());
+            if (subscribers.remove(message.getSender()))
+            {
+                getLog().info(String.format("%1$s just unsubscribed from %2$s.", message.getSender().path(), message.getEventType().getName()));
+            }
         }
         finally
         {
@@ -79,6 +85,8 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
                                              getClass().getName()));
                 return;
             }
+
+            getLog().info(String.format("Dispatching %1$s to %2$d subscribers.", message.getClass().getName(), subscribers.size()));
 
             for (val subscriber : subscribers)
             {

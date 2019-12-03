@@ -7,7 +7,7 @@ def main(arguments):
     with arguments.input.open("r") as input, open("output.bin", "wb+") as output:
         for line in input:
             value = float(line)
-            output.write(bytearray(struct.pack("f", value)))
+            output.write(bytearray(struct.pack("!f", value)))
 
 
 if __name__ == "__main__":

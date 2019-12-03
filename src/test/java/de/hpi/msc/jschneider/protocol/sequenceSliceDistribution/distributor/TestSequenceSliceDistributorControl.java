@@ -139,4 +139,25 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         assertThat(secondMessage.getSlicePart()).containsExactly(range(75, 25));
         assertThat(secondMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
     }
+
+    public void testDoNotSendEmptySlicePart()
+    {
+        val control = control();
+        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_SIZE * Float.BYTES);
+        control.getModel().setSliceSizeFactor(1.0f);
+        val messageInterface = messageInterface(control);
+
+        control.preStart();
+        val firstMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.SequenceSlicePartMessage.class);
+        assertThat(firstMessage.getPartIndex()).isZero();
+        assertThat(firstMessage.isLastPart()).isTrue();
+        assertThat(firstMessage.getSlicePart()).containsExactly(range(0, 100));
+
+        val ack = SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
+                                                                                       .sender(localSliceReceiver.ref())
+                                                                                       .receiver(self.ref())
+                                                                                       .build();
+        messageInterface.apply(ack);
+        assertThatMessageIsCompleted(ack);
+    }
 }

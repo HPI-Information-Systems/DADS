@@ -26,6 +26,12 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
     {
         try
         {
+            if (message.getSlicePart().length < 1)
+            {
+                getLog().error("Received empty sequence slice part!");
+                return;
+            }
+
             getModel().getSliceParts().put(message.getPartIndex(), message.getSlicePart());
             forNextSlices(slicePart ->
                           {
@@ -34,13 +40,14 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                               .slicePart(slicePart)
                                                                                                                                               .build());
                           });
+
+        }
+        finally
+        {
             send(SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.builder()
                                                                                       .sender(getModel().getSelf())
                                                                                       .receiver(message.getSender())
                                                                                       .build());
-        }
-        finally
-        {
             complete(message);
         }
     }

@@ -105,4 +105,28 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
         assertThatMessageIsCompleted(message);
     }
+
+    public void testDoNotWriteEmptySlicePart()
+    {
+        val writer = new MockSequenceWriter();
+        val control = control(writer);
+        val messageInterface = messageInterface(control);
+        val slicePart = new float[0];
+        val message = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
+                                                                                .sender(localSliceDistributor.ref())
+                                                                                .receiver(self.ref())
+                                                                                .partIndex(0)
+                                                                                .isLastPart(true)
+                                                                                .slicePart(slicePart)
+                                                                                .build();
+        messageInterface.apply(message);
+
+        assertThat(writer.getValues()).isEmpty();
+        assertThat(control.getModel().getSliceParts()).isEmpty();
+
+        val ack = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.AcknowledgeSequenceSlicePartMessage.class);
+        assertThat(ack.getReceiver()).isEqualTo(localSliceDistributor.ref());
+
+        assertThatMessageIsCompleted(message);
+    }
 }

@@ -58,8 +58,21 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         val startIndex = getModel().getNextSliceStartIndex().get();
         val length = (int) Math.min(getModel().getSliceSizeFactor() * getModel().getMaximumMessageSize() / Float.BYTES,
                                     getModel().getSequenceReader().getSize() - startIndex);
+
+        if (length < 1)
+        {
+            getLog().info(String.format("Done sending sequence slice parts to %1$s.", receiver.path()));
+            return;
+        }
+
         val records = getModel().getSequenceReader().read(startIndex, length);
         val isLast = startIndex + records.length >= getModel().getSequenceReader().getSize();
+
+        getLog().info(String.format("Sending sequence slice part (index = %1$d, length = %2$d, isLast = %3$s) to %4$s.",
+                                    index,
+                                    records.length,
+                                    isLast,
+                                    receiver.path()));
 
         val message = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
                                                                                 .sender(getModel().getSelf())

@@ -31,7 +31,9 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         }
         else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {
-            getLog().error("Unexpected message completion for a message we never seen before!");
+            getLog().error(String.format("Unexpected message completion for a message we never seen before! (sender = %1$s, receiver = %2$s)",
+                                         message.getSender().path(),
+                                         message.getReceiver().path()));
         }
 
         decrementTotalQueueSize();
