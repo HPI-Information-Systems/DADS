@@ -2,6 +2,9 @@ package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
+import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
@@ -9,9 +12,12 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.EqualSequenceSliceDistributorFactory;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.NullSequenceSliceDistributorFactory;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.SequenceSliceDistributionRootActorControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.SequenceSliceDistributionRootActorModel;
 import lombok.val;
+import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,7 +41,16 @@ public class SequenceSliceDistributionProtocol
 
     private static ActorRef createRootActor(ActorSystem actorSystem)
     {
+        var distributorFactory = NullSequenceSliceDistributorFactory.get();
+        if (SystemParameters.getCommand() instanceof MasterCommand)
+        {
+            val masterCommand = (MasterCommand) SystemParameters.getCommand();
+            distributorFactory = new EqualSequenceSliceDistributorFactory(masterCommand.getMinimumNumberOfSlaves(),
+                                                                          BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile()));
+        }
+
         val model = SequenceSliceDistributionRootActorModel.builder()
+                                                           .sliceDistributorFactory(distributorFactory)
                                                            .build();
         val control = new SequenceSliceDistributionRootActorControl(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);

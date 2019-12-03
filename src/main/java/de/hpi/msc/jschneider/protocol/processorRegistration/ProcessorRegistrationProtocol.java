@@ -15,6 +15,7 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryModel;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionProtocol;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +77,7 @@ public class ProcessorRegistrationProtocol
         val protocols = new HashSet<Protocol>();
 
         protocols.add(MessageExchangeProtocol.initialize(actorSystem));
+        protocols.add(SequenceSliceDistributionProtocol.initialize(actorSystem));
 
         return protocols;
     }
