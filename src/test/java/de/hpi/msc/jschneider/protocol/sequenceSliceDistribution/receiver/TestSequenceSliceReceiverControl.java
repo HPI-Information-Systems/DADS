@@ -9,6 +9,9 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import lombok.val;
 import lombok.var;
+import scala.PartialFunction;
+import scala.collection.immutable.Stream;
+import scala.runtime.BoxedUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,6 +44,28 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         return new SequenceSliceReceiverControl(model(writer));
     }
 
+    private void initialize(SequenceSliceReceiverControl control, PartialFunction<Object, BoxedUnit> messageInterface)
+    {
+        val message = SequenceSliceDistributionMessages.InitializeSliceTransferMessage.builder()
+                                                                                      .sender(localSliceDistributor.ref())
+                                                                                      .receiver(self.ref())
+                                                                                      .firstSubSequenceIndex(10L)
+                                                                                      .subSequenceLength(10)
+                                                                                      .convolutionSize(3)
+                                                                                      .build();
+        messageInterface.apply(message);
+
+        assertThat(control.getModel().getFirstSubSequenceIndex()).isEqualTo(10L);
+        assertThat(control.getModel().getSubSequenceLength()).isEqualTo(10);
+        assertThat(control.getModel().getConvolutionSize()).isEqualTo(3);
+        assertThat(control.getModel().getProjectionInitializer()).isNotNull();
+
+        var request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.class);
+        assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
+
+        assertThatMessageIsCompleted(message);
+    }
+
     private float[] range(int start, int length)
     {
         val values = new float[length];
@@ -58,21 +83,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         val control = control(writer);
         val messageInterface = messageInterface(control);
 
-        val initialize = SequenceSliceDistributionMessages.InitializeSliceTransferMessage.builder()
-                                                                                         .sender(localSliceDistributor.ref())
-                                                                                         .receiver(self.ref())
-                                                                                         .firstSubSequenceIndex(10L)
-                                                                                         .subSequenceLength(10)
-                                                                                         .build();
-        messageInterface.apply(initialize);
-
-        assertThat(control.getModel().getNextSubSequenceIndex().get()).isEqualTo(10L);
-        assertThat(control.getModel().getSubSequenceLength()).isEqualTo(10);
-
-        var request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.class);
-        assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
-
-        assertThatMessageIsCompleted(initialize);
+        initialize(control, messageInterface);
     }
 
     public void testReceiveSlicePart()
@@ -82,6 +93,8 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         val messageInterface = messageInterface(control);
         val slicePart = range(0, 50);
 
+        initialize(control, messageInterface);
+
         var slicePartMessage = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
                                                                                          .sender(localSliceDistributor.ref())
                                                                                          .receiver(self.ref())
@@ -89,9 +102,6 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                                                          .slicePart(slicePart)
                                                                                          .build();
         messageInterface.apply(slicePartMessage);
-
-        val event = expectEvent(SequenceSliceDistributionEvents.SequenceSlicePartReceivedEvent.class);
-        assertThat(event.getSlicePart()).containsExactly(slicePart);
 
         assertThat(writer.getValues()).containsExactly(slicePart);
 
@@ -108,6 +118,8 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         val messageInterface = messageInterface(control);
         val slicePart = range(0, 50);
 
+        initialize(control, messageInterface);
+
         var slicePartMessage = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
                                                                                          .sender(localSliceDistributor.ref())
                                                                                          .receiver(self.ref())
@@ -116,8 +128,10 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                                                          .build();
         messageInterface.apply(slicePartMessage);
 
-        val event = expectEvent(SequenceSliceDistributionEvents.SequenceSlicePartReceivedEvent.class);
-        assertThat(event.getSlicePart()).containsExactly(slicePart);
+        val event = expectEvent(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
+        assertThat(event.getFirstSubSequenceIndex()).isEqualTo(10L);
+        assertThat(event.getProjectionSpace().countColumns()).isEqualTo(7L);
+        assertThat(event.getProjectionSpace().countRows()).isEqualTo(41L);
 
         assertThat(writer.getValues()).containsExactly(slicePart);
         assertThatMessageIsCompleted(slicePartMessage);
@@ -129,6 +143,8 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         val control = control(writer);
         val messageInterface = messageInterface(control);
         val slicePart = new float[0];
+
+        initialize(control, messageInterface);
 
         var slicePartMessage = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
                                                                                          .sender(localSliceDistributor.ref())

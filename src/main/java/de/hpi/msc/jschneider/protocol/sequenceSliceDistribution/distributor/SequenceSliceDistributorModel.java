@@ -26,6 +26,8 @@ public class SequenceSliceDistributorModel extends AbstractProtocolParticipantMo
     private long firstSubSequenceIndex;
     @NonNull @Getter
     private int subSequenceLength;
+    @NonNull @Getter
+    private int convolutionSize;
     @Getter @Setter @Builder.Default
     private float sliceSizeFactor = 0.75f;
 

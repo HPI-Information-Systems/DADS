@@ -14,6 +14,7 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRole;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.ojalgo.OjAlgoUtils;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
@@ -55,6 +56,8 @@ public class ActorSystemInitializer
     private static ActorSystem initializeActorSystem(String name, AbstractCommand command) throws Exception
     {
         val configuration = ConfigurationFactory.createRemoteConfiguration(command.getHost(), command.getPort(), command.getNumberOfThreads());
+
+        OjAlgoUtils.limitEnvironmentBy(command.getNumberOfThreads() / (double) OjAlgoUtils.ENVIRONMENT.threads);
 
         SystemParameters.initialize(command, configuration);
         return ActorSystem.create(name, configuration);

@@ -13,6 +13,7 @@ public class SequenceSliceDistributionMessages
     {
         private static final long serialVersionUID = 5192009128359237303L;
         private int subSequenceLength;
+        private int convolutionSize;
         private long firstSubSequenceIndex;
 
         @Override
@@ -21,6 +22,7 @@ public class SequenceSliceDistributionMessages
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .subSequenceLength(getSubSequenceLength())
+                            .convolutionSize(getConvolutionSize())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
                             .build();
         }

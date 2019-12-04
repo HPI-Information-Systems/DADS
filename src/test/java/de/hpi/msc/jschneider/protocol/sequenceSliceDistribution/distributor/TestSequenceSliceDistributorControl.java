@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestSequenceSliceDistributorControl extends ProtocolTestCase
 {
     private final int SEQUENCE_LENGTH = 100;
+    private final int CONVOLUTION_SIZE = 33;
     private final int SUB_SEQUENCE_LENGTH = 10;
 
     private TestProbe localSliceReceiver;
@@ -38,6 +39,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
                                                           .maximumMessageSizeProvider(() -> (long) (SEQUENCE_LENGTH / 2))
                                                           .firstSubSequenceIndex(0L)
                                                           .subSequenceLength(SUB_SEQUENCE_LENGTH)
+                                                          .convolutionSize(CONVOLUTION_SIZE)
                                                           .build());
     }
 
@@ -65,6 +67,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val message = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.class);
         assertThat(message.getReceiver()).isEqualTo(localProcessor.getProtocolRootActor(ProtocolType.SequenceSliceDistribution).ref());
         assertThat(message.getSubSequenceLength()).isEqualTo(SUB_SEQUENCE_LENGTH);
+        assertThat(message.getConvolutionSize()).isEqualTo(CONVOLUTION_SIZE);
         assertThat(message.getFirstSubSequenceIndex()).isEqualTo(0L);
     }
 

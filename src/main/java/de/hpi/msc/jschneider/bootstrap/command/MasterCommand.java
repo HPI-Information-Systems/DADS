@@ -20,4 +20,7 @@ public class MasterCommand extends AbstractCommand
 
     @Parameter(names = "--sub-sequence-length", description = "length for the sub sequences", required = true)
     private int subSequenceLength;
+
+    @Parameter(names = "--convolution-size", description = "size of the local convolution to transform subsequences into vectors", required = true)
+    private int convolutionSize;
 }

@@ -31,6 +31,7 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
                                                                              .sender(getModel().getSelf())
                                                                              .receiver(protocol.get().getRootActor())
                                                                              .subSequenceLength(getModel().getSubSequenceLength())
+                                                                             .convolutionSize(getModel().getConvolutionSize())
                                                                              .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                              .build());
     }

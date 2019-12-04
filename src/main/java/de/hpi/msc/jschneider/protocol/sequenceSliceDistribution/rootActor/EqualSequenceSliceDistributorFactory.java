@@ -3,6 +3,8 @@ package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
+import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
@@ -20,6 +22,11 @@ import java.util.Map;
 
 public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistributorFactory
 {
+    public static SequenceSliceDistributorFactory fromMasterCommand(MasterCommand masterCommand)
+    {
+        return new EqualSequenceSliceDistributorFactory(masterCommand);
+    }
+
     private Logger log;
     private final int expectedNumberOfProcessors;
     private final SequenceReader sequenceReaderTemplate;
@@ -29,14 +36,16 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
     private final int subSequenceLength;
     private final int sliceOverlap;
     private final long sliceLength;
+    private final int convolutionSize;
 
-    public EqualSequenceSliceDistributorFactory(int expectedNumberOfProcessors, SequenceReader sequenceReader, int subSequenceLength)
+    private EqualSequenceSliceDistributorFactory(MasterCommand masterCommand)
     {
-        this.expectedNumberOfProcessors = expectedNumberOfProcessors;
-        sequenceReaderTemplate = sequenceReader;
-        this.subSequenceLength = subSequenceLength;
-        sliceOverlap = subSequenceLength - 1;
-        sliceLength = (long) Math.ceil(sequenceReader.getSize() / (double) expectedNumberOfProcessors) + sliceOverlap;
+        expectedNumberOfProcessors = masterCommand.getMinimumNumberOfSlaves();
+        sequenceReaderTemplate = BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile());
+        subSequenceLength = masterCommand.getSubSequenceLength();
+        sliceOverlap = masterCommand.getSubSequenceLength() - 1;
+        sliceLength = (long) Math.ceil(sequenceReaderTemplate.getSize() / (double) expectedNumberOfProcessors) + sliceOverlap;
+        convolutionSize = masterCommand.getConvolutionSize();
     }
 
     private Logger getLog()
@@ -86,6 +95,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
                                                  .maximumMessageSizeProvider(SystemParameters::getMaximumMessageSize)
                                                  .firstSubSequenceIndex(currentSubSequenceStartIndex)
                                                  .subSequenceLength(subSequenceLength)
+                                                 .convolutionSize(convolutionSize)
                                                  .build();
 
 

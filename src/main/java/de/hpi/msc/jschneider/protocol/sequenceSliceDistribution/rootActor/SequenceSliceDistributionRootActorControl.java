@@ -58,9 +58,16 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
 
     private void onProcessorJoined(ProcessorRegistrationEvents.ProcessorJoinedEvent message)
     {
-        for (val props : getModel().getSliceDistributorFactory().createDistributorsFromNewProcessor(message.getProcessor()))
+        try
         {
-            trySpawnChild(props, "SequenceSliceDistributor");
+            for (val props : getModel().getSliceDistributorFactory().createDistributorsFromNewProcessor(message.getProcessor()))
+            {
+                trySpawnChild(props, "SequenceSliceDistributor");
+            }
+        }
+        finally
+        {
+            complete(message);
         }
     }
 }

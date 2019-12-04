@@ -45,9 +45,7 @@ public class SequenceSliceDistributionProtocol
         if (SystemParameters.getCommand() instanceof MasterCommand)
         {
             val masterCommand = (MasterCommand) SystemParameters.getCommand();
-            distributorFactory = new EqualSequenceSliceDistributorFactory(masterCommand.getMinimumNumberOfSlaves(),
-                                                                          BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile()),
-                                                                          masterCommand.getSubSequenceLength());
+            distributorFactory = EqualSequenceSliceDistributorFactory.fromMasterCommand(masterCommand);
         }
 
         val model = SequenceSliceDistributionRootActorModel.builder()
@@ -59,7 +57,7 @@ public class SequenceSliceDistributionProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(SequenceSliceDistributionEvents.SequenceSlicePartReceivedEvent.class);
+        val model = BaseEventDispatcherModel.create(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }
