@@ -118,7 +118,7 @@ public class TestEventDispatcherControl extends ProtocolTestCase
         messageInterface.apply(event);
 
         val dispatchedEvent = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(TestMessage.class);
-        assertThat(dispatchedEvent.getId()).isEqualTo(event.getId());
+        assertThat(dispatchedEvent.getId()).isNotEqualTo(event.getId());
         assertThat(dispatchedEvent.getReceiver()).isEqualTo(localActor.ref());
         assertThatMessageIsCompleted(event);
     }

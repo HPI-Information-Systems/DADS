@@ -75,7 +75,7 @@ public abstract class ProtocolTestCase extends TestCase
         model.setUnwatchActorCallback(subject ->
                                       {
                                       });
-        model.setChildFactory(props -> ActorRef.noSender());
+        model.setChildFactory((props, name) -> ActorRef.noSender());
 
         return model;
     }
@@ -98,7 +98,7 @@ public abstract class ProtocolTestCase extends TestCase
         return completedMessage;
     }
 
-    protected <TEvent extends MessageExchangeMessages.MessageExchangeMessage> TEvent expectEvent(Class<TEvent> eventType)
+    protected <TEvent extends MessageExchangeMessages.RedirectableMessage> TEvent expectEvent(Class<TEvent> eventType)
     {
         val localMessageDispatcher = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange);
         return localMessageDispatcher.expectMsgClass(eventType);

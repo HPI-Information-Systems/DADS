@@ -21,21 +21,13 @@ public class MessageExchangeProtocol
     private static final String ROOT_ACTOR_NAME = "MessageExchangeRootActor";
     private static final String EVENT_DISPATCHER_NAME = "MessageExchangeEventDispatcher";
 
-    private static Protocol localProtocol;
-
     public static Protocol initialize(ActorSystem actorSystem)
     {
-        if (localProtocol != null)
-        {
-            Log.warn(String.format("%1$s has already been initialized!", MessageExchangeProtocol.class.getName()));
-            return localProtocol;
-        }
-
-        localProtocol = BaseProtocol.builder()
-                                    .type(ProtocolType.MessageExchange)
-                                    .rootActor(createRootActor(actorSystem))
-                                    .eventDispatcher(createEventDispatcher(actorSystem))
-                                    .build();
+        val localProtocol = BaseProtocol.builder()
+                                        .type(ProtocolType.MessageExchange)
+                                        .rootActor(createRootActor(actorSystem))
+                                        .eventDispatcher(createEventDispatcher(actorSystem))
+                                        .build();
 
         Log.info(String.format("%1$s successfully initialized.", MessageExchangeProtocol.class.getName()));
         return localProtocol;

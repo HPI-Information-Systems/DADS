@@ -53,7 +53,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     public void testCreateMessageProxyForNewConnection()
     {
         val control = control(remoteProcessor);
-        control.getModel().setChildFactory(props -> localToRemoteMessageProxy.ref());
+        control.getModel().setChildFactory((props, name) -> localToRemoteMessageProxy.ref());
         val messageInterface = messageInterface(control);
 
         val message = TestMessage.builder()
@@ -91,7 +91,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     public void testDoNotCreateMessageProxyForUnknownConnection()
     {
         val control = control();
-        control.getModel().setChildFactory(props -> localToRemoteMessageProxy.ref());
+        control.getModel().setChildFactory((props, name) -> localToRemoteMessageProxy.ref());
         val messageInterface = messageInterface(control);
 
         val message = TestMessage.builder()
@@ -106,7 +106,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     public void testLocalMessagesAreAlsoProxied()
     {
         val control = control(localProcessor);
-        control.getModel().setChildFactory(props -> localToLocalMessageProxy.ref());
+        control.getModel().setChildFactory((props, name) -> localToLocalMessageProxy.ref());
         val messageInterface = messageInterface(control);
 
         val message = TestMessage.builder()

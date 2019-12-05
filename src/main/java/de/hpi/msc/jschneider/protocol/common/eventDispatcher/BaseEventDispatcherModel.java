@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.common.eventDispatcher;
 
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -18,11 +19,11 @@ import java.util.Set;
 public class BaseEventDispatcherModel extends AbstractProtocolParticipantModel implements EventDispatcherModel
 {
     @NonNull @Getter @Setter @Builder.Default
-    private Map<Class<?>, Set<ActorRef>> eventSubscribers = new HashMap<>();
+    private Map<Class<? extends MessageExchangeMessages.RedirectableMessage>, Set<ActorRef>> eventSubscribers = new HashMap<>();
 
-    public static EventDispatcherModel create(Class<?>... eventTypes)
+    public static EventDispatcherModel create(Class<? extends MessageExchangeMessages.RedirectableMessage>... eventTypes)
     {
-        val subscribers = new HashMap<Class<?>, Set<ActorRef>>();
+        val subscribers = new HashMap<Class<? extends MessageExchangeMessages.RedirectableMessage>, Set<ActorRef>>();
         for (val eventType : eventTypes)
         {
             subscribers.put(eventType, new HashSet<>());

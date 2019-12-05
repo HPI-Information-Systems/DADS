@@ -39,9 +39,9 @@ public interface ProtocolParticipantModel
 
     Set<ActorRef> getWatchedActors();
 
-    Function<Props, ActorRef> getChildFactory();
+    ActorFactory getChildFactory();
 
-    void setChildFactory(Function<Props, ActorRef> childFactory);
+    void setChildFactory(ActorFactory childFactory);
 
     Set<ActorRef> getChildActors();
 }

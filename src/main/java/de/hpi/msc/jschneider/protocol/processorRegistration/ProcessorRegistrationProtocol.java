@@ -15,6 +15,7 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryModel;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionProtocol;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,28 +29,25 @@ public class ProcessorRegistrationProtocol
     public static final String EVENT_DISPATCHER_NAME = "ProcessorRegistrationEventDispatcher";
     private static final Logger Log = LogManager.getLogger(ProcessorRegistrationProtocol.class);
     private static ProcessorRegistryModel rootActorModel;
-    private static Processor localProcessor;
-    private static Protocol localProtocol;
 
     public static Protocol initialize(ActorSystem actorSystem, ProcessorRole role, boolean isMaster)
     {
-        if (localProtocol != null)
-        {
-            Log.warn(String.format("%1$s has already been initialized!", ProcessorRegistrationProtocol.class.getName()));
-            return localProtocol;
-        }
+        val localProcessor = BaseProcessor.builder()
+                                          .isMaster(isMaster)
+                                          .rootPath(RootActorPath.apply(actorSystem.provider().getDefaultAddress(), "/"))
+                                          .protocols(initializeProtocols(actorSystem, role))
+                                          .build();
 
-        localProcessor = BaseProcessor.builder()
-                                      .isMaster(isMaster)
-                                      .rootPath(RootActorPath.apply(actorSystem.provider().getDefaultAddress(), actorSystem.name()))
-                                      .protocols(initializeProtocols(actorSystem, role))
-                                      .build();
+        val localProtocol = BaseProtocol.builder()
+                                        .type(ProtocolType.ProcessorRegistration)
+                                        .rootActor(createRootActor(actorSystem, localProcessor))
+                                        .eventDispatcher(createEventDispatcher(actorSystem))
+                                        .build();
 
-        localProtocol = BaseProtocol.builder()
-                                    .type(ProtocolType.ProcessorRegistration)
-                                    .rootActor(createRootActor(actorSystem, localProcessor))
-                                    .eventDispatcher(createEventDispatcher(actorSystem))
-                                    .build();
+        val actualProtocols = new Protocol[localProcessor.getProtocols().length + 1];
+        System.arraycopy(localProcessor.getProtocols(), 0, actualProtocols, 0, localProcessor.getProtocols().length);
+        actualProtocols[actualProtocols.length - 1] = localProtocol;
+        localProcessor.setProtocols(actualProtocols);
 
         setUpProtocols(localProcessor);
 
@@ -84,6 +82,7 @@ public class ProcessorRegistrationProtocol
         val protocols = new HashSet<Protocol>();
 
         protocols.add(MessageExchangeProtocol.initialize(actorSystem));
+        protocols.add(SequenceSliceDistributionProtocol.initialize(actorSystem));
 
         return protocols;
     }
@@ -95,6 +94,7 @@ public class ProcessorRegistrationProtocol
                                                .schedulerProvider(actorSystem::scheduler)
                                                .dispatcherProvider(actorSystem::dispatcher)
                                                .build();
+        rootActorModel.getProcessors().put(localProcessor.getRootPath(), localProcessor);
         val control = new ProcessorRegistryControl(rootActorModel);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);

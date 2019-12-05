@@ -1,37 +1,49 @@
 package de.hpi.msc.jschneider;
 
+import com.typesafe.config.Config;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
+import lombok.val;
 
 import java.nio.file.Path;
 
 public class SystemParameters
 {
-    private static int numberOfThreads;
-    private static int numberOfWorkers;
-    private static Path workingDirectory;
+    private static AbstractCommand command;
+    private static Config configuration;
     private static long maximumMemory;
 
-    public static void initialize(AbstractCommand command)
+    public static void initialize(AbstractCommand command, Config configuration)
     {
-        numberOfThreads = command.getNumberOfThreads();
-        numberOfWorkers = command.getNumberOfWorkers();
-        workingDirectory = command.getWorkingDirectory();
+        SystemParameters.command = command;
+        SystemParameters.configuration = configuration;
         maximumMemory = Runtime.getRuntime().maxMemory();
     }
 
+    public static AbstractCommand getCommand()
+    {
+        return command;
+    }
+
+    public static Config getConfiguration() { return configuration; }
+
     public static int getNumberOfThreads()
     {
-        return numberOfThreads;
+        return command.getNumberOfThreads();
     }
 
     public static int getNumberOfWorkers()
     {
-        return numberOfWorkers;
+        return command.getNumberOfWorkers();
     }
 
     public static Path getWorkingDirectory()
     {
-        return workingDirectory;
+        return command.getWorkingDirectory();
+    }
+
+    public static long getMaximumMessageSize()
+    {
+        return configuration.getBytes("akka.remote.maximum-payload-bytes");
     }
 
     public static long getMaximumMemory()

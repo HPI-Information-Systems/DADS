@@ -6,6 +6,7 @@ import de.hpi.msc.jschneider.protocol.common.Protocol;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 @Builder @Getter
 public class BaseProcessor implements Processor
@@ -18,6 +19,6 @@ public class BaseProcessor implements Processor
     private long maximumMemoryInBytes = SystemParameters.getMaximumMemory();
     @NonNull @Builder.Default
     private int numberOfThreads = SystemParameters.getNumberOfThreads();
-    @NonNull
+    @NonNull @Setter
     private Protocol[] protocols;
 }
