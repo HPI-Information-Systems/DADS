@@ -14,7 +14,7 @@ public class SequenceSliceDistributionEvents
     {
         private static final long serialVersionUID = 3362960763906428742L;
         private long firstSubSequenceIndex;
-        private PrimitiveMatrix projectionSpace;
+        private PrimitiveMatrix projection;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -22,7 +22,7 @@ public class SequenceSliceDistributionEvents
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
-                            .projectionSpace(getProjectionSpace())
+                            .projection(getProjection())
                             .build();
         }
     }

@@ -10,7 +10,6 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import lombok.val;
 import lombok.var;
 import scala.PartialFunction;
-import scala.collection.immutable.Stream;
 import scala.runtime.BoxedUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -130,8 +129,8 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
         val event = expectEvent(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
         assertThat(event.getFirstSubSequenceIndex()).isEqualTo(10L);
-        assertThat(event.getProjectionSpace().countColumns()).isEqualTo(7L);
-        assertThat(event.getProjectionSpace().countRows()).isEqualTo(41L);
+        assertThat(event.getProjection().countColumns()).isEqualTo(7L);
+        assertThat(event.getProjection().countRows()).isEqualTo(41L);
 
         assertThat(writer.getValues()).containsExactly(slicePart);
         assertThatMessageIsCompleted(slicePartMessage);

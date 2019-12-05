@@ -68,7 +68,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                               .sender(getModel().getSelf())
                                                                                                                                               .receiver(eventDispatcher)
                                                                                                                                               .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
-                                                                                                                                              .projectionSpace(getModel().getProjectionInitializer().create())
+                                                                                                                                              .projection(getModel().getProjectionInitializer().create())
                                                                                                                                               .build());
                 return;
             }

@@ -50,6 +50,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         return log;
     }
 
+    @Override
     public final ActorRef getSelf()
     {
         try
@@ -63,11 +64,13 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         }
     }
 
+    @Override
     public final Processor getLocalProcessor()
     {
         return getProcessor(getSelf().path().root()).get();
     }
 
+    @Override
     public final Optional<Processor> getMasterProcessor()
     {
         try
@@ -89,6 +92,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         }
     }
 
+    @Override
     public final Optional<Processor> getProcessor(RootActorPath actorSystem)
     {
         try
@@ -110,6 +114,21 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         }
     }
 
+    @Override
+    public int getNumberOfProcessors()
+    {
+        try
+        {
+            return processorProvider.call().length;
+        }
+        catch (Exception exception)
+        {
+            getLog().error("Unable to retrieve number of processors!", exception);
+            return 0;
+        }
+    }
+
+    @Override
     public final ActorRef getSender()
     {
         try

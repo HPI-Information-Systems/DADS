@@ -29,6 +29,8 @@ public interface ProtocolParticipantModel
 
     Optional<Processor> getProcessor(RootActorPath actorSystem);
 
+    int getNumberOfProcessors();
+
     Consumer<ActorRef> getWatchActorCallback();
 
     void setWatchActorCallback(Consumer<ActorRef> callback);
