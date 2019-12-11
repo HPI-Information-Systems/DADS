@@ -1,15 +1,14 @@
 package de.hpi.msc.jschneider.protocol.common.model;
 
 import akka.actor.ActorRef;
-import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public interface ProtocolParticipantModel
 {
@@ -18,6 +17,8 @@ public interface ProtocolParticipantModel
     void setSenderProvider(Callable<ActorRef> provider);
 
     void setProcessorProvider(Callable<Processor[]> provider);
+
+    void setMaximumMessageSizeProvider(Callable<Long> provider);
 
     ActorRef getSelf();
 
@@ -30,6 +31,8 @@ public interface ProtocolParticipantModel
     Optional<Processor> getProcessor(RootActorPath actorSystem);
 
     int getNumberOfProcessors();
+
+    long getMaximumMessageSize();
 
     Consumer<ActorRef> getWatchActorCallback();
 
@@ -46,4 +49,8 @@ public interface ProtocolParticipantModel
     void setChildFactory(ActorFactory childFactory);
 
     Set<ActorRef> getChildActors();
+
+    DataTransferManager getDataTransferManager();
+
+    void setDataTransferManager(DataTransferManager dataTransferManager);
 }

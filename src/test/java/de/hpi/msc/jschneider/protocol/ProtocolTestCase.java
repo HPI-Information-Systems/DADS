@@ -69,6 +69,7 @@ public abstract class ProtocolTestCase extends TestCase
         model.setSelfProvider(() -> self.ref());
         model.setSenderProvider(ActorRef::noSender);
         model.setProcessorProvider(() -> processors.toArray(new Processor[0]));
+        model.setMaximumMessageSizeProvider(() -> 1024 * 1024 * 10L); // 10 MiB
         model.setWatchActorCallback(subject ->
                                     {
                                     });

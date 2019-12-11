@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.fileHandling.reading;
 
-public interface SequenceReader
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
+
+public interface SequenceReader extends DataSource
 {
     long getSize();
 
@@ -10,9 +12,7 @@ public interface SequenceReader
 
     boolean isNull();
 
-    float[] read(int length);
-
-    float[] read(long start, int length);
+    float[] read(long start, long length);
 
     SequenceReader subReader(long start, long length);
 }

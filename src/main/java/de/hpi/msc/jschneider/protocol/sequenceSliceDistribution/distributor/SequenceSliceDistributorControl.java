@@ -1,10 +1,10 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor;
 
-import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataDistributor;
 import lombok.val;
 
 public class SequenceSliceDistributorControl extends AbstractProtocolParticipantControl<SequenceSliceDistributorModel>
@@ -27,62 +27,35 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
             return;
         }
 
-        send(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.builder()
-                                                                             .sender(getModel().getSelf())
-                                                                             .receiver(protocol.get().getRootActor())
-                                                                             .subSequenceLength(getModel().getSubSequenceLength())
-                                                                             .convolutionSize(getModel().getConvolutionSize())
-                                                                             .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
-                                                                             .build());
+        getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializeSequenceDistributor, this::initializationMessageFactory);
     }
 
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.class, this::onRequestNextSlicePart);
+        return super.complementReceiveBuilder(builder);
     }
 
-    private void onRequestNextSlicePart(SequenceSliceDistributionMessages.RequestNextSlicePartMessage message)
+    private DataDistributor initializeSequenceDistributor(DataDistributor distributor)
     {
-        try
-        {
-            sendNextSlicePart(message.getSender());
-        }
-        finally
-        {
-            complete(message);
-        }
+        return distributor.whenFinished(this::whenFinished);
     }
 
-    private void sendNextSlicePart(ActorRef receiver)
+    private void whenFinished(DataDistributor distributor)
     {
-        val readLength = (int) Math.min(getModel().getSliceSizeFactor() * getModel().getMaximumMessageSize() / Float.BYTES,
-                                        getModel().getSequenceReader().getSize() - getModel().getSequenceReader().getPosition());
+        // TODO: terminate self?!
+    }
 
-        if (readLength < 1)
-        {
-            return;
-        }
+    private SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage initializationMessageFactory(DataDistributor distributor)
+    {
+        val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution).get(); // no need to check, because we already checked that in preStart
 
-        val records = getModel().getSequenceReader().read(readLength);
-        val isLast = getModel().getSequenceReader().isAtEnd();
-
-        getLog().info(String.format("Sending sequence slice part (length = %1$d, isLast = %2$s) to %3$s.",
-                                    records.length,
-                                    isLast,
-                                    receiver.path()));
-
-        val message = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
-                                                                                .sender(getModel().getSelf())
-                                                                                .receiver(receiver)
-                                                                                .slicePart(records)
-                                                                                .isLastPart(isLast)
-                                                                                .build();
-        send(message);
-
-        if (isLast)
-        {
-            getLog().info(String.format("Done sending sequence slice parts to %1$s.", receiver.path()));
-        }
+        return SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.builder()
+                .sender(getModel().getSelf())
+                .receiver(protocol.getRootActor())
+                .subSequenceLength(getModel().getSubSequenceLength())
+                .convolutionSize(getModel().getConvolutionSize())
+                .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                .build();
     }
 }

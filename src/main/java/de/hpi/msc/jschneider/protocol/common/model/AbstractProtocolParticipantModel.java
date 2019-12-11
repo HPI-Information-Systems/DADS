@@ -1,9 +1,9 @@
 package de.hpi.msc.jschneider.protocol.common.model;
 
 import akka.actor.ActorRef;
-import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 @SuperBuilder
 public abstract class AbstractProtocolParticipantModel implements ProtocolParticipantModel
@@ -33,12 +32,16 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     private Callable<ActorRef> senderProvider;
     @Setter
     private Callable<Processor[]> processorProvider;
+    @Setter
+    private Callable<Long> maximumMessageSizeProvider;
     @Getter @Setter
     private Consumer<ActorRef> watchActorCallback;
     @Getter @Setter
     private Consumer<ActorRef> unwatchActorCallback;
     @Getter @Setter
     private ActorFactory childFactory;
+    @Getter @Setter
+    private DataTransferManager dataTransferManager;
 
     protected final Logger getLog()
     {
@@ -125,6 +128,20 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         {
             getLog().error("Unable to retrieve number of processors!", exception);
             return 0;
+        }
+    }
+
+    @Override
+    public long getMaximumMessageSize()
+    {
+        try
+        {
+            return maximumMessageSizeProvider.call();
+        }
+        catch (Exception exception)
+        {
+            getLog().error("Unable to retrieve maximum message size!", exception);
+            return 0L;
         }
     }
 

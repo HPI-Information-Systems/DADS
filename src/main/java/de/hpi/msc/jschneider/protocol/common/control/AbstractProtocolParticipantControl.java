@@ -10,6 +10,9 @@ import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMess
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +28,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     protected AbstractProtocolParticipantControl(TModel model)
     {
         setModel(model);
+        model.setDataTransferManager(new DataTransferManager(this));
     }
 
     protected final Logger getLog()
@@ -47,6 +51,13 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     public void postStop()
     {
 
+    }
+
+    @Override
+    public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
+    {
+        return builder.match(DataTransferMessages.RequestNextDataPartMessage.class, getModel().getDataTransferManager()::onRequestNextPart)
+                      .match(DataTransferMessages.DataPartMessage.class, getModel().getDataTransferManager()::onPart);
     }
 
     @Override

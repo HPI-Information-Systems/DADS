@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.val;
 import lombok.var;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 
 public class BinaryDirectoryReader implements SequenceReader
 {
+    private static final Logger Log = LogManager.getLogger(BinaryDirectoryReader.class);
+
     private final SortedSet<SequenceReaderWrapper> sequenceReaders = new TreeSet<>((first, second) -> (int) (first.startIndex - second.startIndex));
 
     public static SequenceReader fromDirectory(File directory)
@@ -116,7 +120,7 @@ public class BinaryDirectoryReader implements SequenceReader
     }
 
     @Override
-    public float[] read(int length)
+    public float[] read(long length)
     {
         val values = read(currentPosition, length);
         currentPosition += values.length;
@@ -124,12 +128,18 @@ public class BinaryDirectoryReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, int length)
+    public float[] read(long start, long length)
     {
         val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
         val end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
+        var actualLength = end - begin + 1;
+        if (actualLength > Integer.MAX_VALUE)
+        {
+            Log.error("Unable to allocate more than Integer.MAX_VALUE floats at once!");
+            actualLength = Integer.MAX_VALUE;
+        }
 
-        val floats = FloatBuffer.allocate((int) (end - begin + 1));
+        val floats = FloatBuffer.allocate((int) actualLength);
         var first = true;
         for (val wrapper : readers(begin, end))
         {
