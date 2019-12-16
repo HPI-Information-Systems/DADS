@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.common;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.Props;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
@@ -58,6 +59,7 @@ public class ProtocolParticipant<TModel extends ProtocolParticipantModel, TContr
         model.setSelfProvider(this::self);
         model.setSenderProvider(this::self);
         model.setProcessorProvider(ProcessorRegistrationProtocol::getProcessors);
+        model.setMaximumMessageSizeProvider(SystemParameters::getMaximumMessageSize);
         model.setWatchActorCallback(context()::watch);
         model.setUnwatchActorCallback(context()::unwatch);
         model.setChildFactory(context()::actorOf);

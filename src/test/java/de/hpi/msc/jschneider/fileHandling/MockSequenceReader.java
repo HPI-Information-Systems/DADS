@@ -50,7 +50,7 @@ public class MockSequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(int length)
+    public float[] read(long length)
     {
         val values = read(currentPosition, length);
         currentPosition += values.length;
@@ -58,9 +58,12 @@ public class MockSequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, int length)
+    public float[] read(long start, long length)
     {
-        return Arrays.copyOfRange(values, (int) start, (int) start + length);
+        var begin = Math.max(0, Math.min(values.length, start));
+        var end = Math.max(begin, Math.min(values.length, start + length));
+
+        return Arrays.copyOfRange(values, (int) begin, (int) end);
     }
 
     @Override

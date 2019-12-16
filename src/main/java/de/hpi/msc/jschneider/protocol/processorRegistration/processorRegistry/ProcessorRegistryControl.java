@@ -24,11 +24,12 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                      .match(ProcessorRegistrationMessages.RegisterAtMasterMessage.class, this::onRegisterAtMaster)
-                      .match(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.class, this::onAcknowledgeRegistration)
-                      .match(ProcessorRegistrationMessages.ProcessorRegistrationMessage.class, this::onRegistration)
-                      .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined);
+        return super.complementReceiveBuilder(builder)
+                    .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                    .match(ProcessorRegistrationMessages.RegisterAtMasterMessage.class, this::onRegisterAtMaster)
+                    .match(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.class, this::onAcknowledgeRegistration)
+                    .match(ProcessorRegistrationMessages.ProcessorRegistrationMessage.class, this::onRegistration)
+                    .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined);
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)

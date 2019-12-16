@@ -2,6 +2,8 @@ package de.hpi.msc.jschneider.fileHandling.reading;
 
 import lombok.val;
 import lombok.var;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,6 +13,8 @@ import java.nio.ByteBuffer;
 
 public class BinarySequenceReader implements SequenceReader
 {
+    private static final Logger Log = LogManager.getLogger(BinarySequenceReader.class);
+
     public static SequenceReader fromFile(File file)
     {
         try
@@ -138,7 +142,7 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(int length)
+    public float[] read(long length)
     {
         val values = read(currentPosition, length);
         currentPosition += values.length;
@@ -146,7 +150,7 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, int length)
+    public float[] read(long start, long length)
     {
         val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
         var end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
@@ -155,7 +159,13 @@ public class BinarySequenceReader implements SequenceReader
 
     private float[] tryRead(long begin, long end)
     {
-        val length = end - begin + 1;
+        var length = end - begin + 1;
+        if (length > Integer.MAX_VALUE)
+        {
+            Log.error("Can not allocate more than Integer.MAX_VALUE floats at once!");
+            length = Integer.MAX_VALUE;
+        }
+
         val floats = new float[(int) length];
         try
         {

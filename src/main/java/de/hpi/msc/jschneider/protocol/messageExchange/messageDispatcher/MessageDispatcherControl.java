@@ -25,8 +25,9 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
+        return super.complementReceiveBuilder(builder)
+                    .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                    .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)

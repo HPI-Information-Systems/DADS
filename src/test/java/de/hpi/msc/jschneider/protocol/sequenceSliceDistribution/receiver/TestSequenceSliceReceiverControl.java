@@ -7,16 +7,20 @@ import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 import lombok.var;
 import scala.PartialFunction;
-import scala.collection.immutable.Stream;
 import scala.runtime.BoxedUnit;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 {
+    private static final UUID OPERATION_ID = UUID.randomUUID();
+
     private TestProbe localSliceDistributor;
 
     @Override
@@ -46,13 +50,14 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
     private void initialize(SequenceSliceReceiverControl control, PartialFunction<Object, BoxedUnit> messageInterface)
     {
-        val message = SequenceSliceDistributionMessages.InitializeSliceTransferMessage.builder()
-                                                                                      .sender(localSliceDistributor.ref())
-                                                                                      .receiver(self.ref())
-                                                                                      .firstSubSequenceIndex(10L)
-                                                                                      .subSequenceLength(10)
-                                                                                      .convolutionSize(3)
-                                                                                      .build();
+        val message = SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.builder()
+                                                                                              .sender(localSliceDistributor.ref())
+                                                                                              .receiver(self.ref())
+                                                                                              .firstSubSequenceIndex(10L)
+                                                                                              .subSequenceLength(10)
+                                                                                              .convolutionSize(3)
+                                                                                              .operationId(OPERATION_ID)
+                                                                                              .build();
         messageInterface.apply(message);
 
         assertThat(control.getModel().getFirstSubSequenceIndex()).isEqualTo(10L);
@@ -60,7 +65,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThat(control.getModel().getConvolutionSize()).isEqualTo(3);
         assertThat(control.getModel().getProjectionInitializer()).isNotNull();
 
-        var request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.class);
+        var request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
         assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
 
         assertThatMessageIsCompleted(message);
@@ -95,20 +100,21 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
         initialize(control, messageInterface);
 
-        var slicePartMessage = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
-                                                                                         .sender(localSliceDistributor.ref())
-                                                                                         .receiver(self.ref())
-                                                                                         .isLastPart(false)
-                                                                                         .slicePart(slicePart)
-                                                                                         .build();
-        messageInterface.apply(slicePartMessage);
+        var partMessage = DataTransferMessages.DataPartMessage.builder()
+                                                              .sender(localSliceDistributor.ref())
+                                                              .receiver(self.ref())
+                                                              .isLastPart(false)
+                                                              .part(slicePart)
+                                                              .operationId(OPERATION_ID)
+                                                              .build();
+        messageInterface.apply(partMessage);
 
         assertThat(writer.getValues()).containsExactly(slicePart);
 
-        val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(SequenceSliceDistributionMessages.RequestNextSlicePartMessage.class);
+        val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
         assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
 
-        assertThatMessageIsCompleted(slicePartMessage);
+        assertThatMessageIsCompleted(partMessage);
     }
 
     public void testReceiveLastSlicePart()
@@ -120,21 +126,22 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
         initialize(control, messageInterface);
 
-        var slicePartMessage = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
-                                                                                         .sender(localSliceDistributor.ref())
-                                                                                         .receiver(self.ref())
-                                                                                         .isLastPart(true)
-                                                                                         .slicePart(slicePart)
-                                                                                         .build();
-        messageInterface.apply(slicePartMessage);
+        var partMessage = DataTransferMessages.DataPartMessage.builder()
+                                                              .sender(localSliceDistributor.ref())
+                                                              .receiver(self.ref())
+                                                              .isLastPart(true)
+                                                              .part(slicePart)
+                                                              .operationId(OPERATION_ID)
+                                                              .build();
+        messageInterface.apply(partMessage);
 
         val event = expectEvent(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
         assertThat(event.getFirstSubSequenceIndex()).isEqualTo(10L);
-        assertThat(event.getProjectionSpace().countColumns()).isEqualTo(7L);
-        assertThat(event.getProjectionSpace().countRows()).isEqualTo(41L);
+        assertThat(event.getProjection().countColumns()).isEqualTo(7L);
+        assertThat(event.getProjection().countRows()).isEqualTo(41L);
 
         assertThat(writer.getValues()).containsExactly(slicePart);
-        assertThatMessageIsCompleted(slicePartMessage);
+        assertThatMessageIsCompleted(partMessage);
     }
 
     public void testReceiveEmptySlicePart()
@@ -146,15 +153,20 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
         initialize(control, messageInterface);
 
-        var slicePartMessage = SequenceSliceDistributionMessages.SequenceSlicePartMessage.builder()
-                                                                                         .sender(localSliceDistributor.ref())
-                                                                                         .receiver(self.ref())
-                                                                                         .isLastPart(false)
-                                                                                         .slicePart(slicePart)
-                                                                                         .build();
-        messageInterface.apply(slicePartMessage);
+        var partMessage = DataTransferMessages.DataPartMessage.builder()
+                                                              .sender(localSliceDistributor.ref())
+                                                              .receiver(self.ref())
+                                                              .isLastPart(false)
+                                                              .part(slicePart)
+                                                              .operationId(OPERATION_ID)
+                                                              .build();
+        messageInterface.apply(partMessage);
 
         assertThat(writer.getValues()).isEmpty();
-        assertThatMessageIsCompleted(slicePartMessage);
+
+        val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+        assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
+
+        assertThatMessageIsCompleted(partMessage);
     }
 }

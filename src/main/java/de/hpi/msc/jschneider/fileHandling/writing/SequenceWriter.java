@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
-public interface SequenceWriter
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSink;
+
+public interface SequenceWriter extends DataSink
 {
     void write(float[] records);
 

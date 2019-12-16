@@ -22,9 +22,10 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                      .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined)
-                      .match(SequenceSliceDistributionMessages.InitializeSliceTransferMessage.class, message -> forward(message, getModel().getSliceReceiver()));
+        return super.complementReceiveBuilder(builder)
+                    .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                    .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined)
+                    .match(SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.class, message -> forward(message, getModel().getSliceReceiver()));
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)

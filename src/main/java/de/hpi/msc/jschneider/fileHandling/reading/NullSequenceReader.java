@@ -36,13 +36,13 @@ public class NullSequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(int length)
+    public float[] read(long length)
     {
         return new float[0];
     }
 
     @Override
-    public float[] read(long start, int length)
+    public float[] read(long start, long length)
     {
         return new float[0];
     }

@@ -10,9 +10,9 @@ import java.util.List;
 public class MatrixInitializer
 {
     private final List<Primitive32Array> rows = new ArrayList<>();
-    private final int columns;
+    private final long columns;
 
-    public MatrixInitializer(int columns)
+    public MatrixInitializer(long columns)
     {
         this.columns = columns;
     }

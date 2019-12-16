@@ -6,4 +6,5 @@ public enum ProtocolType
     MessageExchange,
     Reaper,
     SequenceSliceDistribution,
+    PrincipalComponentAnalysis,
 }

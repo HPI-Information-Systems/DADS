@@ -18,9 +18,10 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                      .match(ReaperMessages.WatchMeMessage.class, this::onWatchMe)
-                      .match(Terminated.class, this::onTerminated);
+        return super.complementReceiveBuilder(builder)
+                    .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                    .match(ReaperMessages.WatchMeMessage.class, this::onWatchMe)
+                    .match(Terminated.class, this::onTerminated);
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)
