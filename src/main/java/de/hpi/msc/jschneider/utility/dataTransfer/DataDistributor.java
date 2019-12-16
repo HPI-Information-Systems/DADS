@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,8 @@ public class DataDistributor
     private boolean hasBeenInitialized = false;
     @Getter
     private boolean hasFinished = false;
+    @Getter @Setter
+    private Object state;
     private Consumer<DataDistributor> whenFinished;
 
     public DataDistributor(ProtocolParticipantControl<? extends ProtocolParticipantModel> control, DataSource dataSource)

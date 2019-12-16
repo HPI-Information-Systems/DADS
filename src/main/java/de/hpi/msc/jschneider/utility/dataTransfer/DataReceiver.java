@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,8 @@ public class DataReceiver
     private final Set<DataSink> dataSinks = new HashSet<>();
     @Getter
     private boolean hasFinished = false;
+    @Getter @Setter
+    private Object state;
     private Consumer<DataReceiver> whenFinished;
     private Consumer<DataTransferMessages.DataPartMessage> onReceive;
 

@@ -2,11 +2,13 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.PrimitiveAccessSource;
 import lombok.Getter;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.ojalgo.structure.Access1D;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +28,21 @@ public class DataTransferManager
     public DataTransferManager(ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.control = control;
+    }
+
+    public void transfer(Access1D<Double> data, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
+    {
+        transfer(data, distributor -> distributor, initializationMessageFactory);
+    }
+
+    public void transfer(Access1D<Double> data, Function<DataDistributor, DataDistributor> dataDistributorInitializer, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
+    {
+        transfer(new PrimitiveAccessSource(data), dataDistributorInitializer, initializationMessageFactory);
+    }
+
+    public void transfer(DataSource dataSource, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
+    {
+        transfer(dataSource, distributor -> distributor, initializationMessageFactory);
     }
 
     public void transfer(DataSource dataSource, Function<DataDistributor, DataDistributor> dataDistributorInitializer, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
