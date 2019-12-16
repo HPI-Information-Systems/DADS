@@ -9,6 +9,8 @@ import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
+import de.hpi.msc.jschneider.utility.dataTransfer.MockDataSink;
 import junit.framework.TestCase;
 import lombok.val;
 import scala.PartialFunction;
@@ -113,5 +115,32 @@ public abstract class ProtocolTestCase extends TestCase
         assertThat(subscriptionMessage.getEventType()).isEqualTo(eventType);
 
         return subscriptionMessage;
+    }
+
+    protected MockDataSink acceptDataTransfer(TestProbe dataReceiver, TestProbe dataSender, DataTransferMessages.InitializeDataTransferMessage initializationMessage)
+    {
+        val mockSink = new MockDataSink();
+        val operationId = initializationMessage.getOperationId();
+
+        while (true)
+        {
+            val requestNextPart = DataTransferMessages.RequestNextDataPartMessage.builder()
+                                                                                 .sender(dataReceiver.ref())
+                                                                                 .receiver(dataSender.ref())
+                                                                                 .operationId(operationId)
+                                                                                 .build();
+            dataSender.ref().tell(requestNextPart, dataReceiver.ref());
+
+            val partMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
+            mockSink.write(partMessage.getPart());
+
+            if (partMessage.isLastPart())
+            {
+                mockSink.close();
+                break;
+            }
+        }
+
+        return mockSink;
     }
 }
