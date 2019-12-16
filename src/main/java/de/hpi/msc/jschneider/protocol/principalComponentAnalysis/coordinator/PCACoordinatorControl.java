@@ -17,7 +17,8 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined);
+        return super.complementReceiveBuilder(builder)
+                    .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined);
     }
 
     private void onProcessorJoined(ProcessorRegistrationEvents.ProcessorJoinedEvent message)
@@ -35,15 +36,14 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
                 return;
             }
 
-            if (getModel().getParticipantIndices().containsKey(message.getProcessor().getRootPath()))
+            if (getModel().getParticipantIndices().containsValue(message.getProcessor().getRootPath()))
             {
                 // processor re-joined?!
                 return;
             }
 
-            val processorIndex = getModel().getNextParticipantIndex().get();
-            getModel().getParticipantIndices().put(message.getProcessor().getRootPath(), processorIndex);
-            getModel().getNextParticipantIndex().set(processorIndex + 1);
+            val processorIndex = getModel().getNextParticipantIndex().getAndIncrement();
+            getModel().getParticipantIndices().put(processorIndex, message.getProcessor().getRootPath());
 
             if (getModel().getParticipantIndices().size() != getModel().getNumberOfParticipants())
             {
@@ -61,7 +61,7 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
 
     private void initializeCalculation()
     {
-        for (val participantRootPath : getModel().getParticipantIndices().keySet())
+        for (val participantRootPath : getModel().getParticipantIndices().values())
         {
             getProtocol(participantRootPath, ProtocolType.PrincipalComponentAnalysis).ifPresent(protocol ->
                                                                                                 {
