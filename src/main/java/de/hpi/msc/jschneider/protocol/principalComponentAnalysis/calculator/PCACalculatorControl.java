@@ -14,6 +14,7 @@ import lombok.var;
 import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.decomposition.QR;
 import org.ojalgo.matrix.decomposition.SingularValue;
+import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access2D;
 
 public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCACalculatorModel>
@@ -82,6 +83,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
             return;
         }
 
+        getLog().info("Starting PCA calculation.");
+
         val transposedColumnMeans = Calculate.transposedColumnMeans(getModel().getProjection());
         transferColumnMeans(transposedColumnMeans);
 
@@ -89,7 +92,15 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         calculateAndTransferR(dataMatrix);
 
         getModel().getCurrentCalculationStep().increment();
-        continueCalculation();
+
+        if (numberOfProcessors() > 1)
+        {
+            continueCalculation();
+        }
+        else
+        {
+            finalizeCalculation();
+        }
     }
 
     private boolean isReadyToStart()
@@ -97,12 +108,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         return getModel().getProcessorIndices() != null && getModel().getProjection() != null;
     }
 
-    private void transferColumnMeans(PrimitiveMatrix columnMeans)
+    private void transferColumnMeans(MatrixStore<Double> columnMeans)
     {
+        val numberOfRows = getModel().getProjection().countRows();
+
         if (getModel().getMyProcessorIndex() == 0)
         {
             getModel().getTransposedColumnMeans().put(getModel().getSelf().path().root(), columnMeans);
-            getModel().getNumberOfRows().put(getModel().getSelf().path().root(), columnMeans.countRows());
+            getModel().getNumberOfRows().put(getModel().getSelf().path().root(), numberOfRows);
             return;
         }
 
@@ -112,13 +125,16 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                                      .receiver(receiverProtocol.getRootActor())
                                                                                                                                      .operationId(dataDistributor.getOperationId())
                                                                                                                                      .processorIndex(getModel().getMyProcessorIndex())
-                                                                                                                                     .numberOfRows(columnMeans.countRows())
+                                                                                                                                     .numberOfRows(numberOfRows)
                                                                                                                                      .build());
+
+        getLog().info(String.format("Transferring PCA column means to %1$s.", receiverProtocol.getRootActor().path().root()));
     }
 
-    private void calculateAndTransferR(Access2D<Double> matrix)
+    private void calculateAndTransferR(MatrixStore<Double> matrix)
     {
-        val qrDecomposition = QR.PRIMITIVE.make(matrix);
+        val qrDecomposition = QR.PRIMITIVE.make();
+        qrDecomposition.compute(matrix);
         getModel().setLocalR(qrDecomposition.getR());
         transferR();
     }
@@ -128,8 +144,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val stepNumber = getModel().getCurrentCalculationStep().get();
         val receiverIndex = nextRReceiverIndex();
 
-        if (receiverIndex < 0 || receiverIndex == getModel().getMyProcessorIndex())
+        if (receiverIndex < 0)
         {
+            return;
+        }
+
+        if (receiverIndex == getModel().getMyProcessorIndex())
+        {
+            getModel().getRemoteRsByProcessStep().put(stepNumber, getModel().getLocalR());
             return;
         }
 
@@ -141,6 +163,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                                       .currentStepNumber(stepNumber)
                                                                                                                                       .operationId(dataDistributor.getOperationId())
                                                                                                                                       .build());
+
+        getLog().info(String.format("Transferring local R (step = %1$d) to %2$s.", stepNumber, receiverProtocol.getRootActor().path().root()));
     }
 
     private long nextRReceiverIndex()
@@ -172,6 +196,9 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val currentStep = getModel().getCurrentCalculationStep().get();
         if (getModel().getMyProcessorIndex() >= numberOfInvolvedProcessors(currentStep))
         {
+            getLog().info(String.format("Stopping PCA calculation at step %1$d, because we (index = %2$d) are no longer involved.",
+                                        currentStep,
+                                        getModel().getMyProcessorIndex()));
             // we dont have to do anything anymore
             // TODO: terminate self?!
             return;
@@ -179,11 +206,13 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
         val involvedProcessors = numberOfInvolvedProcessors(currentStep);
         val expectedRSenderIndex = getModel().getMyProcessorIndex() + involvedProcessors;
-        Access2D<Double> dataMatrix = getModel().getLocalR();
+        var dataMatrix = getModel().getLocalR();
         if (expectedRSenderIndex < getModel().getProcessorIndices().size())
         {
+            getLog().info(String.format("Expecting remote R (step = %1$d).", currentStep - 1));
+
             // we expect to receive a R from an other processor
-            val remoteR = getModel().getRemoteRsByProcessStep().get(currentStep);
+            val remoteR = getModel().getRemoteRsByProcessStep().get(currentStep - 1);
             if (remoteR == null)
             {
                 // not yet received
@@ -223,6 +252,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
             return;
         }
 
+        getLog().info("Finalizing PCA calculation.");
+
         val totalColumnMeans = totalColumnMeans();
         val matrixInitializer = new MatrixInitializer(getModel().getProjection().countColumns());
         for (var processorIndex = 0; processorIndex < getModel().getProcessorIndices().size(); ++processorIndex)
@@ -232,8 +263,10 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
         matrixInitializer.append(getModel().getLocalR());
 
-        val qrDecomposition = QR.PRIMITIVE.make(matrixInitializer.create());
-        val svd = SingularValue.PRIMITIVE.make(qrDecomposition.getR());
+        val qrDecomposition = QR.PRIMITIVE.make();
+        qrDecomposition.compute(matrixInitializer.create());
+        val svd = SingularValue.PRIMITIVE.make();
+        svd.compute(qrDecomposition.getR());
     }
 
     private boolean isLastStep()
@@ -280,6 +313,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private void whenRTransferFinished(long stepNumber, MatrixInitializer matrixInitializer)
     {
+        getLog().info(String.format("Received R for step %1$d.", stepNumber));
+
         getModel().getRemoteRsByProcessStep().put(stepNumber, matrixInitializer.create());
         continueCalculation();
     }
@@ -289,27 +324,29 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         return getModel().getTransposedColumnMeans().size() == getModel().getProcessorIndices().size();
     }
 
-    private PrimitiveMatrix totalColumnMeans()
+    private MatrixStore<Double> totalColumnMeans()
     {
-        val columnMeans = Calculate.filledVector(getModel().getProjection().countColumns(), 0.0d);
+        var columnMeans = Calculate.filledVector(getModel().getProjection().countColumns(), 0.0d);
+        var totalNumberOfRows = 0L;
         for (val processor : getModel().getNumberOfRows().keySet())
         {
             val numberOfRows = getModel().getNumberOfRows().get(processor);
             val transposedColumnMeans = getModel().getTransposedColumnMeans().get(processor);
 
-            columnMeans.add(transposedColumnMeans.multiply(numberOfRows));
+            columnMeans = columnMeans.add(transposedColumnMeans.multiply(numberOfRows));
+            totalNumberOfRows += numberOfRows;
         }
 
-        return columnMeans.multiply(1.0d / getModel().getProcessorIndices().size());
+        return columnMeans.multiply(1.0d / totalNumberOfRows);
     }
 
-    private PrimitiveMatrix getTransposedColumnMeans(int processorIndex)
+    private MatrixStore<Double> getTransposedColumnMeans(long processorIndex)
     {
         val processor = getModel().getProcessorIndices().get(processorIndex);
         return getModel().getTransposedColumnMeans().get(processor);
     }
 
-    private long getNumberOfRows(int processorIndex)
+    private long getNumberOfRows(long processorIndex)
     {
         val processor = getModel().getProcessorIndices().get(processorIndex);
         return getModel().getNumberOfRows().get(processor);

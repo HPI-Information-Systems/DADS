@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
-import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.store.MatrixStore;
 
 import java.util.Arrays;
 
@@ -31,7 +31,7 @@ public class MockDataSink implements DataSink
     {
     }
 
-    public PrimitiveMatrix toMatrix(long columns)
+    public MatrixStore<Double> toMatrix(long columns)
     {
         val initializer = new MatrixInitializer(columns);
         for (var i = 0L; i < values.length; i += columns)

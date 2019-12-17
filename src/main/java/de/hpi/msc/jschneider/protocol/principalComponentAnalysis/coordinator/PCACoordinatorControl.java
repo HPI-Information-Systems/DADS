@@ -15,6 +15,18 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
     }
 
     @Override
+    public void preStart()
+    {
+        super.preStart();
+        if (!getModel().getLocalProcessor().isMaster())
+        {
+            return;
+        }
+
+        subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+    }
+
+    @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)

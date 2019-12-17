@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
@@ -13,6 +14,7 @@ public class DataTransferMessages
     public static abstract class InitializeDataTransferMessage extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 7385042862954704746L;
+        @NonNull
         private UUID operationId;
     }
 
@@ -20,8 +22,11 @@ public class DataTransferMessages
     public static class DataPartMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = -4211856951220195380L;
+        @NonNull
         private UUID operationId;
+        @NonNull
         private float[] part;
+        @NonNull
         private boolean isLastPart;
     }
 
@@ -29,6 +34,7 @@ public class DataTransferMessages
     public static class RequestNextDataPartMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = 53330389621278219L;
+        @NonNull
         private UUID operationId;
     }
 }

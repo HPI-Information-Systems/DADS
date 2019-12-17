@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.store.MatrixStore;
 
 import java.util.HashMap;
@@ -23,13 +22,13 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     @Getter @Setter
     private long myProcessorIndex;
     @Getter @Setter
-    private PrimitiveMatrix projection;
+    private MatrixStore<Double> projection;
     @NonNull @Getter
     private final Map<RootActorPath, Long> numberOfRows = new HashMap<>();
     @NonNull @Getter
-    private final Map<RootActorPath, PrimitiveMatrix> transposedColumnMeans = new HashMap<>();
+    private final Map<RootActorPath, MatrixStore<Double>> transposedColumnMeans = new HashMap<>();
     @Getter @Setter
     private MatrixStore<Double> localR;
     @NonNull @Getter
-    private final Map<Long, PrimitiveMatrix> remoteRsByProcessStep = new HashMap<>();
+    private final Map<Long, MatrixStore<Double>> remoteRsByProcessStep = new HashMap<>();
 }

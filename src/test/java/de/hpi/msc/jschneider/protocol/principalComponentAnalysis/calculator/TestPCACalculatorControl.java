@@ -13,6 +13,7 @@ import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.decomposition.QR;
+import org.ojalgo.matrix.store.MatrixStore;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 
@@ -76,7 +77,7 @@ public class TestPCACalculatorControl extends ProtocolTestCase
         return message;
     }
 
-    private PrimitiveMatrix simpleMatrix()
+    private MatrixStore<Double> simpleMatrix()
     {
         return (new MatrixInitializer(3))
                 .appendRow(new float[]{0.0f, 1.0f, 2.0f})

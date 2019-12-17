@@ -5,6 +5,7 @@ import lombok.val;
 import lombok.var;
 import org.ojalgo.array.Primitive32Array;
 import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access2D;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class MatrixInitializer implements DataSink
     private final List<Primitive32Array> rows = new ArrayList<>();
     private final long columns;
 
-    public static PrimitiveMatrix concat(Access2D<Double> first, Access2D<Double> second)
+    public static MatrixStore<Double> concat(Access2D<Double> first, Access2D<Double> second)
     {
         assert first.countColumns() == second.countColumns() : "First and second matrix must have same amount of columns for concat!";
 
@@ -56,12 +57,12 @@ public class MatrixInitializer implements DataSink
         return this;
     }
 
-    public PrimitiveMatrix create()
+    public MatrixStore<Double> create()
     {
         val result = PrimitiveMatrix.FACTORY.rows(rows.toArray(new Primitive32Array[0]));
         rows.clear();
 
-        return result;
+        return MatrixStore.PRIMITIVE.makeWrapper(result).get();
     }
 
     @Override

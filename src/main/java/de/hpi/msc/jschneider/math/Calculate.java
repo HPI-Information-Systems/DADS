@@ -2,34 +2,36 @@ package de.hpi.msc.jschneider.math;
 
 import lombok.val;
 import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.store.MatrixStore;
 
 import java.util.stream.DoubleStream;
 
 public class Calculate
 {
-    public static PrimitiveMatrix filledVector(long length, double value)
+    public static MatrixStore<Double> filledVector(long length, double value)
     {
-        return PrimitiveMatrix.FACTORY.rows(DoubleStream.generate(() -> value).limit(length).toArray());
+        val matrix = PrimitiveMatrix.FACTORY.rows(DoubleStream.generate(() -> value).limit(length).toArray());
+        return MatrixStore.PRIMITIVE.makeWrapper(matrix).get();
     }
 
-    public static PrimitiveMatrix transposedColumnMeans(PrimitiveMatrix input)
+    public static MatrixStore<Double> transposedColumnMeans(MatrixStore<Double> input)
     {
         val numberOfRows = input.countRows();
         val factor = 1.0d / numberOfRows;
         val e = filledVector(numberOfRows, factor);
-        return input.multiply(e.transpose());
+        return e.multiply(input);
     }
 
-    public static PrimitiveMatrix columnCenteredDataMatrix(PrimitiveMatrix input)
+    public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input)
     {
         return columnCenteredDataMatrix(input, transposedColumnMeans(input));
     }
 
-    public static PrimitiveMatrix columnCenteredDataMatrix(PrimitiveMatrix input, PrimitiveMatrix transposedColumnMeans)
+    public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input, MatrixStore<Double> transposedColumnMeans)
     {
         val numberOfRows = input.countRows();
-        val e = filledVector(numberOfRows, 1.0d);
-        return input.subtract(transposedColumnMeans.multiply(e));
+        val e = filledVector(numberOfRows, 1.0d).transpose();
+        return input.subtract(e.multiply(transposedColumnMeans));
     }
 
     public static double log2(double value)

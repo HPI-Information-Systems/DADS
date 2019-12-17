@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
 public class SequenceSliceDistributionMessages
@@ -13,8 +14,11 @@ public class SequenceSliceDistributionMessages
     public static class InitializeSequenceSliceTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
     {
         private static final long serialVersionUID = 5192009128359237303L;
+        @NonNull
         private int subSequenceLength;
+        @NonNull
         private int convolutionSize;
+        @NonNull
         private long firstSubSequenceIndex;
 
         @Override

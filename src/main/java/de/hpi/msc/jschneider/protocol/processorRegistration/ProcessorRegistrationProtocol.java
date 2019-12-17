@@ -121,6 +121,15 @@ public class ProcessorRegistrationProtocol
         {
             protocol.getRootActor().tell(message, ActorRef.noSender());
         }
+
+        try
+        {
+            Thread.sleep(1000); // await any event subscriptions
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public static Processor[] getProcessors()

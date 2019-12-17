@@ -73,7 +73,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         for (var vectorIndex = 0; vectorIndex < vector.length; ++vectorIndex)
         {
             var value = 0.0f;
-            for (var convolutionIndex = 0; convolutionIndex < getModel().getConvolutionSize(); ++convolutionIndex)
+            for (var convolutionIndex = 0; convolutionIndex <= getModel().getConvolutionSize(); ++convolutionIndex)
             {
                 value += getModel().getUnusedRecords()[convolutionIndex + subSequenceStartIndex];
             }
