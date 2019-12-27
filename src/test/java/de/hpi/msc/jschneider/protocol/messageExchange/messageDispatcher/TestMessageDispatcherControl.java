@@ -25,7 +25,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
         localActor = localProcessor.createActor("actor");
         localToLocalMessageProxy = localProcessor.createActor("localToLocalMessageProxy");
         localToRemoteMessageProxy = localProcessor.createActor("localToRemoteMessageProxy");
-        remoteProcessor = createProcessor("remote");
+        remoteProcessor = createSlave();
         remoteActor = remoteProcessor.createActor("actor");
     }
 

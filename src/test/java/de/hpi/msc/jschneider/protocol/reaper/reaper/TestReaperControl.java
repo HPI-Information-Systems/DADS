@@ -25,7 +25,7 @@ public class TestReaperControl extends ProtocolTestCase
         super.setUp();
 
         localActor = localProcessor.createActor("actor");
-        remoteProcessor = createProcessor("remote");
+        remoteProcessor = createSlave();
         remoteActor = remoteProcessor.createActor("actor");
     }
 

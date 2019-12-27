@@ -103,7 +103,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
         messageInterface.apply(message);
 
         assertThat(control.getModel().getProcessors()).isNotEmpty();
-        expectEventSubscription(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
+        assertEventSubscription(ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
         expectEvent(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
     }
 }

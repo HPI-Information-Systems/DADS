@@ -1,8 +1,6 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
 import akka.actor.RootActorPath;
-import akka.testkit.TestProbe;
-import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -11,8 +9,6 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
-import org.ojalgo.matrix.PrimitiveMatrix;
-import org.ojalgo.matrix.decomposition.QR;
 import org.ojalgo.matrix.store.MatrixStore;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
@@ -20,7 +16,6 @@ import scala.runtime.BoxedUnit;
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.in;
 
 public class TestPCACalculatorControl extends ProtocolTestCase
 {
@@ -30,7 +25,7 @@ public class TestPCACalculatorControl extends ProtocolTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        remoteProcessor = createProcessor("remote");
+        remoteProcessor = createSlave();
     }
 
     @Override

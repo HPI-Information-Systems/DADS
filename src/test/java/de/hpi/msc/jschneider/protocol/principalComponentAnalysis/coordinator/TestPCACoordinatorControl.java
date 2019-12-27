@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.coordinator;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -11,7 +10,6 @@ import lombok.val;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,7 +21,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        remoteProcessor = createProcessor("remote");
+        remoteProcessor = createSlave();
     }
 
     @Override
@@ -98,7 +96,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
         val control = control();
         val messageInterface = messageInterface(control);
 
-        val observerProcessor = createProcessor("observer", ProtocolType.MessageExchange, ProtocolType.ProcessorRegistration);
+        val observerProcessor = createProcessor("observer", false, ProtocolType.MessageExchange, ProtocolType.ProcessorRegistration);
         val processorJoined = processorJoined(observerProcessor);
         messageInterface.apply(processorJoined);
 
