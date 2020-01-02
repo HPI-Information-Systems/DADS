@@ -54,7 +54,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     {
         val control = control(remoteProcessor);
         control.getModel().setChildFactory((props, name) -> localToRemoteMessageProxy.ref());
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = TestMessage.builder()
                                  .sender(localActor.ref())
@@ -71,7 +71,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     {
         val control = control(remoteProcessor);
         control.getModel().getMessageProxies().put(remoteProcessor.getRootPath(), localToRemoteMessageProxy.ref());
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val localToRemoteMessage = TestMessage.builder()
                                               .sender(localActor.ref())
@@ -92,7 +92,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     {
         val control = control();
         control.getModel().setChildFactory((props, name) -> localToRemoteMessageProxy.ref());
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = TestMessage.builder()
                                  .sender(localActor.ref())
@@ -107,7 +107,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     {
         val control = control(localProcessor);
         control.getModel().setChildFactory((props, name) -> localToLocalMessageProxy.ref());
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = TestMessage.builder()
                                  .sender(localActor.ref())

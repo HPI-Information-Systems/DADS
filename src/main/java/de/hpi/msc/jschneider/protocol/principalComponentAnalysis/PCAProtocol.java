@@ -11,7 +11,6 @@ import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcher
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.rootActor.PCARootActorControl;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.rootActor.PCARootActorModel;
-import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +43,7 @@ public class PCAProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create();
+        val model = BaseEventDispatcherModel.create(PCAEvents.SingularValueDecompositionCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

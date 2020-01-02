@@ -5,17 +5,17 @@ import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
 import lombok.val;
 import lombok.var;
-import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.decomposition.QR;
 import org.ojalgo.matrix.decomposition.SingularValue;
 import org.ojalgo.matrix.store.MatrixStore;
-import org.ojalgo.structure.Access2D;
 
 public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCACalculatorModel>
 {
@@ -267,14 +267,20 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         qrDecomposition.compute(matrixInitializer.create());
         val svd = SingularValue.PRIMITIVE.make();
         svd.compute(qrDecomposition.getR());
+
+        trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.SingularValueDecompositionCreatedEvent.builder()
+                                                                                                                                 .sender(getModel().getSelf())
+                                                                                                                                 .receiver(eventDispatcher)
+                                                                                                                                 .svd(svd)
+                                                                                                                                 .build());
     }
 
     private boolean isLastStep()
     {
         val currentStep = getModel().getCurrentCalculationStep().get();
-        val lastStep = (int) Math.ceil(Calculate.log2(numberOfProcessors()));
+        val lastStep = (int) Math.ceil(Calculate.log2(numberOfProcessors())) + 1;
 
-        return currentStep >= lastStep;
+        return currentStep == lastStep;
     }
 
     private void onInitializeColumnMeansTransfer(PCAMessages.InitializeColumnMeansTransferMessage message)
@@ -304,18 +310,18 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     {
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            val sink = new MatrixInitializer(getModel().getProjection().countColumns());
+            val sink = new PrimitiveMatrixSink();
             dataReceiver.addSink(sink);
             dataReceiver.whenFinished(receiver -> whenRTransferFinished(message.getCurrentStepNumber(), sink));
             return dataReceiver;
         });
     }
 
-    private void whenRTransferFinished(long stepNumber, MatrixInitializer matrixInitializer)
+    private void whenRTransferFinished(long stepNumber, PrimitiveMatrixSink sink)
     {
         getLog().info(String.format("Received R for step %1$d.", stepNumber));
 
-        getModel().getRemoteRsByProcessStep().put(stepNumber, matrixInitializer.create());
+        getModel().getRemoteRsByProcessStep().put(stepNumber, sink.getMatrix(getModel().getProjection().countColumns()));
         continueCalculation();
     }
 

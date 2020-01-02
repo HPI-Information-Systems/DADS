@@ -84,7 +84,7 @@ public class TestPCACalculatorControl extends ProtocolTestCase
     public void testLocalProjectionCreated()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val projection = simpleMatrix();
 
@@ -105,7 +105,7 @@ public class TestPCACalculatorControl extends ProtocolTestCase
     public void testInitializeCalculation()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val processorIndices = new HashMap<Long, RootActorPath>();
         processorIndices.put(0L, remoteProcessor.getRootPath());
@@ -128,7 +128,7 @@ public class TestPCACalculatorControl extends ProtocolTestCase
     public void testStartCalculation()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
         val projection = simpleMatrix();
 
         val initializationMessage = initializeCalculation(control, messageInterface, remoteProcessor, localProcessor);

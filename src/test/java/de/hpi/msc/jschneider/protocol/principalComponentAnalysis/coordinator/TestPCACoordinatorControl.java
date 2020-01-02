@@ -54,7 +54,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
     public void testProcessorJoined()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val processorJoinedEvent = processorJoined(localProcessor);
         messageInterface.apply(processorJoinedEvent);
@@ -69,7 +69,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
     public void testInitializeCalculationWhenAllProcessorsJoined()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val localProcessorJoinedEvent = processorJoined(localProcessor);
         messageInterface.apply(localProcessorJoinedEvent);
@@ -94,7 +94,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
     public void testIgnoreProcessorsWithoutExpectedProtocol()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val observerProcessor = createProcessor("observer", false, ProtocolType.MessageExchange, ProtocolType.ProcessorRegistration);
         val processorJoined = processorJoined(observerProcessor);

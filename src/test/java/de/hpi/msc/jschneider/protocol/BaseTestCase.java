@@ -9,6 +9,8 @@ import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
 import junit.framework.TestCase;
 import lombok.val;
 import scala.PartialFunction;
@@ -82,7 +84,7 @@ public abstract class BaseTestCase extends TestCase
         return model;
     }
 
-    protected <TModel extends ProtocolParticipantModel, TControl extends ProtocolParticipantControl<TModel>> PartialFunction<Object, BoxedUnit> messageInterface(TControl control)
+    protected <TModel extends ProtocolParticipantModel, TControl extends ProtocolParticipantControl<TModel>> PartialFunction<Object, BoxedUnit> createMessageInterface(TControl control)
     {
         val receiveBuilder = new ImprovedReceiveBuilder();
         control.complementReceiveBuilder(receiveBuilder);
@@ -116,6 +118,54 @@ public abstract class BaseTestCase extends TestCase
         return messageDispatcher.expectMsgClass(eventType);
     }
 
+    protected PrimitiveMatrixSink performDataTransfer(TestProbe dataReceiver, PartialFunction<Object, BoxedUnit> dataReceiverMessageInterface,
+                                                      TestProbe dataSender, PartialFunction<Object, BoxedUnit> dataSenderMessageInterface,
+                                                      DataTransferMessages.InitializeDataTransferMessage initializeDataTransferMessage,
+                                                      boolean expectFinalMessageCompletion)
+    {
+        val receiverProcessor = processors.stream().filter(processor -> processor.getRootPath().equals(dataReceiver.ref().path().root())).findFirst();
+        assert receiverProcessor.isPresent() : "Unable to find receiverProcessor!";
+
+        val senderProcessor = processors.stream().filter(processor -> processor.getRootPath().equals(dataSender.ref().path().root())).findFirst();
+        assert senderProcessor.isPresent() : "Unable to find senderProcessor!";
+
+        val sink = new PrimitiveMatrixSink();
+        val operationId = initializeDataTransferMessage.getOperationId();
+
+        MessageExchangeMessages.MessageExchangeMessage nextMessageToCompleteOnReceiver = initializeDataTransferMessage;
+        dataReceiverMessageInterface.apply(initializeDataTransferMessage);
+
+        while (true)
+        {
+            val requestNextPart = receiverProcessor.get().getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+            assertThat(requestNextPart.getOperationId()).isEqualTo(operationId);
+            dataSenderMessageInterface.apply(requestNextPart);
+            assertThatMessageIsCompleted(nextMessageToCompleteOnReceiver, receiverProcessor.get());
+
+            val part = senderProcessor.get().getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
+            sink.write(part.getPart());
+            dataReceiverMessageInterface.apply(part);
+            assertThatMessageIsCompleted(requestNextPart, senderProcessor.get());
+
+            nextMessageToCompleteOnReceiver = part;
+
+            if (!part.isLastPart())
+            {
+                continue;
+            }
+
+            if (expectFinalMessageCompletion)
+            {
+                assertThatMessageIsCompleted(part, receiverProcessor.get());
+            }
+
+            sink.close();
+            break;
+        }
+
+        return sink;
+    }
+
     @Override
     protected void tearDown() throws Exception
     {
@@ -125,5 +175,6 @@ public abstract class BaseTestCase extends TestCase
         {
             processor.terminate();
         }
+        processors.clear();
     }
 }

@@ -39,7 +39,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
     public void testRegisterAtMaster()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                            .masterAddress(localProcessor.getActorSystem().provider().getDefaultAddress())
@@ -54,7 +54,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
     {
         val control = control();
         control.getModel().setResendRegistrationInterval(Duration.ofMillis(100));
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                            .masterAddress(localProcessor.getActorSystem().provider().getDefaultAddress())
@@ -78,7 +78,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
     {
         val control = control();
         control.getModel().setSenderProvider(self::ref);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = ProcessorRegistrationMessages.ProcessorRegistrationMessage.builder()
                                                                                 .processor(localProcessor)
@@ -95,7 +95,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
     public void testSubscribeToEventsOnRegistrationAcknowledged()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
                                                                                   .existingProcessors(new Processor[]{localProcessor})

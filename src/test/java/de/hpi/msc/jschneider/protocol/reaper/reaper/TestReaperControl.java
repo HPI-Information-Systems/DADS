@@ -60,7 +60,7 @@ public class TestReaperControl extends ProtocolTestCase
     public void testWatchLocalActor()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = watchMe(localActor);
         messageInterface.apply(message);
@@ -73,7 +73,7 @@ public class TestReaperControl extends ProtocolTestCase
     public void testDoNotWatchRemoteActor()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = watchMe(remoteActor);
         messageInterface.apply(message);
@@ -85,7 +85,7 @@ public class TestReaperControl extends ProtocolTestCase
     public void testTerminateSystem()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
         val secondLocalActor = localProcessor.createActor("actor2");
 
         control.getModel().getWatchedActors().add(localActor.ref());
