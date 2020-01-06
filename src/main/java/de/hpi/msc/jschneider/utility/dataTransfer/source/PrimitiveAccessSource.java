@@ -28,7 +28,9 @@ public class PrimitiveAccessSource implements DataSource
     @Override
     public float[] read(long length)
     {
-        val end = Math.min(currentPosition, Math.max(data.count(), currentPosition + length));
+        assert length > -1 : "Length < 0!";
+
+        val end = Math.min(data.count(), currentPosition + length);
         var actualLength = end - currentPosition;
         if (actualLength > Integer.MAX_VALUE)
         {

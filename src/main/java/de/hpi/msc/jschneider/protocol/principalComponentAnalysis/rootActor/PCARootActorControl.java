@@ -23,8 +23,11 @@ public class PCARootActorControl extends AbstractProtocolParticipantControl<PCAR
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                      .match(PCAMessages.InitializePCACalculationMessage.class, message -> forward(message, getModel().getCalculator()));
+        return super.complementReceiveBuilder(builder)
+                    .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
+                    .match(PCAMessages.InitializePCACalculationMessage.class, message -> forward(message, getModel().getCalculator()))
+                    .match(PCAMessages.InitializeColumnMeansTransferMessage.class, message -> forward(message, getModel().getCalculator()))
+                    .match(PCAMessages.InitializeRTransferMessage.class, message -> forward(message, getModel().getCalculator()));
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.store.MatrixStore;
 
 public class SequenceSliceDistributionEvents
 {
@@ -14,7 +15,7 @@ public class SequenceSliceDistributionEvents
     {
         private static final long serialVersionUID = 3362960763906428742L;
         private long firstSubSequenceIndex;
-        private PrimitiveMatrix projection;
+        private MatrixStore<Double> projection;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)

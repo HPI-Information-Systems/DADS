@@ -18,9 +18,8 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return super.complementReceiveBuilder(builder)
-                    .match(MessageExchangeMessages.MessageCompletedMessage.class, this::onMessageCompleted)
-                    .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
+        return builder.match(MessageExchangeMessages.MessageCompletedMessage.class, this::onMessageCompleted)
+                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
     }
 
     private void onMessageCompleted(MessageExchangeMessages.MessageCompletedMessage message)

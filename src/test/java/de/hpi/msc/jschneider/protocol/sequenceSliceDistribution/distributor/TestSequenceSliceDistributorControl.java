@@ -92,7 +92,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     {
         val control = initializedControl();
         control.getModel().setMaximumMessageSizeProvider(() -> Long.MAX_VALUE);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val request = DataTransferMessages.RequestNextDataPartMessage.builder()
                                                                      .sender(localSliceReceiver.ref())
@@ -113,7 +113,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     {
         val control = initializedControl();
         control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Float.BYTES);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val request = DataTransferMessages.RequestNextDataPartMessage.builder()
                                                                      .sender(localSliceReceiver.ref())
@@ -141,7 +141,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     {
         val control = initializedControl();
         control.getModel().setMaximumMessageSizeProvider(() -> Long.MAX_VALUE);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val request = DataTransferMessages.RequestNextDataPartMessage.builder()
                                                                      .sender(localSliceReceiver.ref())

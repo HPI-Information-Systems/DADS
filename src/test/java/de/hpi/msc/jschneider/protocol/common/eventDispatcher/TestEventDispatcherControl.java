@@ -58,7 +58,7 @@ public class TestEventDispatcherControl extends ProtocolTestCase
     public void testSubscribe()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val subscribeMessage = subscribeToTestMessage(localActor);
         messageInterface.apply(subscribeMessage);
@@ -72,7 +72,7 @@ public class TestEventDispatcherControl extends ProtocolTestCase
     public void testSubscribeTwice()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val firstSubscription = subscribeToTestMessage(localActor);
         messageInterface.apply(firstSubscription);
@@ -95,7 +95,7 @@ public class TestEventDispatcherControl extends ProtocolTestCase
     {
         val control = control();
         control.getModel().getEventSubscribers().get(TestMessage.class).add(localActor.ref());
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val unsubscribeMessage = unsubscribeFromTestMessage(localActor);
         messageInterface.apply(unsubscribeMessage);
@@ -109,7 +109,7 @@ public class TestEventDispatcherControl extends ProtocolTestCase
     {
         val control = control();
         control.getModel().getEventSubscribers().get(TestMessage.class).add(localActor.ref());
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val event = TestMessage.builder()
                                .sender(localActor.ref())
@@ -126,7 +126,7 @@ public class TestEventDispatcherControl extends ProtocolTestCase
     public void testDoNotDispatchEventWithoutSubscribers()
     {
         val control = control();
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val event = TestMessage.builder()
                                .sender(localActor.ref())

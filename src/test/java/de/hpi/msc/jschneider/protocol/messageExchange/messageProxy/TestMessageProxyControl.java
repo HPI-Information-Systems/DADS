@@ -24,7 +24,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
         super.setUp();
 
         localActor = localProcessor.createActor("actor");
-        remoteProcessor = createProcessor("remote");
+        remoteProcessor = createSlave();
         remoteActor = remoteProcessor.createActor("actor");
     }
 
@@ -76,7 +76,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     public void testFirstMessageToLocalReceiverIsSentImmediately()
     {
         val control = control(localProcessor);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = enqueueMessage(control, messageInterface, localActor, localActor, 1, 1);
 
@@ -86,7 +86,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     public void testSecondMessageIsQueuedUntilFirstMessageIsCompleted()
     {
         val control = control(localProcessor);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val firstMessage = enqueueMessage(control, messageInterface, localActor, localActor, 1, 1);
         assertThat(localActor.expectMsgClass(TestMessage.class)).isSameAs(firstMessage);
@@ -101,7 +101,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     public void testMessageToRemoteReceiverIsForwardedToRemoteDispatcher()
     {
         val control = control(remoteProcessor);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = enqueueMessage(control, messageInterface, localActor, remoteActor, 1, 1);
 
@@ -112,7 +112,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     {
         val control = control(remoteProcessor);
         control.getModel().setSingleQueueBackPressureThreshold(0);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val message = enqueueMessage(control, messageInterface, localActor, remoteActor, 1, 1);
 
@@ -124,7 +124,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     {
         val control = control(remoteProcessor);
         control.getModel().setSingleQueueBackPressureThreshold(0);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val remoteToLocalMessage = enqueueMessage(control, messageInterface, remoteActor, localActor, 1, 1);
         assertThat(localActor.expectMsgClass(TestMessage.class)).isSameAs(remoteToLocalMessage);
@@ -141,7 +141,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     {
         val control = control(remoteProcessor);
         control.getModel().setSingleQueueBackPressureThreshold(0);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         val remoteToLocalMessage = enqueueMessage(control, messageInterface, remoteActor, localActor, 1, 1);
         assertThat(localActor.expectMsgClass(TestMessage.class)).isSameAs(remoteToLocalMessage);

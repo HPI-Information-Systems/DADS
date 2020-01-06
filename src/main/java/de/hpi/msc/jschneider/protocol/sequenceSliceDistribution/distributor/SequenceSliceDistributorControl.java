@@ -51,11 +51,12 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution).get(); // no need to check, because we already checked that in preStart
 
         return SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.builder()
-                .sender(getModel().getSelf())
-                .receiver(protocol.getRootActor())
-                .subSequenceLength(getModel().getSubSequenceLength())
-                .convolutionSize(getModel().getConvolutionSize())
-                .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
-                .build();
+                                                                                       .sender(getModel().getSelf())
+                                                                                       .receiver(protocol.getRootActor())
+                                                                                       .subSequenceLength(getModel().getSubSequenceLength())
+                                                                                       .convolutionSize(getModel().getConvolutionSize())
+                                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                                       .operationId(distributor.getOperationId())
+                                                                                       .build();
     }
 }

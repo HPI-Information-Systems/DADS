@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.protocol.principalComponentAnalysis;
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -16,7 +17,7 @@ public class PCAMessages
     public static class InitializePCACalculationMessage extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 7959217715683067548L;
-        private Map<RootActorPath, Integer> processorIndices;
+        private Map<Long, RootActorPath> processorIndices;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -24,6 +25,44 @@ public class PCAMessages
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .processorIndices(new HashMap<>(getProcessorIndices()))
+                            .build();
+        }
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class InitializeColumnMeansTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
+    {
+        private static final long serialVersionUID = -8531945015558247291L;
+        private long processorIndex;
+        private long numberOfRows;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .processorIndex(getProcessorIndex())
+                            .numberOfRows(getNumberOfRows())
+                            .operationId(getOperationId())
+                            .build();
+        }
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class InitializeRTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
+    {
+        private static final long serialVersionUID = -5113830341484647213L;
+        private long processorIndex;
+        private long currentStepNumber;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .operationId(getOperationId())
+                            .processorIndex(getProcessorIndex())
+                            .currentStepNumber(getCurrentStepNumber())
                             .build();
         }
     }

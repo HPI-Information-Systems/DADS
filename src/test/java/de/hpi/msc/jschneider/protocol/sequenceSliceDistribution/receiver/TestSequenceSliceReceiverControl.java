@@ -86,7 +86,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
     {
         val writer = new MockSequenceWriter();
         val control = control(writer);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
 
         initialize(control, messageInterface);
     }
@@ -95,7 +95,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
     {
         val writer = new MockSequenceWriter();
         val control = control(writer);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
         val slicePart = range(0, 50);
 
         initialize(control, messageInterface);
@@ -121,7 +121,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
     {
         val writer = new MockSequenceWriter();
         val control = control(writer);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
         val slicePart = range(0, 50);
 
         initialize(control, messageInterface);
@@ -148,7 +148,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
     {
         val writer = new MockSequenceWriter();
         val control = control(writer);
-        val messageInterface = messageInterface(control);
+        val messageInterface = createMessageInterface(control);
         val slicePart = new float[0];
 
         initialize(control, messageInterface);
