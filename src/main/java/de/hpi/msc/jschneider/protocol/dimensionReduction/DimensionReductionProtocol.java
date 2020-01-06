@@ -43,7 +43,7 @@ public class DimensionReductionProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create();
+        val model = BaseEventDispatcherModel.create(DimensionReductionEvents.ReducedProjectionCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }
