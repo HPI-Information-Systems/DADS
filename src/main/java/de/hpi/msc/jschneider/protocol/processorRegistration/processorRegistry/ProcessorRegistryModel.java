@@ -33,7 +33,7 @@ public class ProcessorRegistryModel extends AbstractProtocolParticipantModel
     @Getter @Setter @Builder.Default
     private Duration resendRegistrationInterval = Duration.ofSeconds(5);
     @NonNull @Getter
-    private final Map<RootActorPath, Processor> processors = new HashMap<>();
+    private final Map<RootActorPath, Processor> clusterProcessors = new HashMap<>();
 
     public final Scheduler getScheduler()
     {

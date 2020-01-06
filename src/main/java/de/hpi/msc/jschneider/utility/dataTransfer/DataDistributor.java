@@ -3,6 +3,8 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.utility.event.EventHandler;
+import de.hpi.msc.jschneider.utility.event.EventImpl;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
@@ -10,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DataDistributor
@@ -24,12 +25,12 @@ public class DataDistributor
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     private final DataSource dataSource;
     @Getter
-    private boolean hasBeenInitialized = false;
+    private boolean initialized = false;
     @Getter
-    private boolean hasFinished = false;
+    private boolean finished = false;
     @Getter @Setter
     private Object state;
-    private Consumer<DataDistributor> whenFinished;
+    private final EventImpl<DataDistributor> onFinished = new EventImpl<>();
 
     public DataDistributor(ProtocolParticipantControl<? extends ProtocolParticipantModel> control, DataSource dataSource)
     {
@@ -37,15 +38,15 @@ public class DataDistributor
         this.dataSource = dataSource;
     }
 
-    public DataDistributor whenFinished(Consumer<DataDistributor> callback)
+    public DataDistributor whenFinished(EventHandler<DataDistributor> handler)
     {
-        whenFinished = callback;
+        onFinished.subscribe(handler);
         return this;
     }
 
     public void initialize(Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
     {
-        if (hasBeenInitialized)
+        if (initialized)
         {
             Log.error(String.format("[%1$s] Data transfer has already been initializer!", control.getClass().getName()));
             return;
@@ -56,7 +57,7 @@ public class DataDistributor
             val initializationMessage = initializationMessageFactory.apply(this);
             control.send(initializationMessage);
 
-            hasBeenInitialized = true;
+            initialized = true;
         }
         catch (Exception exception)
         {
@@ -66,7 +67,7 @@ public class DataDistributor
 
     public void transfer(ActorRef receiver)
     {
-        if (hasFinished)
+        if (finished)
         {
             return;
         }
@@ -87,27 +88,11 @@ public class DataDistributor
                                dataSource.isAtEnd(),
                                receiver.path()));
 
-        if (dataSource.isAtEnd() && !hasFinished)
+        if (dataSource.isAtEnd() && !finished)
         {
-            hasFinished = true;
+            finished = true;
             Log.info(String.format("[%1$s] Done sending data to %2$s.", control.getClass().getName(), receiver.path()));
-            invokeWhenFinished();
-        }
-    }
-
-    private void invokeWhenFinished()
-    {
-        if (whenFinished == null)
-        {
-            return;
-        }
-        try
-        {
-            whenFinished.accept(this);
-        }
-        catch (Exception exception)
-        {
-            Log.error(String.format("[%1$s] Unable to invoke when finished!", control.getClass().getName()), exception);
+            onFinished.invoke(this);
         }
     }
 }

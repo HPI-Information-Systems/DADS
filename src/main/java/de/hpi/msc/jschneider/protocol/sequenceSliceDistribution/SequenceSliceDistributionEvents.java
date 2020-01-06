@@ -5,7 +5,6 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.store.MatrixStore;
 
 public class SequenceSliceDistributionEvents
@@ -15,6 +14,8 @@ public class SequenceSliceDistributionEvents
     {
         private static final long serialVersionUID = 3362960763906428742L;
         private long firstSubSequenceIndex;
+        private float minimumRecord;
+        private float maximumRecord;
         private MatrixStore<Double> projection;
 
         @Override
@@ -23,6 +24,8 @@ public class SequenceSliceDistributionEvents
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
+                            .minimumRecord(getMinimumRecord())
+                            .maximumRecord(getMaximumRecord())
                             .projection(getProjection())
                             .build();
         }

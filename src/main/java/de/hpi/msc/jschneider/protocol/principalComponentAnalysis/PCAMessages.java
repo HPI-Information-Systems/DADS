@@ -35,6 +35,8 @@ public class PCAMessages
         private static final long serialVersionUID = -8531945015558247291L;
         private long processorIndex;
         private long numberOfRows;
+        private float minimumRecord;
+        private float maximumRecord;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -43,6 +45,8 @@ public class PCAMessages
                             .receiver(newReceiver)
                             .processorIndex(getProcessorIndex())
                             .numberOfRows(getNumberOfRows())
+                            .minimumRecord(getMinimumRecord())
+                            .maximumRecord(getMaximumRecord())
                             .operationId(getOperationId())
                             .build();
         }

@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.utility;
 
-import de.hpi.msc.jschneider.utility.dataTransfer.DataSink;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.array.Primitive32Array;
@@ -11,7 +10,7 @@ import org.ojalgo.structure.Access2D;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MatrixInitializer implements DataSink
+public class MatrixInitializer
 {
     private final List<Primitive32Array> rows = new ArrayList<>();
     private final long columns;
@@ -63,16 +62,5 @@ public class MatrixInitializer implements DataSink
         rows.clear();
 
         return MatrixStore.PRIMITIVE.makeWrapper(result).get();
-    }
-
-    @Override
-    public void write(float[] part)
-    {
-        appendRow(part);
-    }
-
-    @Override
-    public void close()
-    {
     }
 }

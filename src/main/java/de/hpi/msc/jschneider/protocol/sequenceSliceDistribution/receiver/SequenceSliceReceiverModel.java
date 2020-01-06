@@ -22,6 +22,10 @@ public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
     private int subSequenceLength;
     @Setter @Getter
     private int convolutionSize;
+    @Builder.Default @Getter @Setter
+    private float minimumRecord = Float.MAX_VALUE;
+    @Builder.Default @Getter @Setter
+    private float maximumRecord = Float.MIN_VALUE;
     @Setter @Getter
     private MatrixInitializer projectionInitializer;
     @Setter @Getter @Builder.Default

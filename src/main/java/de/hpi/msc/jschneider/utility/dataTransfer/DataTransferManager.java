@@ -3,6 +3,8 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.PrimitiveAccessSource;
+import de.hpi.msc.jschneider.utility.event.EventHandler;
+import de.hpi.msc.jschneider.utility.event.EventImpl;
 import lombok.Getter;
 import lombok.val;
 import lombok.var;
@@ -24,6 +26,13 @@ public class DataTransferManager
     @Getter
     private final Map<UUID, DataReceiver> dataReceivers = new HashMap<>();
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
+    private final EventImpl<DataTransferManager> onAllTransfersFinished = new EventImpl<>();
+
+    public DataTransferManager whenAllTransfersFinished(EventHandler<DataTransferManager> handler)
+    {
+        onAllTransfersFinished.subscribe(handler);
+        return this;
+    }
 
     public DataTransferManager(ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
@@ -48,6 +57,7 @@ public class DataTransferManager
     public void transfer(DataSource dataSource, Function<DataDistributor, DataDistributor> dataDistributorInitializer, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
     {
         val distributor = dataDistributorInitializer.apply(new DataDistributor(control, dataSource));
+        distributor.whenFinished(d -> transferFinished());
         dataDistributors.put(distributor.getOperationId(), distributor);
 
         distributor.initialize(initializationMessageFactory);
@@ -67,6 +77,7 @@ public class DataTransferManager
             }
 
             receiver = dataReceiverInitializer.apply(new DataReceiver(initializationMessage.getOperationId(), control));
+            receiver.whenFinished(r -> transferFinished());
             dataReceivers.put(receiver.getOperationId(), receiver);
 
             receiver.pull(initializationMessage.getSender());
@@ -114,5 +125,21 @@ public class DataTransferManager
         {
             control.complete(message);
         }
+    }
+
+    private void transferFinished()
+    {
+        if (!allTransfersFinished())
+        {
+            return;
+        }
+
+        onAllTransfersFinished.invoke(this);
+    }
+
+    public boolean allTransfersFinished()
+    {
+        return dataDistributors.values().stream().allMatch(DataDistributor::isFinished) &&
+               dataReceivers.values().stream().allMatch(DataReceiver::isFinished);
     }
 }

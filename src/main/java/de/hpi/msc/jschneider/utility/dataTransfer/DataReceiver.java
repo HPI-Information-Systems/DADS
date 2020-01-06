@@ -3,32 +3,29 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.utility.event.EventHandler;
+import de.hpi.msc.jschneider.utility.event.EventImpl;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public class DataReceiver
 {
-    private static final Logger Log = LogManager.getLogger(DataReceiver.class);
-
     @Getter
     private final UUID operationId;
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     @Getter
     private final Set<DataSink> dataSinks = new HashSet<>();
     @Getter
-    private boolean hasFinished = false;
+    private boolean finished = false;
     @Getter @Setter
     private Object state;
-    private Consumer<DataReceiver> whenFinished;
-    private Consumer<DataTransferMessages.DataPartMessage> onReceive;
+    private final EventImpl<DataReceiver> onFinished = new EventImpl<>();
+    private final EventImpl<DataTransferMessages.DataPartMessage> onDataPartReceived = new EventImpl<>();
 
     public DataReceiver(UUID operationId, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
@@ -42,21 +39,21 @@ public class DataReceiver
         return this;
     }
 
-    public DataReceiver whenFinished(Consumer<DataReceiver> callback)
+    public DataReceiver whenFinished(EventHandler<DataReceiver> handler)
     {
-        whenFinished = callback;
+        onFinished.subscribe(handler);
         return this;
     }
 
-    public DataReceiver onReceive(Consumer<DataTransferMessages.DataPartMessage> callback)
+    public DataReceiver whenDataPartReceived(EventHandler<DataTransferMessages.DataPartMessage> handler)
     {
-        onReceive = callback;
+        onDataPartReceived.subscribe(handler);
         return this;
     }
 
     public void pull(ActorRef distributor)
     {
-        if (hasFinished)
+        if (finished)
         {
             return;
         }
@@ -81,49 +78,16 @@ public class DataReceiver
             }
         }
 
-        invokeOnReceive(message);
+        onDataPartReceived.invoke(message);
 
         if (!message.isLastPart())
         {
             pull(message.getSender());
         }
-        else if (!hasFinished)
+        else if (!finished)
         {
-            hasFinished = true;
-            invokeWhenFinished();
-        }
-    }
-
-    private void invokeOnReceive(DataTransferMessages.DataPartMessage message)
-    {
-        if (onReceive == null)
-        {
-            return;
-        }
-        try
-        {
-            onReceive.accept(message);
-        }
-        catch (Exception exception)
-        {
-            Log.error(String.format("[%1$s] Unable to invoke on receive!", control.getClass().getName()), exception);
-        }
-    }
-
-    private void invokeWhenFinished()
-    {
-        if (whenFinished == null)
-        {
-            return;
-        }
-
-        try
-        {
-            whenFinished.accept(this);
-        }
-        catch (Exception exception)
-        {
-            Log.error(String.format("[%1$s] Unable to invoke when finished!", control.getClass().getName()), exception);
+            finished = true;
+            onFinished.invoke(this);
         }
     }
 }

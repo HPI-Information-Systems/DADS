@@ -14,10 +14,10 @@ public class SequenceSliceDistributorModel extends AbstractProtocolParticipantMo
     private RootActorPath sliceReceiverActorSystem;
     @NonNull @Getter
     private SequenceReader sequenceReader;
-    @NonNull @Getter
+    @Getter
     private long firstSubSequenceIndex;
-    @NonNull @Getter
+    @Getter
     private int subSequenceLength;
-    @NonNull @Getter
+    @Getter
     private int convolutionSize;
 }

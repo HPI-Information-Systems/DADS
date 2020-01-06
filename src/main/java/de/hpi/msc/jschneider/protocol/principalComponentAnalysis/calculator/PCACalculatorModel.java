@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.Counter;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -23,6 +24,10 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     private long myProcessorIndex;
     @Getter @Setter
     private MatrixStore<Double> projection;
+    @Builder.Default @Getter @Setter
+    private float minimumRecord = Float.MAX_VALUE;
+    @Builder.Default @Getter @Setter
+    private float maximumRecord = Float.MIN_VALUE;
     @NonNull @Getter
     private final Map<RootActorPath, Long> numberOfRows = new HashMap<>();
     @NonNull @Getter

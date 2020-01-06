@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.receiver;
 
+import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
@@ -33,7 +34,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         getModel().setProjectionInitializer(new MatrixInitializer(getModel().getSubSequenceLength() - getModel().getConvolutionSize()));
 
         getModel().getDataTransferManager().accept(message,
-                                                   dataReceiver -> dataReceiver.onReceive(this::onSlicePart)
+                                                   dataReceiver -> dataReceiver.whenDataPartReceived(this::onSlicePart)
                                                                                .whenFinished(this::whenFinished)
                                                                                .addSink(getModel().getSequenceWriter()));
     }
@@ -45,6 +46,9 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
             getLog().error("Received empty sequence slice part!");
             return;
         }
+
+        getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), Floats.min(message.getPart())));
+        getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), Floats.max(message.getPart())));
 
         val newUnusedRecords = new float[getModel().getUnusedRecords().length + message.getPart().length];
         System.arraycopy(getModel().getUnusedRecords(), 0, newUnusedRecords, 0, getModel().getUnusedRecords().length);
@@ -69,13 +73,14 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
 
     private void embedSubSequence(int subSequenceStartIndex)
     {
+        val unusedRecords = getModel().getUnusedRecords();
         val vector = new float[getModel().getSubSequenceLength() - getModel().getConvolutionSize()];
         for (var vectorIndex = 0; vectorIndex < vector.length; ++vectorIndex)
         {
             var value = 0.0f;
             for (var convolutionIndex = 0; convolutionIndex <= getModel().getConvolutionSize(); ++convolutionIndex)
             {
-                value += getModel().getUnusedRecords()[convolutionIndex + subSequenceStartIndex];
+                value += unusedRecords[convolutionIndex + subSequenceStartIndex];
             }
             vector[vectorIndex] = value;
         }
@@ -89,6 +94,8 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                       .sender(getModel().getSelf())
                                                                                                                                       .receiver(eventDispatcher)
                                                                                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                                                                                      .minimumRecord(getModel().getMinimumRecord())
+                                                                                                                                      .maximumRecord(getModel().getMaximumRecord())
                                                                                                                                       .projection(getModel().getProjectionInitializer().create())
                                                                                                                                       .build());
     }
