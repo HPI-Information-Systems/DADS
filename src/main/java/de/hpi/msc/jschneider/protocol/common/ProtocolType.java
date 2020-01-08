@@ -7,4 +7,5 @@ public enum ProtocolType
     Reaper,
     SequenceSliceDistribution,
     PrincipalComponentAnalysis,
+    DimensionReduction,
 }

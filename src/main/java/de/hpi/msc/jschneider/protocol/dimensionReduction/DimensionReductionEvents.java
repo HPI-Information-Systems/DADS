@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.protocol.principalComponentAnalysis;
+package de.hpi.msc.jschneider.protocol.dimensionReduction;
 
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
@@ -7,22 +7,22 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ojalgo.matrix.store.MatrixStore;
 
-public class PCAEvents
+public class DimensionReductionEvents
 {
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class PrincipalComponentsCreatedEvent extends MessageExchangeMessages.RedirectableMessage
+    public static class ReducedProjectionCreatedEvent extends MessageExchangeMessages.RedirectableMessage
     {
-        private static final long serialVersionUID = 2609090276705058071L;
-        private MatrixStore<Double> principalComponents;
-        private MatrixStore<Double> rotation;
+        private static final long serialVersionUID = -5115390658605851185L;
+        private MatrixStore<Double> reducedProjection;
+        private long firstSubSequenceIndex;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
-                            .principalComponents(getPrincipalComponents())
-                            .rotation(getRotation())
+                            .reducedProjection(getReducedProjection())
+                            .firstSubSequenceIndex(getFirstSubSequenceIndex())
                             .build();
         }
     }

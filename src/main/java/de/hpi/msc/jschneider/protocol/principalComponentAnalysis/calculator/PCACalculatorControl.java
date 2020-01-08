@@ -68,6 +68,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         try
         {
             getModel().setProjection(message.getProjection());
+            getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), message.getMinimumRecord()));
+            getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), message.getMaximumRecord()));
             startCalculation();
         }
         finally
@@ -126,6 +128,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                                      .operationId(dataDistributor.getOperationId())
                                                                                                                                      .processorIndex(getModel().getMyProcessorIndex())
                                                                                                                                      .numberOfRows(numberOfRows)
+                                                                                                                                     .minimumRecord(getModel().getMinimumRecord())
+                                                                                                                                     .maximumRecord(getModel().getMaximumRecord())
                                                                                                                                      .build());
 
         getLog().info(String.format("Transferring PCA column means to %1$s.", receiverProtocol.getRootActor().path().root()));
@@ -267,12 +271,19 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         qrDecomposition.compute(matrixInitializer.create());
         val svd = SingularValue.PRIMITIVE.make();
         svd.compute(qrDecomposition.getR());
+        val principalComponents = svd.getV().logical().column(0, 1, 2).get();
+        val referenceVector = createReferenceVector(principalComponents);
+        val angleX = Calculate.angleBetween(Calculate.makeVector(1.0d, 0.0d, 0.0d), referenceVector);
+        val angleY = Calculate.angleBetween(Calculate.makeVector(0.0d, 1.0d, 0.0d), referenceVector);
+        val angleZ = Calculate.angleBetween(Calculate.makeVector(0.0d, 0.0d, 1.0d), referenceVector);
+        val rotation = Calculate.makeRotationX(angleX).multiply(Calculate.makeRotationY(angleY)).multiply(Calculate.makeRotationZ(angleZ));
 
-        trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.SingularValueDecompositionCreatedEvent.builder()
-                                                                                                                                 .sender(getModel().getSelf())
-                                                                                                                                 .receiver(eventDispatcher)
-                                                                                                                                 .svd(svd)
-                                                                                                                                 .build());
+        trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
+                                                                                                                          .sender(getModel().getSelf())
+                                                                                                                          .receiver(eventDispatcher)
+                                                                                                                          .principalComponents(principalComponents)
+                                                                                                                          .rotation(rotation)
+                                                                                                                          .build());
     }
 
     private boolean isLastStep()
@@ -283,25 +294,35 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         return currentStep == lastStep;
     }
 
+    private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents)
+    {
+        val min = Calculate.makeFilledVector(getModel().getProjection().countColumns(), getModel().getMinimumRecord()).multiply(principalComponents);
+        val max = Calculate.makeFilledVector(getModel().getProjection().countColumns(), getModel().getMaximumRecord()).multiply(principalComponents);
+
+        return max.subtract(min);
+    }
+
     private void onInitializeColumnMeansTransfer(PCAMessages.InitializeColumnMeansTransferMessage message)
     {
         assert getModel().getMyProcessorIndex() == 0 : String.format("%1$s trying to send column means, although we are not processor#0!", message.getSender().path());
 
         getModel().getNumberOfRows().put(message.getSender().path().root(), message.getNumberOfRows());
+        getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), message.getMinimumRecord()));
+        getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), message.getMaximumRecord()));
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            val sink = new MatrixInitializer(getModel().getProjection().countColumns());
+            val sink = new PrimitiveMatrixSink();
             dataReceiver.addSink(sink);
             dataReceiver.whenFinished(receiver -> columnMeansTransferFinished(message.getSender().path().root(), sink));
             return dataReceiver;
         });
     }
 
-    private void columnMeansTransferFinished(RootActorPath sender, MatrixInitializer sink)
+    private void columnMeansTransferFinished(RootActorPath sender, PrimitiveMatrixSink sink)
     {
         getLog().info(String.format("Received column means from %1$s.", sender));
-        getModel().getTransposedColumnMeans().put(sender, sink.create());
+        getModel().getTransposedColumnMeans().put(sender, sink.getMatrix(getModel().getProjection().countColumns()));
 
         finalizeCalculation();
     }
@@ -332,7 +353,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private MatrixStore<Double> totalColumnMeans()
     {
-        var columnMeans = Calculate.filledVector(getModel().getProjection().countColumns(), 0.0d);
+        var columnMeans = Calculate.makeFilledVector(getModel().getProjection().countColumns(), 0.0d);
         var totalNumberOfRows = 0L;
         for (val processor : getModel().getNumberOfRows().keySet())
         {

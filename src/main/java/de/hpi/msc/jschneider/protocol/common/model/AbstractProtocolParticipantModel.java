@@ -120,14 +120,20 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     @Override
     public int getNumberOfProcessors()
     {
+        return getProcessors().length;
+    }
+
+    @Override
+    public Processor[] getProcessors()
+    {
         try
         {
-            return processorProvider.call().length;
+            return processorProvider.call();
         }
         catch (Exception exception)
         {
-            getLog().error("Unable to retrieve number of processors!", exception);
-            return 0;
+            getLog().error("Unable to retrieve processors!", exception);
+            return new Processor[0];
         }
     }
 

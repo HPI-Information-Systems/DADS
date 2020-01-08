@@ -32,6 +32,8 @@ public interface ProtocolParticipantModel
 
     int getNumberOfProcessors();
 
+    Processor[] getProcessors();
+
     long getMaximumMessageSize();
 
     Consumer<ActorRef> getWatchActorCallback();

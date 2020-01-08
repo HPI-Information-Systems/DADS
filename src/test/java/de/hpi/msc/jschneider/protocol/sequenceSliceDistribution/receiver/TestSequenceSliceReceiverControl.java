@@ -137,6 +137,8 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 
         val event = expectEvent(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
         assertThat(event.getFirstSubSequenceIndex()).isEqualTo(10L);
+        assertThat(event.getMinimumRecord()).isEqualTo(slicePart[0]);
+        assertThat(event.getMaximumRecord()).isEqualTo(slicePart[slicePart.length - 1]);
         assertThat(event.getProjection().countColumns()).isEqualTo(7L);
         assertThat(event.getProjection().countRows()).isEqualTo(41L);
 

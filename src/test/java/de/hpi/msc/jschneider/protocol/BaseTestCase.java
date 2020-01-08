@@ -9,20 +9,34 @@ import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.PrimitiveAccessSource;
 import junit.framework.TestCase;
 import lombok.val;
+import lombok.var;
+import org.ojalgo.matrix.store.MatrixStore;
+import org.ojalgo.structure.Access1D;
+import org.ojalgo.type.context.NumberContext;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class BaseTestCase extends TestCase
 {
+    protected static final int MATRIX_PRECISION = 5;
+    protected static final RoundingMode MATRIX_ROUNDING_MODE = RoundingMode.HALF_UP;
+    protected static final NumberContext MATRIX_COMPARISON_CONTEXT = NumberContext.getMath(new MathContext(MATRIX_PRECISION, MATRIX_ROUNDING_MODE));
+
     private final List<TestProcessor> processors = new ArrayList<>();
 
     protected TestProcessor createMaster()
@@ -118,6 +132,25 @@ public abstract class BaseTestCase extends TestCase
         return messageDispatcher.expectMsgClass(eventType);
     }
 
+    protected MatrixStore<Double> createMatrix(long rows, long columns)
+    {
+        val matrixInitializer = new MatrixInitializer(columns);
+        val random = new Random();
+
+        for (var rowIndex = 0L; rowIndex < rows; ++rowIndex)
+        {
+            val row = new float[(int) columns];
+            for (var columnIndex = 0; columnIndex < columns; ++columnIndex)
+            {
+                val bigDecimal = new BigDecimal(Float.toString(random.nextFloat())).setScale(MATRIX_PRECISION, MATRIX_ROUNDING_MODE);
+                row[columnIndex] = bigDecimal.floatValue();
+            }
+            matrixInitializer.appendRow(row);
+        }
+
+        return matrixInitializer.create();
+    }
+
     protected PrimitiveMatrixSink performDataTransfer(TestProbe dataReceiver, PartialFunction<Object, BoxedUnit> dataReceiverMessageInterface,
                                                       TestProbe dataSender, PartialFunction<Object, BoxedUnit> dataSenderMessageInterface,
                                                       DataTransferMessages.InitializeDataTransferMessage initializeDataTransferMessage,
@@ -164,6 +197,55 @@ public abstract class BaseTestCase extends TestCase
         }
 
         return sink;
+    }
+
+    protected void transfer(Access1D<Double> data,
+                            TestProbe dataReceiver, PartialFunction<Object, BoxedUnit> dataReceiverMessageInterface,
+                            DataTransferMessages.InitializeDataTransferMessage initializeDataTransferMessage,
+                            boolean expectFinalMessageCompletion)
+    {
+        val receiverProcessor = processors.stream().filter(processor -> processor.getRootPath().equals(dataReceiver.ref().path().root())).findFirst();
+        assert receiverProcessor.isPresent() : "Unable to find receiverProcessor!";
+
+        val operationId = initializeDataTransferMessage.getOperationId();
+
+        val source = new PrimitiveAccessSource(data);
+
+        MessageExchangeMessages.MessageExchangeMessage nextMessageToComplete = initializeDataTransferMessage;
+        dataReceiverMessageInterface.apply(initializeDataTransferMessage);
+
+        while (true)
+        {
+            val request = receiverProcessor.get().getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+            assertThat(request.getOperationId()).isEqualTo(operationId);
+
+            assertThatMessageIsCompleted(nextMessageToComplete, receiverProcessor.get());
+
+            val values = source.read(1024);
+            val isLastPart = source.isAtEnd();
+
+            val part = DataTransferMessages.DataPartMessage.builder()
+                                                           .receiver(dataReceiver.ref())
+                                                           .sender(initializeDataTransferMessage.getSender())
+                                                           .operationId(operationId)
+                                                           .part(values)
+                                                           .isLastPart(isLastPart)
+                                                           .build();
+            dataReceiverMessageInterface.apply(part);
+            nextMessageToComplete = part;
+
+            if (!isLastPart)
+            {
+                continue;
+            }
+
+            if (expectFinalMessageCompletion)
+            {
+                assertThatMessageIsCompleted(nextMessageToComplete, receiverProcessor.get());
+            }
+
+            break;
+        }
     }
 
     @Override

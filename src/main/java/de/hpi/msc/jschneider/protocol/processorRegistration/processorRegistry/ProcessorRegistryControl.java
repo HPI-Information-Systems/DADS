@@ -100,7 +100,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
 
         for (val processor : message.getExistingProcessors())
         {
-            getModel().getProcessors().put(processor.getRootPath(), processor);
+            getModel().getClusterProcessors().put(processor.getRootPath(), processor);
         }
 
         subscribeToMasterEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
@@ -114,7 +114,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     {
         try
         {
-            getModel().getProcessors().put(message.getProcessor().getRootPath(), message.getProcessor());
+            getModel().getClusterProcessors().put(message.getProcessor().getRootPath(), message.getProcessor());
             getLog().info(String.format("%1$s just joined.", message.getProcessor().getRootPath()));
         }
         finally
@@ -127,8 +127,8 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     {
         val rootPath = message.getProcessor().getRootPath();
 
-        getModel().getProcessors().put(rootPath, message.getProcessor());
-        val existingProcessors = getModel().getProcessors().values().toArray(new Processor[0]);
+        getModel().getClusterProcessors().put(rootPath, message.getProcessor());
+        val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
 
         getModel().getSender().tell(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()

@@ -58,6 +58,18 @@ public class TestCalculate extends TestCase
         assertThat(dataMatrix.get(3, 2)).isEqualTo(1.0d);
     }
 
+    public void testAngleBetween()
+    {
+        val unitX = Calculate.makeVector(1.0d, 0.0d, 0.0d);
+        val unitY = Calculate.makeVector(0.0d, 1.0d, 0.0d);
+        val unitZ = Calculate.makeVector(0.0d, 0.0d, 1.0d);
+        val negativeUnitX = Calculate.makeVector(-1.0d, 0.0d, 0.0d);
+
+        assertThat(Calculate.angleBetween(unitX, unitY)).isEqualTo(Math.PI * 0.5d);
+        assertThat(Calculate.angleBetween(unitX, unitZ)).isEqualTo(Math.PI * 0.5d);
+        assertThat(Calculate.angleBetween(unitX, negativeUnitX)).isEqualTo(Math.PI);
+    }
+
     public void testLog2()
     {
         assertThat(Calculate.log2(8.0d)).isEqualTo(3.0d);

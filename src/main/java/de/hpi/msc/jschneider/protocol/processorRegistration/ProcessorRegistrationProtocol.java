@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
+import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionProtocol;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
@@ -85,6 +86,7 @@ public class ProcessorRegistrationProtocol
         protocols.add(MessageExchangeProtocol.initialize(actorSystem));
         protocols.add(SequenceSliceDistributionProtocol.initialize(actorSystem));
         protocols.add(PCAProtocol.initialize(actorSystem));
+        protocols.add(DimensionReductionProtocol.initialize(actorSystem));
 
         return protocols;
     }
@@ -96,7 +98,7 @@ public class ProcessorRegistrationProtocol
                                                .schedulerProvider(actorSystem::scheduler)
                                                .dispatcherProvider(actorSystem::dispatcher)
                                                .build();
-        rootActorModel.getProcessors().put(localProcessor.getRootPath(), localProcessor);
+        rootActorModel.getClusterProcessors().put(localProcessor.getRootPath(), localProcessor);
         val control = new ProcessorRegistryControl(rootActorModel);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);
@@ -134,6 +136,6 @@ public class ProcessorRegistrationProtocol
 
     public static Processor[] getProcessors()
     {
-        return rootActorModel.getProcessors().values().toArray(new Processor[0]);
+        return rootActorModel.getClusterProcessors().values().toArray(new Processor[0]);
     }
 }
