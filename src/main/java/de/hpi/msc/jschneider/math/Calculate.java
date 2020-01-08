@@ -1,5 +1,7 @@
 package de.hpi.msc.jschneider.math;
 
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
@@ -27,6 +29,20 @@ public class Calculate
     {
         val matrix = PrimitiveMatrix.FACTORY.rows(values);
         return MatrixStore.PRIMITIVE.makeWrapper(matrix).get();
+    }
+
+    public static double[] makeRange(double start, double end, double step)
+    {
+        var entries = new ArrayList<Double>();
+        var current = start;
+
+        while (current < end)
+        {
+            entries.add(current);
+            current += step;
+        }
+
+        return Doubles.toArray(entries);
     }
 
     public static MatrixStore<Double> makeRotationX(double angle)
@@ -99,6 +115,8 @@ public class Calculate
 
     public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection, int numberOfSamples)
     {
+        // TODO: parallelize execution?! --> split up reduced projection by columns
+
         assert reducedProjection.countRows() == 2 : "ReducedProjection must have 2 dimensions in column vector format!";
         assert reducedProjection.countColumns() > 1 : "ReducedProjection must have at least 2 records!";
 
@@ -280,6 +298,40 @@ public class Calculate
         {
             return input.transpose();
         }
+    }
+
+    public static int[] localMaximumIndices(double[] values)
+    {
+        // TODO: we currently assume that values[0] and values[l - 1] can *NOT* be local maxima (scipy argrelmaxima behavior), is this assumption true?
+
+        var indices = new ArrayList<Integer>();
+        for (var valueIndex = 1; valueIndex < values.length - 1; ++valueIndex)
+        {
+            val previous = values[valueIndex - 1];
+            val current = values[valueIndex];
+            val next = values[valueIndex + 1];
+
+            if (current == next)
+            {
+                // we dont need to check 'next' again, because we already know its not a local maximum
+                valueIndex++;
+                continue;
+            }
+
+            if (current > previous && current > next)
+            {
+                indices.add(valueIndex);
+                // we dont need to check 'next' again, because we already know its not a local maximum
+                valueIndex++;
+            }
+        }
+
+        return Ints.toArray(indices);
+    }
+
+    public static double scottsFactor(long numberOfRecords, long numberOfDimensions)
+    {
+        return Math.pow(numberOfRecords, -1.0d / (numberOfDimensions + 4.0d));
     }
 
     public static double log2(double value)

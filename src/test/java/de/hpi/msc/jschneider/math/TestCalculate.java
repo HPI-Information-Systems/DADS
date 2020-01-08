@@ -13,6 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestCalculate extends TestCase
 {
+    public void testMakeRange()
+    {
+        assertThat(Calculate.makeRange(0.0d, 5.0d, 1.0d)).containsExactly(0.0d, 1.0d, 2.0d, 3.0d, 4.0d);
+        assertThat(Calculate.makeRange(1.0d, 5.0d, 1.0d)).containsExactly(1.0d, 2.0d, 3.0d, 4.0d);
+        assertThat(Calculate.makeRange(0.0d, 10.0d, 8.0d)).containsExactly(0.0d, 8.0d);
+    }
+
     public void testColumnMeans()
     {
         val input = (new MatrixInitializer(3))
@@ -108,6 +115,14 @@ public class TestCalculate extends TestCase
                 assertThat(intersection.getVector().get(1)).isCloseTo(intersectionPoints.get(i).get(1), tolerance);
             }
         }
+    }
+
+    public void testLocalMaximumIndices()
+    {
+        val values = new double[]{5.0d, 1.0d, 2.0d, 0.5d, 4.0d, 3.0d, 9.0d};
+        val indices = Calculate.localMaximumIndices(values);
+
+        assertThat(indices).containsExactly(2, 4);
     }
 
     public void testLog2()
