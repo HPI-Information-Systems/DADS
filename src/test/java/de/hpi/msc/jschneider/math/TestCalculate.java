@@ -3,6 +3,11 @@ package de.hpi.msc.jschneider.math;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import junit.framework.TestCase;
 import lombok.val;
+import lombok.var;
+import org.assertj.core.data.Offset;
+import org.ojalgo.matrix.store.MatrixStore;
+
+import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,14 +65,49 @@ public class TestCalculate extends TestCase
 
     public void testAngleBetween()
     {
-        val unitX = Calculate.makeVector(1.0d, 0.0d, 0.0d);
-        val unitY = Calculate.makeVector(0.0d, 1.0d, 0.0d);
-        val unitZ = Calculate.makeVector(0.0d, 0.0d, 1.0d);
-        val negativeUnitX = Calculate.makeVector(-1.0d, 0.0d, 0.0d);
+        val unitX = Calculate.makeRowVector(1.0d, 0.0d, 0.0d);
+        val unitY = Calculate.makeRowVector(0.0d, 1.0d, 0.0d);
+        val unitZ = Calculate.makeRowVector(0.0d, 0.0d, 1.0d);
+        val negativeUnitX = Calculate.makeRowVector(-1.0d, 0.0d, 0.0d);
 
         assertThat(Calculate.angleBetween(unitX, unitY)).isEqualTo(Math.PI * 0.5d);
         assertThat(Calculate.angleBetween(unitX, unitZ)).isEqualTo(Math.PI * 0.5d);
         assertThat(Calculate.angleBetween(unitX, negativeUnitX)).isEqualTo(Math.PI);
+    }
+
+    public void testIntersections()
+    {
+        val tolerance = Offset.offset(0.00001d);
+        val reducedProjection = (new MatrixInitializer(2L)
+                                         .appendRow(new float[]{1.0f, 0.0f})
+                                         .appendRow(new float[]{0.0f, 1.0f})
+                                         .appendRow(new float[]{-1.0f, 0.0f})
+                                         .appendRow(new float[]{0.0f, -1.0f})
+                                         .create()
+                                         .transpose());
+        val numberOfSamples = 4;
+
+        val intersections = Calculate.intersections(reducedProjection, numberOfSamples);
+
+        assertThat(intersections.length).isEqualTo(numberOfSamples);
+        val intersectionPoints = new ArrayList<MatrixStore<Double>>(numberOfSamples);
+        intersectionPoints.add(Calculate.makeRowVector(1.0d, 0.0d));
+        intersectionPoints.add(Calculate.makeRowVector(0.0d, 1.0d));
+        intersectionPoints.add(Calculate.makeRowVector(-1.0d, 0.0d));
+        intersectionPoints.add(Calculate.makeRowVector(0.0d, -1.0d));
+
+        for (var i = 0; i < numberOfSamples; ++i)
+        {
+            assertThat(intersections[i].getIntersectionPointIndex()).isEqualTo(i);
+            assertThat(intersections[i].getIntersections().size()).isEqualTo(1);
+
+            for (val intersection : intersections[i].getIntersections())
+            {
+                assertThat(intersection.getVectorLength()).isCloseTo(1.0d, tolerance);
+                assertThat(intersection.getVector().get(0)).isCloseTo(intersectionPoints.get(i).get(0), tolerance);
+                assertThat(intersection.getVector().get(1)).isCloseTo(intersectionPoints.get(i).get(1), tolerance);
+            }
+        }
     }
 
     public void testLog2()

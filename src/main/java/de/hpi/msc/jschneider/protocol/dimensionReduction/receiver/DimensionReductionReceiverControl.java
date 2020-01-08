@@ -95,5 +95,6 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                                                                       .reducedProjection(projection2d)
                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                       .build());
+        // TODO: terminate self?!
     }
 }

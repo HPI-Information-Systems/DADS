@@ -273,9 +273,9 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         svd.compute(qrDecomposition.getR());
         val principalComponents = svd.getV().logical().column(0, 1, 2).get();
         val referenceVector = createReferenceVector(principalComponents);
-        val angleX = Calculate.angleBetween(Calculate.makeVector(1.0d, 0.0d, 0.0d), referenceVector);
-        val angleY = Calculate.angleBetween(Calculate.makeVector(0.0d, 1.0d, 0.0d), referenceVector);
-        val angleZ = Calculate.angleBetween(Calculate.makeVector(0.0d, 0.0d, 1.0d), referenceVector);
+        val angleX = Calculate.angleBetween(Calculate.makeRowVector(1.0d, 0.0d, 0.0d), referenceVector);
+        val angleY = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 1.0d, 0.0d), referenceVector);
+        val angleZ = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 0.0d, 1.0d), referenceVector);
         val rotation = Calculate.makeRotationX(angleX).multiply(Calculate.makeRotationY(angleY)).multiply(Calculate.makeRotationZ(angleZ));
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
@@ -296,8 +296,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents)
     {
-        val min = Calculate.makeFilledVector(getModel().getProjection().countColumns(), getModel().getMinimumRecord()).multiply(principalComponents);
-        val max = Calculate.makeFilledVector(getModel().getProjection().countColumns(), getModel().getMaximumRecord()).multiply(principalComponents);
+        val min = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMinimumRecord()).multiply(principalComponents);
+        val max = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMaximumRecord()).multiply(principalComponents);
 
         return max.subtract(min);
     }
@@ -353,7 +353,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private MatrixStore<Double> totalColumnMeans()
     {
-        var columnMeans = Calculate.makeFilledVector(getModel().getProjection().countColumns(), 0.0d);
+        var columnMeans = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), 0.0d);
         var totalNumberOfRows = 0L;
         for (val processor : getModel().getNumberOfRows().keySet())
         {
