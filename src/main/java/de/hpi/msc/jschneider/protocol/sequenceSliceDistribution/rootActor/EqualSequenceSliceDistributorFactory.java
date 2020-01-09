@@ -72,6 +72,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
         else if (sequenceReaders.size() < expectedNumberOfProcessors)
         {
             sequenceReader = createNextSequenceReader();
+            sequenceReaders.put(newProcessor.getRootPath(), sequenceReader);
             props.add(createProps(newProcessor.getRootPath(), sequenceReader));
         }
 
@@ -97,7 +98,6 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
                                                  .subSequenceLength(subSequenceLength)
                                                  .convolutionSize(convolutionSize)
                                                  .build();
-
 
         val control = new SequenceSliceDistributorControl(model);
         return ReapedActor.props(control);

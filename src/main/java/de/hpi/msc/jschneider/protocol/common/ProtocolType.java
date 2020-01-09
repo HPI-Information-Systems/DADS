@@ -8,4 +8,5 @@ public enum ProtocolType
     SequenceSliceDistribution,
     PrincipalComponentAnalysis,
     DimensionReduction,
+    NodeCreation,
 }
