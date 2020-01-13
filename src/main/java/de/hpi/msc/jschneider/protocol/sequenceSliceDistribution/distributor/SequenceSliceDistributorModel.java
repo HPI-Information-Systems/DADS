@@ -17,6 +17,8 @@ public class SequenceSliceDistributorModel extends AbstractProtocolParticipantMo
     @Getter
     private long firstSubSequenceIndex;
     @Getter
+    private boolean isLastSubSequenceChunk;
+    @Getter
     private int subSequenceLength;
     @Getter
     private int convolutionSize;

@@ -45,6 +45,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
                                                           .firstSubSequenceIndex(0L)
                                                           .subSequenceLength(SUB_SEQUENCE_LENGTH)
                                                           .convolutionSize(CONVOLUTION_SIZE)
+                                                          .isLastSubSequenceChunk(true)
                                                           .build());
     }
 
@@ -86,6 +87,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         assertThat(message.getSubSequenceLength()).isEqualTo(SUB_SEQUENCE_LENGTH);
         assertThat(message.getConvolutionSize()).isEqualTo(CONVOLUTION_SIZE);
         assertThat(message.getFirstSubSequenceIndex()).isEqualTo(0L);
+        assertThat(message.isLastSubSequenceChunk()).isTrue();
     }
 
     public void testSendEntireSliceOnRequest()

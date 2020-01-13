@@ -73,14 +73,14 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
         {
             sequenceReader = createNextSequenceReader();
             sequenceReaders.put(newProcessor.getRootPath(), sequenceReader);
-            props.add(createProps(newProcessor.getRootPath(), sequenceReader));
+            props.add(createProps(newProcessor.getRootPath(), sequenceReader, sequenceReaders.size() == expectedNumberOfProcessors));
         }
 
 
         return props;
     }
 
-    private Props createProps(RootActorPath sliceReceiverActorSystem, SequenceReader reader)
+    private Props createProps(RootActorPath sliceReceiverActorSystem, SequenceReader reader, boolean isLastSubSequenceChunk)
     {
         val currentSubSequenceStartIndex = nextSubSequenceStartIndex;
         nextSubSequenceStartIndex += Math.max(1, reader.getSize() - (subSequenceLength - 1));
@@ -95,6 +95,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
                                                  .sequenceReader(reader)
                                                  .maximumMessageSizeProvider(SystemParameters::getMaximumMessageSize)
                                                  .firstSubSequenceIndex(currentSubSequenceStartIndex)
+                                                 .isLastSubSequenceChunk(isLastSubSequenceChunk)
                                                  .subSequenceLength(subSequenceLength)
                                                  .convolutionSize(convolutionSize)
                                                  .build();

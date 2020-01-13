@@ -48,6 +48,7 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
 
     private SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage initializationMessageFactory(DataDistributor distributor)
     {
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
         val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution).get(); // no need to check, because we already checked that in preStart
 
         return SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.builder()
@@ -56,6 +57,7 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
                                                                                        .subSequenceLength(getModel().getSubSequenceLength())
                                                                                        .convolutionSize(getModel().getConvolutionSize())
                                                                                        .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                                        .operationId(distributor.getOperationId())
                                                                                        .build();
     }

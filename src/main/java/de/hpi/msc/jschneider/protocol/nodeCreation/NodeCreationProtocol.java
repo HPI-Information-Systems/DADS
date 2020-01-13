@@ -43,7 +43,7 @@ public class NodeCreationProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(); // TODO: add events
+        val model = BaseEventDispatcherModel.create(NodeCreationEvents.NodesCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

@@ -39,6 +39,7 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
         {
             getModel().setProjection(message.getProjection());
             getModel().setFirstSubSequenceIndex(message.getFirstSubSequenceIndex());
+            getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
         }
         finally
         {
@@ -94,6 +95,7 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                                                                       .receiver(eventDispatcher)
                                                                       .reducedProjection(projection2d)
                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                      .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                       .build());
         // TODO: terminate self?!
     }

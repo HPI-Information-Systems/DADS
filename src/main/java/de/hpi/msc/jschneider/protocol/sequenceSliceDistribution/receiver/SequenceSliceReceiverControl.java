@@ -94,6 +94,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                       .sender(getModel().getSelf())
                                                                                                                                       .receiver(eventDispatcher)
                                                                                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                                                                                      .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                                                                                       .minimumRecord(getModel().getMinimumRecord())
                                                                                                                                       .maximumRecord(getModel().getMaximumRecord())
                                                                                                                                       .projection(getModel().getProjectionInitializer().create())

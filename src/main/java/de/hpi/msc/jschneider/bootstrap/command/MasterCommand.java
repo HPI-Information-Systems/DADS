@@ -23,4 +23,7 @@ public class MasterCommand extends AbstractCommand
 
     @Parameter(names = "--convolution-size", description = "size of the local convolution to transform subsequences into vectors", required = true)
     private int convolutionSize;
+
+    @Parameter(names = "--sample-rate", description = "number of segments to create for the node creation", required = true)
+    private int numberOfSamples;
 }

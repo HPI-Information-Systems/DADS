@@ -15,6 +15,7 @@ public class DimensionReductionEvents
         private static final long serialVersionUID = -5115390658605851185L;
         private MatrixStore<Double> reducedProjection;
         private long firstSubSequenceIndex;
+        private boolean isLastSubSequenceChunk;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -23,6 +24,7 @@ public class DimensionReductionEvents
                             .receiver(newReceiver)
                             .reducedProjection(getReducedProjection())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
+                            .isLastSubSequenceChunk(isLastSubSequenceChunk())
                             .build();
         }
     }

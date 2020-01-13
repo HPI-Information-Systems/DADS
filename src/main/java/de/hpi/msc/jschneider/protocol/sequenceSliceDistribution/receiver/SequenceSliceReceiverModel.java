@@ -19,6 +19,8 @@ public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private long firstSubSequenceIndex;
     @Setter @Getter
+    private boolean isLastSubSequenceChunk;
+    @Setter @Getter
     private int subSequenceLength;
     @Setter @Getter
     private int convolutionSize;
