@@ -40,7 +40,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
 
     private EqualSequenceSliceDistributorFactory(MasterCommand masterCommand)
     {
-        expectedNumberOfProcessors = masterCommand.getMinimumNumberOfSlaves();
+        expectedNumberOfProcessors = masterCommand.getMinimumNumberOfSlaves() + 1; // the master is also working
         sequenceReaderTemplate = BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile());
         subSequenceLength = masterCommand.getSubSequenceLength();
         sliceOverlap = masterCommand.getSubSequenceLength() - 1;

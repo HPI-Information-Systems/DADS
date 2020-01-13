@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.math;
 
-import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
@@ -33,16 +32,13 @@ public class Calculate
 
     public static double[] makeRange(double start, double end, double step)
     {
-        var entries = new ArrayList<Double>();
-        var current = start;
-
-        while (current < end)
+        val range = new double[(int) Math.ceil((end - start) / step)];
+        for (var i = 0; i < range.length; ++i)
         {
-            entries.add(current);
-            current += step;
+            range[i] = start + i * step;
         }
 
-        return Doubles.toArray(entries);
+        return range;
     }
 
     public static MatrixStore<Double> makeRotationX(double angle)

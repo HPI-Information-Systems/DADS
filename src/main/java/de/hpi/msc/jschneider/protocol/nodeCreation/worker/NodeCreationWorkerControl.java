@@ -56,7 +56,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setReducedProjection(message.getReducedProjection());
             getModel().setFirstSubSequenceIndex(message.getFirstSubSequenceIndex());
             getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
-            val maximumValue = Math.max(getModel().getReducedProjection().aggregateAll(Aggregator.MAXIMUM), -getModel().getReducedProjection().aggregateAll(Aggregator.MINIMUM));
+            val maximumValue = Math.max(getModel().getReducedProjection().aggregateAll(Aggregator.MAXIMUM),
+                                        -getModel().getReducedProjection().aggregateAll(Aggregator.MINIMUM));
             val subSequenceIndices = Int64Range.builder()
                                                .start(getModel().getFirstSubSequenceIndex())
                                                .end(getModel().getFirstSubSequenceIndex() + getModel().getReducedProjection().countColumns())
@@ -89,6 +90,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             getModel().setSampleResponsibilities(message.getSampleResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
+            getModel().setDensitySamples(Calculate.makeRange(0.0d, getModel().getMaximumValue(), getModel().getMaximumValue() / NUMBER_OF_DENSITY_SAMPLES));
 
             val intersectionCollections = Calculate.intersections(getModel().getReducedProjection(), message.getNumberOfSamples());
             for (val intersectionCollection : intersectionCollections)
@@ -167,13 +169,12 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         val h = Calculate.scottsFactor(intersections.length, 1L);
         val kde = new KernelDensity(intersections, h);
         val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
-        val densitySamples = Calculate.makeRange(0, getModel().getMaximumValue(), getModel().getMaximumValue() / NUMBER_OF_DENSITY_SAMPLES);
 
-        assert densitySamples.length == probabilities.length : "|densitySamples| != |probabilities|";
+        assert getModel().getDensitySamples().length == probabilities.length : "|densitySamples| != |probabilities|";
 
-        for (var i = 0; i < densitySamples.length; ++i)
+        for (var i = 0; i < getModel().getDensitySamples().length; ++i)
         {
-            probabilities[i] = kde.p(densitySamples[i]);
+            probabilities[i] = kde.p(getModel().getDensitySamples()[i]);
         }
 
         val localMaximumIndices = Calculate.localMaximumIndices(probabilities);
@@ -183,7 +184,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (val localMaximumIndex : localMaximumIndices)
         {
             nodeCollection.getNodes().add(Node.builder()
-                                              .intersectionLength(densitySamples[localMaximumIndex])
+                                              .intersectionLength(getModel().getDensitySamples()[localMaximumIndex])
                                               .probability(probabilities[localMaximumIndex])
                                               .build());
         }

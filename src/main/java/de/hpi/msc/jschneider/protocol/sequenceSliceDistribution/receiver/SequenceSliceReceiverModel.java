@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.nio.file.Paths;
+import java.util.List;
 
 @SuperBuilder
 public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
@@ -32,6 +33,8 @@ public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
     private MatrixInitializer projectionInitializer;
     @Setter @Getter @Builder.Default
     private float[] unusedRecords = new float[0];
+    @Setter @Getter
+    private List<Float> rawSubSequence;
     @NonNull @Getter @Builder.Default
     private SequenceWriter sequenceWriter = BinaryDirectoryWriter.fromDirectory(Paths.get(SystemParameters.getWorkingDirectory().toString(), "sequence-slices/").toFile());
 }

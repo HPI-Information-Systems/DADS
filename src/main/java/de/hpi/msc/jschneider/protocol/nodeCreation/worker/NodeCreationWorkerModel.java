@@ -26,6 +26,8 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     private Map<ActorRef, Int32Range> sampleResponsibilities;
     @Setter @Getter
     private double maximumValue;
+    @Setter @Getter
+    private double[] densitySamples;
     @NonNull @Getter
     private final Map<Integer, List<float[]>> intersections = new HashMap<>();
 }

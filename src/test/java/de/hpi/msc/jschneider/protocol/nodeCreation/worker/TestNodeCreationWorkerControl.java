@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -152,6 +153,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
 
 
         control.getModel().setMaximumValue(totalMax * 1.2d);
+        control.getModel().setDensitySamples(Calculate.makeRange(0.0d, totalMax * 1.2d, totalMax * 1.2d / 250));
         control.getModel().setSampleResponsibilities(responsibilities);
 
         val intersectionPointIndex = 0;

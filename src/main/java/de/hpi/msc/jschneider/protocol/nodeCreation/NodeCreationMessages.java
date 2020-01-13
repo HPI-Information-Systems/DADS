@@ -26,6 +26,7 @@ public class NodeCreationMessages
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .subSequenceIndices(getSubSequenceIndices())
+                            .maximumValue(getMaximumValue())
                             .isLastSubSequenceChunk(isLastSubSequenceChunk())
                             .build();
         }

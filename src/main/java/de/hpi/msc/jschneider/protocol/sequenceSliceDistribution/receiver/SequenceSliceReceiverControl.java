@@ -12,6 +12,9 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 import lombok.var;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SequenceSliceReceiverControl extends AbstractProtocolParticipantControl<SequenceSliceReceiverModel>
 {
     public SequenceSliceReceiverControl(SequenceSliceReceiverModel model)
@@ -31,6 +34,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         getModel().setFirstSubSequenceIndex(message.getFirstSubSequenceIndex());
         getModel().setSubSequenceLength(message.getSubSequenceLength());
         getModel().setConvolutionSize(message.getConvolutionSize());
+        getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
         getModel().setProjectionInitializer(new MatrixInitializer(getModel().getSubSequenceLength() - getModel().getConvolutionSize()));
 
         getModel().getDataTransferManager().accept(message,
@@ -60,32 +64,51 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
 
     private void embedSubSequences()
     {
-        val lastSubSequenceStart = getModel().getUnusedRecords().length - getModel().getSubSequenceLength();
+        val unusedRecords = getModel().getUnusedRecords();
+        val lastSubSequenceStart = unusedRecords.length - getModel().getSubSequenceLength();
+        var subSequence = getModel().getRawSubSequence();
         for (var subSequenceStart = 0; subSequenceStart <= lastSubSequenceStart; ++subSequenceStart)
         {
-            embedSubSequence(subSequenceStart);
+            if (subSequence == null)
+            {
+                subSequence = createFirstSubSequence();
+            }
+            else
+            {
+                subSequence.remove(0);
+                var value = 0.0f;
+                for (var convolutionIndex = 0; convolutionIndex < getModel().getConvolutionSize(); ++convolutionIndex)
+                {
+                    value += unusedRecords[subSequenceStart + getModel().getSubSequenceLength() - getModel().getConvolutionSize() - 1 + convolutionIndex];
+                }
+                subSequence.add(value);
+            }
+
+            getModel().getProjectionInitializer().appendRow(Floats.toArray(subSequence));
         }
 
+        getModel().setRawSubSequence(subSequence);
         val newUnusedRecords = new float[getModel().getSubSequenceLength() - 1];
         System.arraycopy(getModel().getUnusedRecords(), getModel().getUnusedRecords().length - newUnusedRecords.length, newUnusedRecords, 0, newUnusedRecords.length);
         getModel().setUnusedRecords(newUnusedRecords);
     }
 
-    private void embedSubSequence(int subSequenceStartIndex)
+    private List<Float> createFirstSubSequence()
     {
         val unusedRecords = getModel().getUnusedRecords();
-        val vector = new float[getModel().getSubSequenceLength() - getModel().getConvolutionSize()];
-        for (var vectorIndex = 0; vectorIndex < vector.length; ++vectorIndex)
+        val vectorLength = getModel().getSubSequenceLength() - getModel().getConvolutionSize();
+        val vector = new ArrayList<Float>(vectorLength);
+        for (var vectorIndex = 0; vectorIndex < vectorLength; ++vectorIndex)
         {
             var value = 0.0f;
-            for (var convolutionIndex = 0; convolutionIndex <= getModel().getConvolutionSize(); ++convolutionIndex)
+            for (var convolutionIndex = 0; convolutionIndex < getModel().getConvolutionSize(); ++convolutionIndex)
             {
-                value += unusedRecords[convolutionIndex + subSequenceStartIndex];
+                value += unusedRecords[vectorIndex + convolutionIndex];
             }
-            vector[vectorIndex] = value;
+            vector.add(value);
         }
 
-        getModel().getProjectionInitializer().appendRow(vector);
+        return vector;
     }
 
     private void whenFinished(DataReceiver receiver)

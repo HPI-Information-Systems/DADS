@@ -91,7 +91,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         transfer(rotation, self, messageInterface, initializeRotationTransfer, false);
         assertThat(control.getModel().getRotation().equals(rotation, MATRIX_COMPARISON_CONTEXT)).isTrue();
 
-        val projection2d = rotation.multiply(projection.multiply(principalComponents).transpose()).logical().row(1, 2).get();
+        val projection2d = rotation.multiply(projection.multiply(principalComponents).transpose()).logical().row(0, 1).get();
         val reducedProjectionCreatedEvent = expectEvent(DimensionReductionEvents.ReducedProjectionCreatedEvent.class);
 
         assertThat(projection2d.equals(reducedProjectionCreatedEvent.getReducedProjection(), MATRIX_COMPARISON_CONTEXT)).isTrue();
