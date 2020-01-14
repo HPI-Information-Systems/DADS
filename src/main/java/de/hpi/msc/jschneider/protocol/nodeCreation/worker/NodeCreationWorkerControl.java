@@ -159,9 +159,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         val numberOfIntersections = intersectionList.stream().mapToInt(intersections -> intersections.length).sum();
         val intersections = new double[numberOfIntersections];
-        for (int startIndex = 0, i = 0; startIndex < intersections.length; ++i)
+        var startIndex = 0;
+        for (var i = 0; startIndex < intersections.length; ++i)
         {
-            float[] part = intersectionList.get(i);
+            val part = intersectionList.get(i);
             System.arraycopy(toDoubles(part), 0, intersections, startIndex, part.length);
             startIndex += part.length;
         }

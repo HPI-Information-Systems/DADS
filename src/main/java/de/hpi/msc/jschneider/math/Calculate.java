@@ -267,8 +267,7 @@ public class Calculate
 
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
-                                       .vector(intersection)
-                                       .vectorLength(distance(origin, intersection))
+                                       .vectorLength((float) distance(origin, intersection))
                                        .build());
     }
 
