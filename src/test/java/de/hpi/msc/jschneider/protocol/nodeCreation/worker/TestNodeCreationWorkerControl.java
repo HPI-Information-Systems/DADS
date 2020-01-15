@@ -122,6 +122,12 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
             val intersectionsAtAngle = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.IntersectionsAtAngleMessage.class);
             assertThat(intersectionsAtAngle.getIntersectionPointIndex()).isEqualTo(i);
             assertThat(intersectionsAtAngle.getIntersections()).isNotNull();
+
+            val intersectionsEvent = expectEvent(NodeCreationEvents.IntersectionsCalculatedEvent.class);
+            assertThat(intersectionsEvent.getIntersectionPointIndex()).isEqualTo(i);
+            assertThat(intersectionsEvent.getIntersections()).isNotNull();
+
+            assertThat(intersectionsEvent.getIntersections()).containsExactly(intersectionsAtAngle.getIntersections());
         }
 
         assertThatMessageIsCompleted(initializeNodeCreation);
@@ -153,7 +159,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
 
 
         control.getModel().setMaximumValue(totalMax * 1.2d);
-        control.getModel().setDensitySamples(Calculate.makeRange(0.0d, totalMax * 1.2d, totalMax * 1.2d / 250));
+        control.getModel().setDensitySamples(Calculate.makeRange(0.0d, totalMax * 1.2d, 250));
         control.getModel().setSampleResponsibilities(responsibilities);
 
         val intersectionPointIndex = 0;

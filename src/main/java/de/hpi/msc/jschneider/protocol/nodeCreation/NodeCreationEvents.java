@@ -24,4 +24,22 @@ public class NodeCreationEvents
                             .build();
         }
     }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class IntersectionsCalculatedEvent extends MessageExchangeMessages.RedirectableMessage
+    {
+        private static final long serialVersionUID = -8226513489732567804L;
+        private int intersectionPointIndex;
+        private float[] intersections;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .intersectionPointIndex(getIntersectionPointIndex())
+                            .intersections(getIntersections())
+                            .build();
+        }
+    }
 }

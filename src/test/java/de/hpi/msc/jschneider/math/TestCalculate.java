@@ -15,9 +15,9 @@ public class TestCalculate extends TestCase
 {
     public void testMakeRange()
     {
-        assertThat(Calculate.makeRange(0.0d, 5.0d, 1.0d)).containsExactly(0.0d, 1.0d, 2.0d, 3.0d, 4.0d);
-        assertThat(Calculate.makeRange(1.0d, 5.0d, 1.0d)).containsExactly(1.0d, 2.0d, 3.0d, 4.0d);
-        assertThat(Calculate.makeRange(0.0d, 10.0d, 8.0d)).containsExactly(0.0d, 8.0d);
+        assertThat(Calculate.makeRange(0.0d, 5.0d, 5)).containsExactly(0.0d, 1.0d, 2.0d, 3.0d, 4.0d);
+        assertThat(Calculate.makeRange(1.0d, 5.0d, 4)).containsExactly(1.0d, 2.0d, 3.0d, 4.0d);
+        assertThat(Calculate.makeRange(0.0d, 10.0d, 1)).containsExactly(0.0d);
     }
 
     public void testColumnMeans()

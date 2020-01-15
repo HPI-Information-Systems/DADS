@@ -30,9 +30,10 @@ public class Calculate
         return MatrixStore.PRIMITIVE.makeWrapper(matrix).get();
     }
 
-    public static double[] makeRange(double start, double end, double step)
+    public static double[] makeRange(double start, double end, int numberOfSteps)
     {
-        val range = new double[(int) Math.ceil((end - start) / step)];
+        val step = (end - start) / numberOfSteps;
+        val range = new double[numberOfSteps];
         for (var i = 0; i < range.length; ++i)
         {
             range[i] = start + i * step;

@@ -90,7 +90,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             getModel().setSampleResponsibilities(message.getSampleResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
-            getModel().setDensitySamples(Calculate.makeRange(0.0d, getModel().getMaximumValue(), getModel().getMaximumValue() / NUMBER_OF_DENSITY_SAMPLES));
+            getModel().setDensitySamples(Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES));
 
             val intersectionCollections = Calculate.intersections(getModel().getReducedProjection(), message.getNumberOfSamples());
             for (val intersectionCollection : intersectionCollections)
@@ -110,12 +110,21 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         val intersections = Floats.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getVectorLength).collect(Collectors.toList()));
 
+        // send intersections directly to responsible processor
         send(NodeCreationMessages.IntersectionsAtAngleMessage.builder()
                                                              .sender(getModel().getSelf())
                                                              .receiver(responsibleProcessor)
                                                              .intersectionPointIndex(intersectionCollection.getIntersectionPointIndex())
                                                              .intersections(intersections)
                                                              .build());
+
+        // publish event with intersections, so that the edge creation process can use these results
+        trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.IntersectionsCalculatedEvent.builder()
+                                                                                                                  .sender(getModel().getSelf())
+                                                                                                                  .receiver(eventDispatcher)
+                                                                                                                  .intersectionPointIndex(intersectionCollection.getIntersectionPointIndex())
+                                                                                                                  .intersections(intersections)
+                                                                                                                  .build());
     }
 
     private ActorRef responsibleProcessor(int intersectionIndex)
