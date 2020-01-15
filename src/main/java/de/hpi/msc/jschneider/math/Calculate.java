@@ -16,7 +16,24 @@ import java.util.stream.DoubleStream;
 
 public class Calculate
 {
+    public static final double FLOATING_POINT_TOLERANCE = 0.00001d;
+
     private static final double TWO_PI = 2 * Math.PI;
+
+    public static boolean isSame(Number a, Number b)
+    {
+        return Math.abs(a.doubleValue() - b.doubleValue()) <= FLOATING_POINT_TOLERANCE;
+    }
+
+    public static boolean isMore(Number a, Number b)
+    {
+        return a.doubleValue() - b.doubleValue() > FLOATING_POINT_TOLERANCE;
+    }
+
+    public static boolean isLess(Number a, Number b)
+    {
+        return b.doubleValue() - a.doubleValue() > FLOATING_POINT_TOLERANCE;
+    }
 
     public static MatrixStore<Double> makeFilledRowVector(long length, double value)
     {
@@ -110,7 +127,7 @@ public class Calculate
         return Math.acos(dotProduct / (lengthA * lengthB));
     }
 
-    public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection, int numberOfSamples)
+    public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection, long firstSubSequenceIndex, int numberOfSegments)
     {
         // TODO: parallelize execution?! --> split up reduced projection by columns
 
@@ -121,12 +138,12 @@ public class Calculate
         val radiusY = Math.max(reducedProjection.aggregateRow(1L, Aggregator.MAXIMUM), Math.abs(reducedProjection.aggregateRow(1L, Aggregator.MINIMUM)));
         val radiusLength = Math.sqrt(radiusX * radiusX + radiusY * radiusY);
 
-        val intersectionPoints = makeIntersectionPoints(radiusLength, numberOfSamples);
-        val intersectionCollections = new IntersectionCollection[numberOfSamples];
+        val intersectionPoints = makeIntersectionPoints(radiusLength, numberOfSegments);
+        val intersectionCollections = new IntersectionCollection[numberOfSegments];
         for (var i = 0; i < intersectionCollections.length; ++i)
         {
             intersectionCollections[i] = IntersectionCollection.builder()
-                                                               .intersectionPointIndex(i)
+                                                               .intersectionSegment(i)
                                                                .build();
         }
 
@@ -135,9 +152,12 @@ public class Calculate
             val current = reducedProjection.sliceColumn(columnIndex);
             val next = reducedProjection.sliceColumn(columnIndex + 1);
 
-            for (val intersectionPointIndex : intersectionPointIndicesToCheck(current, next, numberOfSamples))
+            for (val intersectionPointIndex : intersectionPointIndicesToCheck(current, next, numberOfSegments))
             {
-                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionPointIndex), current, next);
+                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionPointIndex),
+                                                            firstSubSequenceIndex + columnIndex,
+                                                            current,
+                                                            next);
                 if (!intersection.isPresent())
                 {
                     continue;
@@ -150,12 +170,12 @@ public class Calculate
         return intersectionCollections;
     }
 
-    private static List<MatrixStore<Double>> makeIntersectionPoints(double radiusLength, int numberOfSamples)
+    private static List<MatrixStore<Double>> makeIntersectionPoints(double radiusLength, int numberOfSegments)
     {
-        val intersectionPoints = new ArrayList<MatrixStore<Double>>(numberOfSamples);
-        val angleStep = TWO_PI / numberOfSamples;
+        val intersectionPoints = new ArrayList<MatrixStore<Double>>(numberOfSegments);
+        val angleStep = TWO_PI / numberOfSegments;
 
-        for (var i = 0; i < numberOfSamples; ++i)
+        for (var i = 0; i < numberOfSegments; ++i)
         {
             val x = Math.cos(angleStep * i) * radiusLength;
             val y = Math.sin(angleStep * i) * radiusLength;
@@ -165,7 +185,7 @@ public class Calculate
         return intersectionPoints;
     }
 
-    private static int[] intersectionPointIndicesToCheck(Access1D<Double> current, Access1D<Double> next, int numberOfSamples)
+    private static int[] intersectionPointIndicesToCheck(Access1D<Double> current, Access1D<Double> next, int numberOfSegments)
     {
         val currentX = current.get(0);
         val currentY = current.get(1);
@@ -186,19 +206,19 @@ public class Calculate
             nextTheta += TWO_PI;
         }
 
-        val currentIntersectionPointIndex = (int) (currentTheta / TWO_PI * numberOfSamples);
-        val nextIntersectionPointIndex = (int) (nextTheta / TWO_PI * numberOfSamples);
+        val currentIntersectionPointIndex = (int) (currentTheta / TWO_PI * numberOfSegments);
+        val nextIntersectionPointIndex = (int) (nextTheta / TWO_PI * numberOfSegments);
         var diff = Math.abs(currentIntersectionPointIndex - nextIntersectionPointIndex);
-        val halfSamples = numberOfSamples / 2;
+        val halfSamples = numberOfSegments / 2;
         if (diff > halfSamples)
         {
             if (nextIntersectionPointIndex > halfSamples)
             {
-                diff = Math.abs(currentIntersectionPointIndex + numberOfSamples - nextIntersectionPointIndex);
+                diff = Math.abs(currentIntersectionPointIndex + numberOfSegments - nextIntersectionPointIndex);
             }
             else if (currentIntersectionPointIndex > halfSamples)
             {
-                diff = Math.abs(currentIntersectionPointIndex - numberOfSamples - nextIntersectionPointIndex);
+                diff = Math.abs(currentIntersectionPointIndex - numberOfSegments - nextIntersectionPointIndex);
             }
         }
         diff = Math.min(diff, halfSamples);
@@ -206,13 +226,13 @@ public class Calculate
         val intersectionPointOffset = -diff - 1;
         for (var i = 0; i < intersectionPointIndices.length; ++i)
         {
-            intersectionPointIndices[i] = Math.floorMod(currentIntersectionPointIndex + intersectionPointOffset + i, numberOfSamples);
+            intersectionPointIndices[i] = Math.floorMod(currentIntersectionPointIndex + intersectionPointOffset + i, numberOfSegments);
         }
 
         return intersectionPointIndices;
     }
 
-    private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint, Access1D<Double> current, Access1D<Double> next)
+    private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint, long subSequenceIndex, Access1D<Double> current, Access1D<Double> next)
     {
         val origin = makeRowVector(0.0d, 0.0d);
 
@@ -256,19 +276,20 @@ public class Calculate
         val intersectionX = determinant(determinants, diffX) / div;
         val intersectionY = determinant(determinants, diffY) / div;
 
-        if (intersectionX > line1MaxX || intersectionX < line1MinX || intersectionX > line2MaxX || intersectionX < line2MinX)
+        if (isMore(intersectionX, line1MaxX) || isLess(intersectionX, line1MinX) || isMore(intersectionX, line2MaxX) || isLess(intersectionX, line2MinX))
         {
             return Optional.empty();
         }
 
-        if (intersectionY > line1MaxY || intersectionY < line1MinY || intersectionY > line2MaxY || intersectionY < line2MinY)
+        if (isMore(intersectionY, line1MaxY) || isLess(intersectionY, line1MinY) || isMore(intersectionY, line2MaxY) || isLess(intersectionY, line2MinY))
         {
             return Optional.empty();
         }
 
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
-                                       .vectorLength((float) distance(origin, intersection))
+                                       .intersectionDistance((float) distance(origin, intersection))
+                                       .subSequenceIndex(subSequenceIndex)
                                        .build());
     }
 

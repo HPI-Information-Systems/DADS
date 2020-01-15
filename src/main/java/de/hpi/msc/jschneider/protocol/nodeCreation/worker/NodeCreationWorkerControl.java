@@ -14,6 +14,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
@@ -38,6 +39,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         return super.complementReceiveBuilder(builder)
                     .match(DimensionReductionEvents.ReducedProjectionCreatedEvent.class, this::onReducedProjectionCreated)
                     .match(NodeCreationMessages.InitializeNodeCreationMessage.class, this::onInitializeNodeCreation)
+                    .match(NodeCreationMessages.ReducedSubSequenceMessage.class, this::onReducedSubSequence)
                     .match(NodeCreationMessages.IntersectionsAtAngleMessage.class, this::onIntersectionsAtAngle);
     }
 
@@ -59,8 +61,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             val maximumValue = Math.max(getModel().getReducedProjection().aggregateAll(Aggregator.MAXIMUM),
                                         -getModel().getReducedProjection().aggregateAll(Aggregator.MINIMUM));
             val subSequenceIndices = Int64Range.builder()
-                                               .start(getModel().getFirstSubSequenceIndex())
-                                               .end(getModel().getFirstSubSequenceIndex() + getModel().getReducedProjection().countColumns())
+                                               .from(getModel().getFirstSubSequenceIndex())
+                                               .to(getModel().getFirstSubSequenceIndex() + getModel().getReducedProjection().countColumns())
                                                .build();
 
             val protocol = getMasterProtocol(ProtocolType.NodeCreation);
@@ -88,15 +90,14 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         try
         {
-            getModel().setSampleResponsibilities(message.getSampleResponsibilities());
+            getModel().setIntersectionSegmentResponsibilities(message.getIntersectionSegmentResponsibilities());
+            getModel().setSubSequenceResponsibilities(message.getSubSequenceResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
+            getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
             getModel().setDensitySamples(Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES));
 
-            val intersectionCollections = Calculate.intersections(getModel().getReducedProjection(), message.getNumberOfSamples());
-            for (val intersectionCollection : intersectionCollections)
-            {
-                sendIntersections(intersectionCollection);
-            }
+            sendReducedSubSequenceToNextProcessor();
+            calculateIntersections();
         }
         finally
         {
@@ -104,32 +105,111 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
     }
 
+    private void sendReducedSubSequenceToNextProcessor()
+    {
+        if (getModel().isLastSubSequenceChunk())
+        {
+            // there is no next processor
+            return;
+        }
+
+        val subSequenceIndexToSend = getModel().getFirstSubSequenceIndex() + getModel().getReducedProjection().countColumns();
+        for (val entry : getModel().getSubSequenceResponsibilities().entrySet())
+        {
+            val subSequenceIndices = entry.getValue();
+            if (!subSequenceIndices.contains(subSequenceIndexToSend))
+            {
+                continue;
+            }
+
+            val receiver = entry.getKey();
+            val columnIndex = getModel().getReducedProjection().countColumns() - 1;
+            val x = getModel().getReducedProjection().get(0L, columnIndex).floatValue();
+            val y = getModel().getReducedProjection().get(1L, columnIndex).floatValue();
+            send(NodeCreationMessages.ReducedSubSequenceMessage.builder()
+                                                               .sender(getModel().getSelf())
+                                                               .receiver(receiver)
+                                                               .subSequenceIndex(subSequenceIndexToSend)
+                                                               .subSequenceX(x)
+                                                               .subSequenceY(y)
+                                                               .build());
+            return;
+        }
+
+        getLog().error(String.format("Unable to find responsible actor for subsequence index %1$d!", subSequenceIndexToSend));
+    }
+
+    private void onReducedSubSequence(NodeCreationMessages.ReducedSubSequenceMessage message)
+    {
+        try
+        {
+            assert getModel().getReducedSubSequenceMessage() == null : "Already received a ReducedSubSequence message!";
+            getModel().setReducedSubSequenceMessage(message);
+
+            calculateIntersections();
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void calculateIntersections()
+    {
+        if (!isReadyToCalculateIntersections())
+        {
+            return;
+        }
+
+        var projection = getModel().getReducedProjection();
+        if (getModel().getFirstSubSequenceIndex() > 0L)
+        {
+            projection = (new MatrixInitializer(getModel().getReducedProjection().countRows())
+                                  .append(getModel().getReducedProjection().transpose())
+                                  .appendRow(new float[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
+                                  .create()
+                                  .transpose());
+        }
+
+        val intersectionCollections = Calculate.intersections(projection, getModel().getFirstSubSequenceIndex(), getModel().getNumberOfIntersectionSegments());
+        for (val intersectionCollection : intersectionCollections)
+        {
+            sendIntersections(intersectionCollection);
+        }
+    }
+
+    private boolean isReadyToCalculateIntersections()
+    {
+        return getModel().getReducedProjection() != null &&
+               getModel().getIntersectionSegmentResponsibilities() != null &&
+               (getModel().getFirstSubSequenceIndex() == 0 || getModel().getReducedSubSequenceMessage() != null);
+    }
+
     private void sendIntersections(IntersectionCollection intersectionCollection)
     {
-        val responsibleProcessor = responsibleProcessor(intersectionCollection.getIntersectionPointIndex());
+        val responsibleProcessor = responsibleProcessor(intersectionCollection.getIntersectionSegment());
 
-        val intersections = Floats.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getVectorLength).collect(Collectors.toList()));
+        val intersections = Floats.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
-        // send intersections directly to responsible processor
+        // send intersections directly to the processor which is responsible for the segment
         send(NodeCreationMessages.IntersectionsAtAngleMessage.builder()
                                                              .sender(getModel().getSelf())
                                                              .receiver(responsibleProcessor)
-                                                             .intersectionPointIndex(intersectionCollection.getIntersectionPointIndex())
+                                                             .intersectionPointIndex(intersectionCollection.getIntersectionSegment())
                                                              .intersections(intersections)
                                                              .build());
 
-        // publish event with intersections, so that the edge creation process can use these results
+        // publish intersection event, so that the edge creation protocol does not need to calculate those again
         trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.IntersectionsCalculatedEvent.builder()
                                                                                                                   .sender(getModel().getSelf())
                                                                                                                   .receiver(eventDispatcher)
-                                                                                                                  .intersectionPointIndex(intersectionCollection.getIntersectionPointIndex())
-                                                                                                                  .intersections(intersections)
+                                                                                                                  .intersectionCollection(intersectionCollection)
                                                                                                                   .build());
     }
 
     private ActorRef responsibleProcessor(int intersectionIndex)
     {
-        val processorRootPath = getModel().getSampleResponsibilities().entrySet()
+        val processorRootPath = getModel().getIntersectionSegmentResponsibilities().entrySet()
                                           .stream()
                                           .filter(keyValuePair -> keyValuePair.getValue().contains(intersectionIndex))
                                           .map(Map.Entry::getKey)
@@ -143,7 +223,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         try
         {
-            val myResponsibilities = getModel().getSampleResponsibilities().get(getModel().getSelf());
+            val myResponsibilities = getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf());
             assert myResponsibilities.contains(message.getIntersectionPointIndex()) : "Received intersections for an angle we are not responsible for!";
 
             getModel().getIntersections().putIfAbsent(message.getIntersectionPointIndex(), new ArrayList<>());
@@ -160,7 +240,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     private void createNodes(int intersectionPointIndex)
     {
         val intersectionList = getModel().getIntersections().get(intersectionPointIndex);
-        if (intersectionList.size() != getModel().getSampleResponsibilities().size())
+        if (intersectionList.size() != getModel().getIntersectionSegmentResponsibilities().size())
         {
             // not all processor sent their intersections yet
             return;
@@ -195,7 +275,6 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             nodeCollection.getNodes().add(Node.builder()
                                               .intersectionLength(getModel().getDensitySamples()[localMaximumIndex])
-                                              .probability(probabilities[localMaximumIndex])
                                               .build());
         }
 

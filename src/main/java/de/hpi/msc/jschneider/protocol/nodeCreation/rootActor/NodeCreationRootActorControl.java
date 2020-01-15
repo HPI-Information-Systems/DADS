@@ -63,7 +63,7 @@ public class NodeCreationRootActorControl extends AbstractProtocolParticipantCon
     {
         assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master node may create a NodeCreationCoordinator!";
 
-        val numberOfSamples = ((MasterCommand) SystemParameters.getCommand()).getNumberOfSamples();
+        val numberOfSamples = ((MasterCommand) SystemParameters.getCommand()).getNumberOfIntersectionSegments();
 
         val model = NodeCreationCoordinatorModel.builder()
                                                 .totalNumberOfSamples(numberOfSamples)

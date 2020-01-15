@@ -7,5 +7,4 @@ import lombok.Getter;
 public class Node
 {
     private double intersectionLength;
-    private double probability;
 }

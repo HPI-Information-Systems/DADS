@@ -10,6 +10,7 @@ import lombok.val;
 import org.ojalgo.function.aggregator.Aggregator;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,6 +48,22 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
         return new NodeCreationCoordinatorControl(dummyModel());
     }
 
+    private void assertThatInitializationMessagesAreSent(TestProbe... participants)
+    {
+        val initializeMessages = new ArrayList<NodeCreationMessages.InitializeNodeCreationMessage>();
+        for (val participant : participants)
+        {
+            initializeMessages.add(localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.InitializeNodeCreationMessage.class));
+        }
+
+        for (val participant : participants)
+        {
+            assertThat(initializeMessages.stream().anyMatch(message -> message.getReceiver().equals(participant.ref()))).isTrue();
+        }
+
+        assertThat(initializeMessages.stream().map(NodeCreationMessages.InitializeNodeCreationMessage::getMaximumValue).collect(Collectors.toSet())).hasSize(1);
+    }
+
     public void testWaitForAllProcessorsToBeReady()
     {
         val control = control();
@@ -64,8 +81,8 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
                                                                                   .receiver(self.ref())
                                                                                   .isLastSubSequenceChunk(false)
                                                                                   .subSequenceIndices(Int64Range.builder()
-                                                                                                                .start(0L)
-                                                                                                                .end(firstReducedProjection.countColumns())
+                                                                                                                .from(0L)
+                                                                                                                .to(firstReducedProjection.countColumns())
                                                                                                                 .build())
                                                                                   .maximumValue(firstMaxValue)
                                                                                   .build();
@@ -82,8 +99,8 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
                                                                                    .receiver(self.ref())
                                                                                    .isLastSubSequenceChunk(true)
                                                                                    .subSequenceIndices(Int64Range.builder()
-                                                                                                                 .start(firstReducedProjection.countColumns())
-                                                                                                                 .end(firstReducedProjection.countColumns() + secondReducedProjection.countColumns())
+                                                                                                                 .from(firstReducedProjection.countColumns())
+                                                                                                                 .to(firstReducedProjection.countColumns() + secondReducedProjection.countColumns())
                                                                                                                  .build())
                                                                                    .maximumValue(secondMaxValue)
                                                                                    .build();
@@ -93,21 +110,7 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
         assertThat(control.getModel().getReadyMessages().get(1)).isEqualTo(secondWorkerReady);
 
         // initialize node creation process now that all processors reported ready
-        val initializeMessages = new ArrayList<NodeCreationMessages.InitializeNodeCreationMessage>();
-        initializeMessages.add(localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.InitializeNodeCreationMessage.class));
-        initializeMessages.add(localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.InitializeNodeCreationMessage.class));
-
-        assertThat(initializeMessages.stream()
-                                     .anyMatch(message -> message.getReceiver().equals(self.ref()))).isTrue();
-        assertThat(initializeMessages.stream()
-                                     .anyMatch(message -> message.getReceiver().equals(remoteActor.ref()))).isTrue();
-        assertThat(initializeMessages.get(0).getSampleResponsibilities()).isEqualTo(initializeMessages.get(1).getSampleResponsibilities());
-
-        val sampleResponsibilities = initializeMessages.get(0).getSampleResponsibilities();
-        assertThat(sampleResponsibilities.get(self.ref()).getStart()).isEqualTo(0);
-        assertThat(sampleResponsibilities.get(self.ref()).getEnd()).isEqualTo(NUMBER_OF_SAMPLES / 2);
-        assertThat(sampleResponsibilities.get(remoteActor.ref()).getStart()).isEqualTo(NUMBER_OF_SAMPLES / 2);
-        assertThat(sampleResponsibilities.get(remoteActor.ref()).getEnd()).isEqualTo(NUMBER_OF_SAMPLES);
+        assertThatInitializationMessagesAreSent(self, remoteActor);
 
         assertThatMessageIsCompleted(secondWorkerReady);
     }
@@ -129,8 +132,8 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
                                                                                    .receiver(self.ref())
                                                                                    .isLastSubSequenceChunk(true)
                                                                                    .subSequenceIndices(Int64Range.builder()
-                                                                                                                 .start(firstReducedProjection.countColumns())
-                                                                                                                 .end(firstReducedProjection.countColumns() + secondReducedProjection.countColumns())
+                                                                                                                 .from(firstReducedProjection.countColumns())
+                                                                                                                 .to(firstReducedProjection.countColumns() + secondReducedProjection.countColumns())
                                                                                                                  .build())
                                                                                    .maximumValue(secondMaxValue)
                                                                                    .build();
@@ -147,8 +150,8 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
                                                                                   .receiver(self.ref())
                                                                                   .isLastSubSequenceChunk(false)
                                                                                   .subSequenceIndices(Int64Range.builder()
-                                                                                                                .start(0L)
-                                                                                                                .end(firstReducedProjection.countColumns())
+                                                                                                                .from(0L)
+                                                                                                                .to(firstReducedProjection.countColumns())
                                                                                                                 .build())
                                                                                   .maximumValue(firstMaxValue)
                                                                                   .build();
@@ -158,21 +161,7 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
         assertThat(control.getModel().getReadyMessages().get(1)).isEqualTo(firstWorkerReady);
 
         // initialize node creation process now that all processors reported ready
-        val initializeMessages = new ArrayList<NodeCreationMessages.InitializeNodeCreationMessage>();
-        initializeMessages.add(localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.InitializeNodeCreationMessage.class));
-        initializeMessages.add(localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.InitializeNodeCreationMessage.class));
-
-        assertThat(initializeMessages.stream()
-                                     .anyMatch(message -> message.getReceiver().equals(self.ref()))).isTrue();
-        assertThat(initializeMessages.stream()
-                                     .anyMatch(message -> message.getReceiver().equals(remoteActor.ref()))).isTrue();
-        assertThat(initializeMessages.get(0).getSampleResponsibilities()).isEqualTo(initializeMessages.get(1).getSampleResponsibilities());
-
-        val sampleResponsibilities = initializeMessages.get(0).getSampleResponsibilities();
-        assertThat(sampleResponsibilities.get(self.ref()).getStart()).isEqualTo(0);
-        assertThat(sampleResponsibilities.get(self.ref()).getEnd()).isEqualTo(NUMBER_OF_SAMPLES / 2);
-        assertThat(sampleResponsibilities.get(remoteActor.ref()).getStart()).isEqualTo(NUMBER_OF_SAMPLES / 2);
-        assertThat(sampleResponsibilities.get(remoteActor.ref()).getEnd()).isEqualTo(NUMBER_OF_SAMPLES);
+        assertThatInitializationMessagesAreSent(self, remoteActor);
 
         assertThatMessageIsCompleted(firstWorkerReady);
     }

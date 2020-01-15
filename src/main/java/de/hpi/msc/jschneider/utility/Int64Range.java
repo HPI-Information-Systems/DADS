@@ -7,17 +7,17 @@ import lombok.Getter;
 public class Int64Range
 {
     // Start is included.
-    private long start;
+    private long from;
     // End is excluded.
-    private long end;
+    private long to;
 
     public long length()
     {
-        return end - start;
+        return to - from;
     }
 
     public boolean contains(long value)
     {
-        return value >= start && value < end;
+        return value >= from && value < to;
     }
 }

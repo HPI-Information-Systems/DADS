@@ -9,6 +9,6 @@ import java.util.List;
 @Builder @Getter
 public class IntersectionCollection
 {
-    private int intersectionPointIndex;
+    private int intersectionSegment;
     private final List<Intersection> intersections = new ArrayList<>();
 }

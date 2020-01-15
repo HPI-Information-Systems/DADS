@@ -33,12 +33,34 @@ public class NodeCreationMessages
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class InitializeNodeCreationMessage extends MessageExchangeMessages.MessageExchangeMessage
+    public static class InitializeNodeCreationMessage extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 1734911241966860272L;
-        private int numberOfSamples;
+        private int numberOfIntersectionSegments;
         private double maximumValue;
-        private Map<ActorRef, Int32Range> sampleResponsibilities;
+        private Map<ActorRef, Int32Range> intersectionSegmentResponsibilities;
+        private Map<ActorRef, Int64Range> subSequenceResponsibilities;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .numberOfIntersectionSegments(getNumberOfIntersectionSegments())
+                            .maximumValue(getMaximumValue())
+                            .intersectionSegmentResponsibilities(getIntersectionSegmentResponsibilities())
+                            .subSequenceResponsibilities(getSubSequenceResponsibilities())
+                            .build();
+        }
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class ReducedSubSequenceMessage extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = 7735483469077801832L;
+        private long subSequenceIndex;
+        private float subSequenceX;
+        private float subSequenceY;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter

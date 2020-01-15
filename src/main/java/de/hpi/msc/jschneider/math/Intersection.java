@@ -6,5 +6,6 @@ import lombok.Getter;
 @Builder @Getter
 public class Intersection
 {
-    private float vectorLength;
+    private float intersectionDistance;
+    private long subSequenceIndex;
 }
