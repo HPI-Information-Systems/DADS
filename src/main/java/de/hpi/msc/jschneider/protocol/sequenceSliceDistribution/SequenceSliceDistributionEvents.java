@@ -14,6 +14,7 @@ public class SequenceSliceDistributionEvents
     {
         private static final long serialVersionUID = 3362960763906428742L;
         private long firstSubSequenceIndex;
+        private boolean isLastSubSequenceChunk;
         private float minimumRecord;
         private float maximumRecord;
         private MatrixStore<Double> projection;
@@ -24,6 +25,7 @@ public class SequenceSliceDistributionEvents
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
+                            .isLastSubSequenceChunk(isLastSubSequenceChunk())
                             .minimumRecord(getMinimumRecord())
                             .maximumRecord(getMaximumRecord())
                             .projection(getProjection())

@@ -15,11 +15,11 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(EventDispatcherMessages.SubscribeToEventMessage.class, this::onSubscribe)
-                      .match(EventDispatcherMessages.UnsubscribeFromEventMessage.class, this::onUnsubscribe)
-                      .match(MessageExchangeMessages.RedirectableMessage.class, this::onDispatchEvent)
-                      .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure)
-                      .matchAny(this::onAny);
+        return super.complementReceiveBuilder(builder)
+                    .match(EventDispatcherMessages.SubscribeToEventMessage.class, this::onSubscribe)
+                    .match(EventDispatcherMessages.UnsubscribeFromEventMessage.class, this::onUnsubscribe)
+                    .match(MessageExchangeMessages.RedirectableMessage.class, this::onDispatchEvent)
+                    .matchAny(this::onAny);
     }
 
     protected void onSubscribe(EventDispatcherMessages.SubscribeToEventMessage message)
@@ -92,18 +92,6 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
             {
                 send(message.redirectTo(subscriber));
             }
-        }
-        finally
-        {
-            complete(message);
-        }
-    }
-
-    protected void onBackPressure(MessageExchangeMessages.BackPressureMessage message) throws InterruptedException
-    {
-        try
-        {
-            Thread.sleep(1000);
         }
         finally
         {

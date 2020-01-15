@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
+import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 import lombok.var;
@@ -167,8 +168,62 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThat(writer.getValues()).isEmpty();
 
         val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+        assertThat(request.getOperationId()).isEqualTo(OPERATION_ID);
         assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
 
         assertThatMessageIsCompleted(partMessage);
+    }
+
+    public void testCreateProjection()
+    {
+        val writer = new MockSequenceWriter();
+        val control = control(writer);
+        val messageInterface = createMessageInterface(control);
+        val slicePart = range(0, 10);
+
+        val subSequenceLength = 5;
+        val convolutionSize = 3;
+        val slidingWindowWidth = subSequenceLength - convolutionSize;
+
+        val initialize = SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.builder()
+                                                                                                 .sender(localSliceDistributor.ref())
+                                                                                                 .receiver(self.ref())
+                                                                                                 .firstSubSequenceIndex(0L)
+                                                                                                 .subSequenceLength(subSequenceLength)
+                                                                                                 .convolutionSize(convolutionSize)
+                                                                                                 .operationId(OPERATION_ID)
+                                                                                                 .build();
+        messageInterface.apply(initialize);
+
+        val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+        assertThat(request.getOperationId()).isEqualTo(OPERATION_ID);
+        assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
+        assertThatMessageIsCompleted(initialize);
+
+        val part = DataTransferMessages.DataPartMessage.builder()
+                                                       .sender(localSliceDistributor.ref())
+                                                       .receiver(self.ref())
+                                                       .isLastPart(true)
+                                                       .part(slicePart)
+                                                       .operationId(OPERATION_ID)
+                                                       .build();
+        messageInterface.apply(part);
+
+        val projectionCreated = expectEvent(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
+        assertThat(projectionCreated.getProjection().countColumns()).isEqualTo(slidingWindowWidth);
+        assertThat(projectionCreated.getProjection().countRows()).isEqualTo(slicePart.length - (subSequenceLength - 1));
+
+        val expectedProjection = (new MatrixInitializer(2L)
+                                          .appendRow(new float[]{0.0f + 1.0f + 2.0f, 1.0f + 2.0f + 3.0f})
+                                          .appendRow(new float[]{1.0f + 2.0f + 3.0f, 2.0f + 3.0f + 4.0f})
+                                          .appendRow(new float[]{2.0f + 3.0f + 4.0f, 3.0f + 4.0f + 5.0f})
+                                          .appendRow(new float[]{3.0f + 4.0f + 5.0f, 4.0f + 5.0f + 6.0f})
+                                          .appendRow(new float[]{4.0f + 5.0f + 6.0f, 5.0f + 6.0f + 7.0f})
+                                          .appendRow(new float[]{5.0f + 6.0f + 7.0f, 6.0f + 7.0f + 8.0f})
+                                          .create());
+
+        assertThat(projectionCreated.getProjection().equals(expectedProjection, MATRIX_COMPARISON_CONTEXT)).isTrue();
+
+        assertThatMessageIsCompleted(part);
     }
 }

@@ -40,7 +40,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
 
     private EqualSequenceSliceDistributorFactory(MasterCommand masterCommand)
     {
-        expectedNumberOfProcessors = masterCommand.getMinimumNumberOfSlaves();
+        expectedNumberOfProcessors = masterCommand.getMinimumNumberOfSlaves() + 1; // the master is also working
         sequenceReaderTemplate = BinarySequenceReader.fromFile(masterCommand.getSequenceFilePath().toFile());
         subSequenceLength = masterCommand.getSubSequenceLength();
         sliceOverlap = masterCommand.getSubSequenceLength() - 1;
@@ -72,14 +72,15 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
         else if (sequenceReaders.size() < expectedNumberOfProcessors)
         {
             sequenceReader = createNextSequenceReader();
-            props.add(createProps(newProcessor.getRootPath(), sequenceReader));
+            sequenceReaders.put(newProcessor.getRootPath(), sequenceReader);
+            props.add(createProps(newProcessor.getRootPath(), sequenceReader, sequenceReaders.size() == expectedNumberOfProcessors));
         }
 
 
         return props;
     }
 
-    private Props createProps(RootActorPath sliceReceiverActorSystem, SequenceReader reader)
+    private Props createProps(RootActorPath sliceReceiverActorSystem, SequenceReader reader, boolean isLastSubSequenceChunk)
     {
         val currentSubSequenceStartIndex = nextSubSequenceStartIndex;
         nextSubSequenceStartIndex += Math.max(1, reader.getSize() - (subSequenceLength - 1));
@@ -94,10 +95,10 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
                                                  .sequenceReader(reader)
                                                  .maximumMessageSizeProvider(SystemParameters::getMaximumMessageSize)
                                                  .firstSubSequenceIndex(currentSubSequenceStartIndex)
+                                                 .isLastSubSequenceChunk(isLastSubSequenceChunk)
                                                  .subSequenceLength(subSequenceLength)
                                                  .convolutionSize(convolutionSize)
                                                  .build();
-
 
         val control = new SequenceSliceDistributorControl(model);
         return ReapedActor.props(control);

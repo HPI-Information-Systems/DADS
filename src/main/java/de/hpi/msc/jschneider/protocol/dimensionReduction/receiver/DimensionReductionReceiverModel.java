@@ -14,6 +14,8 @@ public class DimensionReductionReceiverModel extends AbstractProtocolParticipant
     private MatrixStore<Double> projection;
     @Setter @Getter
     private long firstSubSequenceIndex;
+    @Setter @Getter
+    private boolean isLastSubSequenceChunk;
     @Getter
     private final PrimitiveMatrixSink principalComponentsSink = new PrimitiveMatrixSink();
     @Setter @Getter

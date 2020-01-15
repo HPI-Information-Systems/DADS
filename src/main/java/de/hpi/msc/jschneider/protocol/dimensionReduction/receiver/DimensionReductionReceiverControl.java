@@ -39,6 +39,7 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
         {
             getModel().setProjection(message.getProjection());
             getModel().setFirstSubSequenceIndex(message.getFirstSubSequenceIndex());
+            getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
         }
         finally
         {
@@ -86,7 +87,7 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
 
         val reducedProjection = getModel().getProjection().multiply(getModel().getPrincipalComponents());
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
-        val projection2d = rotatedProjection.logical().row(1, 2).get();
+        val projection2d = rotatedProjection.logical().row(0, 1).get();
 
         trySendEvent(ProtocolType.DimensionReduction, eventDispatcher ->
                 DimensionReductionEvents.ReducedProjectionCreatedEvent.builder()
@@ -94,6 +95,8 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                                                                       .receiver(eventDispatcher)
                                                                       .reducedProjection(projection2d)
                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                      .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                       .build());
+        // TODO: terminate self?!
     }
 }

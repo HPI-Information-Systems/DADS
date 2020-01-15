@@ -13,6 +13,7 @@ import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcher
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionProtocol;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
+import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationProtocol;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryModel;
@@ -87,6 +88,7 @@ public class ProcessorRegistrationProtocol
         protocols.add(SequenceSliceDistributionProtocol.initialize(actorSystem));
         protocols.add(PCAProtocol.initialize(actorSystem));
         protocols.add(DimensionReductionProtocol.initialize(actorSystem));
+        protocols.add(NodeCreationProtocol.initialize(actorSystem));
 
         return protocols;
     }
