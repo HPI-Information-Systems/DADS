@@ -1,5 +1,7 @@
 package de.hpi.msc.jschneider.utility;
 
+import lombok.val;
+
 public class Counter
 {
     private long value;
@@ -19,6 +21,8 @@ public class Counter
         value += 1;
     }
 
+    public void decrement() { value = Math.max(0L, value - 1);}
+
     public long getAndIncrement()
     {
         increment();
@@ -28,6 +32,19 @@ public class Counter
     public long incrementAndGet()
     {
         increment();
+        return get();
+    }
+
+    public long getAndDecrement()
+    {
+        val value = get();
+        decrement();
+        return value;
+    }
+
+    public long decrementAndGet()
+    {
+        decrement();
         return get();
     }
 }

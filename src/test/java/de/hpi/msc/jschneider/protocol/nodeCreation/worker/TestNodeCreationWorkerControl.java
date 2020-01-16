@@ -3,7 +3,6 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
 import com.google.common.primitives.Floats;
-import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
@@ -128,6 +127,9 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
                                                                                        .build();
         messageInterface.apply(initializeNodeCreation);
 
+        val segmentResponsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
+        assertThat(segmentResponsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.get(self.ref()));
+
         for (var i = 0; i < numberOfIntersectionSegments; ++i)
         {
             val intersectionsAtAngle = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.IntersectionsMessage.class);
@@ -172,7 +174,6 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
 
         control.getModel().setFirstSubSequenceIndex(0L);
         control.getModel().setMaximumValue(totalMax * 1.2d);
-        control.getModel().setDensitySamples(Calculate.makeRange(0.0d, totalMax * 1.2d, 250));
         control.getModel().setLastSubSequenceChunk(false);
         control.getModel().setIntersectionSegmentResponsibilities(intersectionSegmentResponsibilities);
 
@@ -249,6 +250,10 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
                                                                                   .subSequenceResponsibilities(subSequenceResponsibilities)
                                                                                   .build();
         messageInterface.apply(initializeMessage);
+
+        val responsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
+        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(segmentResponsibilities.get(self.ref()));
+        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.get(self.ref()));
 
         val reducedSubSequenceMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.ReducedSubSequenceMessage.class);
         assertThat(reducedSubSequenceMessage.getReceiver()).isEqualTo(remoteActor.ref());

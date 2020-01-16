@@ -149,12 +149,30 @@ public class Calculate
 
         for (var columnIndex = 0; columnIndex < reducedProjection.countColumns() - 1; ++columnIndex)
         {
+            var intersectionFound = false;
             val current = reducedProjection.sliceColumn(columnIndex);
             val next = reducedProjection.sliceColumn(columnIndex + 1);
 
-            for (val intersectionPointIndex : intersectionPointIndicesToCheck(current, next, numberOfSegments))
+//            for (var intersectionSegment = 0; intersectionSegment < numberOfSegments; ++intersectionSegment)
+//            {
+//                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
+//                                                            firstSubSequenceIndex + columnIndex,
+//                                                            current,
+//                                                            next);
+//                if (!intersection.isPresent())
+//                {
+//                    continue;
+//                }
+//
+//                intersectionFound = true;
+//                intersectionCollections[intersectionSegment].getIntersections().add(intersection.get());
+//            }
+//
+//            assert intersectionFound : "Every pair of sub sequences must have an intersection somewhere!";
+
+            for (val intersectionSegment : intersectionSegmentsToCheck(current, next, numberOfSegments))
             {
-                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionPointIndex),
+                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
                                                             firstSubSequenceIndex + columnIndex,
                                                             current,
                                                             next);
@@ -163,7 +181,7 @@ public class Calculate
                     continue;
                 }
 
-                intersectionCollections[intersectionPointIndex].getIntersections().add(intersection.get());
+                intersectionCollections[intersectionSegment].getIntersections().add(intersection.get());
             }
         }
 
@@ -185,7 +203,7 @@ public class Calculate
         return intersectionPoints;
     }
 
-    private static int[] intersectionPointIndicesToCheck(Access1D<Double> current, Access1D<Double> next, int numberOfSegments)
+    private static int[] intersectionSegmentsToCheck(Access1D<Double> current, Access1D<Double> next, int numberOfSegments)
     {
         val currentX = current.get(0);
         val currentY = current.get(1);

@@ -135,7 +135,20 @@ public class TestCalculate extends TestCase
             assertThat(intersections[segmentIndex].getIntersections().stream().mapToLong(Intersection::getSubSequenceIndex))
                     .containsExactlyInAnyOrder((long) segmentIndex, (long) Math.floorMod(segmentIndex - 1, numberOfSegments));
         }
+    }
 
+    public void testIntersections2()
+    {
+        val reducedProjection = (new MatrixInitializer(2L)
+                                         .appendRow(new float[]{0.5f, 0.0f})
+                                         .appendRow(new float[]{1.0f, 0.0f})
+                                         .create()
+                                         .transpose());
+        val numberOfSegments = 4;
+        val intersections = Calculate.intersections(reducedProjection, 0L, numberOfSegments);
+
+        assertThat(intersections.length).isEqualTo(numberOfSegments);
+        assertThat(Arrays.stream(intersections).allMatch(collection -> collection.getIntersections().isEmpty())).isTrue();
     }
 
     public void testLocalMaximumIndices()

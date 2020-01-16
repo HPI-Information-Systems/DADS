@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
+import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class NodeCreationWorkerControl extends AbstractProtocolParticipantControl<NodeCreationWorkerModel>
 {
     private static final int NUMBER_OF_DENSITY_SAMPLES = 250;
+    private static final double DENSITY_SAMPLES_SCALING_FACTOR = 1.2d;
 
     public NodeCreationWorkerControl(NodeCreationWorkerModel model)
     {
@@ -94,7 +96,13 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setSubSequenceResponsibilities(message.getSubSequenceResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
-            getModel().setDensitySamples(Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES));
+
+            trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
+                                                                                                                       .sender(getModel().getSelf())
+                                                                                                                       .receiver(eventDispatcher)
+                                                                                                                       .segmentResponsibilities(message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()))
+                                                                                                                       .subSequenceResponsibilities(message.getSubSequenceResponsibilities().get(getModel().getSelf()))
+                                                                                                                       .build());
 
             sendReducedSubSequenceToNextProcessor();
             calculateIntersections();
@@ -259,12 +267,11 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         val h = Calculate.scottsFactor(intersections.length, 1L);
         val kde = new KernelDensity(intersections, h);
         val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
+        val densitySamples = Calculate.makeRange(0.0d, Doubles.max(intersections) * DENSITY_SAMPLES_SCALING_FACTOR, NUMBER_OF_DENSITY_SAMPLES);
 
-        assert getModel().getDensitySamples().length == probabilities.length : "|densitySamples| != |probabilities|";
-
-        for (var i = 0; i < getModel().getDensitySamples().length; ++i)
+        for (var i = 0; i < densitySamples.length; ++i)
         {
-            probabilities[i] = kde.p(getModel().getDensitySamples()[i]);
+            probabilities[i] = kde.p(densitySamples[i]);
         }
 
         val localMaximumIndices = Calculate.localMaximumIndices(probabilities);
@@ -274,7 +281,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (val localMaximumIndex : localMaximumIndices)
         {
             nodeCollection.getNodes().add(Node.builder()
-                                              .intersectionLength(getModel().getDensitySamples()[localMaximumIndex])
+                                              .intersectionLength(densitySamples[localMaximumIndex])
                                               .build());
         }
 

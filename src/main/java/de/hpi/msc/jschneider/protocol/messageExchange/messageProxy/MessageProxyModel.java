@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageProxy;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.utility.Counter;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -17,7 +18,7 @@ import java.util.Map;
 public class MessageProxyModel extends AbstractProtocolParticipantModel
 {
     @NonNull @Getter
-    private final MutableLong totalNumberOfEnqueuedMessages = new MutableLong();
+    private final Counter totalNumberOfEnqueuedMessages = new Counter(0L);
     @NonNull @Getter
     private final Map<ActorPath, ActorMessageQueue> messageQueues = new HashMap<>();
     @NonNull @Getter

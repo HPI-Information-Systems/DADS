@@ -33,8 +33,6 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private int numberOfIntersectionSegments;
     @Setter @Getter
-    private double[] densitySamples;
-    @Setter @Getter
     private NodeCreationMessages.ReducedSubSequenceMessage reducedSubSequenceMessage;
     @NonNull @Getter
     private final Map<Integer, List<float[]>> intersections = new HashMap<>();
