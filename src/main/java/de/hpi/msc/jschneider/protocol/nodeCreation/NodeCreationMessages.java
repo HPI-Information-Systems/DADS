@@ -64,10 +64,28 @@ public class NodeCreationMessages
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class IntersectionsAtAngleMessage extends MessageExchangeMessages.MessageExchangeMessage
+    public static class IntersectionsMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = -8012069364274224581L;
-        private int intersectionPointIndex;
+        private int intersectionSegment;
         private float[] intersections;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class NodesMessage extends MessageExchangeMessages.RedirectableMessage
+    {
+        private static final long serialVersionUID = 2030668695666469041L;
+        private int intersectionSegment;
+        private float[] nodes;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .intersectionSegment(getIntersectionSegment())
+                            .nodes(getNodes())
+                            .build();
+        }
     }
 }

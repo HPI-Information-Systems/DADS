@@ -33,7 +33,7 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
     @Override
     protected ProtocolType[] getProcessorProtocols()
     {
-        return new ProtocolType[]{ProtocolType.MessageExchange, ProtocolType.NodeCreation};
+        return new ProtocolType[]{ProtocolType.MessageExchange, ProtocolType.NodeCreation, ProtocolType.EdgeCreation};
     }
 
     private NodeCreationCoordinatorModel dummyModel()

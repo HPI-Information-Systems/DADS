@@ -40,7 +40,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                     .match(DimensionReductionEvents.ReducedProjectionCreatedEvent.class, this::onReducedProjectionCreated)
                     .match(NodeCreationMessages.InitializeNodeCreationMessage.class, this::onInitializeNodeCreation)
                     .match(NodeCreationMessages.ReducedSubSequenceMessage.class, this::onReducedSubSequence)
-                    .match(NodeCreationMessages.IntersectionsAtAngleMessage.class, this::onIntersectionsAtAngle);
+                    .match(NodeCreationMessages.IntersectionsMessage.class, this::onIntersections);
     }
 
     @Override
@@ -192,12 +192,12 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         val intersections = Floats.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
         // send intersections directly to the processor which is responsible for the segment
-        send(NodeCreationMessages.IntersectionsAtAngleMessage.builder()
-                                                             .sender(getModel().getSelf())
-                                                             .receiver(responsibleProcessor)
-                                                             .intersectionPointIndex(intersectionCollection.getIntersectionSegment())
-                                                             .intersections(intersections)
-                                                             .build());
+        send(NodeCreationMessages.IntersectionsMessage.builder()
+                                                      .sender(getModel().getSelf())
+                                                      .receiver(responsibleProcessor)
+                                                      .intersectionSegment(intersectionCollection.getIntersectionSegment())
+                                                      .intersections(intersections)
+                                                      .build());
 
         // publish intersection event, so that the edge creation protocol does not need to calculate those again
         trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.IntersectionsCalculatedEvent.builder()
@@ -219,17 +219,17 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         return processorRootPath.get();
     }
 
-    private void onIntersectionsAtAngle(NodeCreationMessages.IntersectionsAtAngleMessage message)
+    private void onIntersections(NodeCreationMessages.IntersectionsMessage message)
     {
         try
         {
             val myResponsibilities = getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf());
-            assert myResponsibilities.contains(message.getIntersectionPointIndex()) : "Received intersections for an angle we are not responsible for!";
+            assert myResponsibilities.contains(message.getIntersectionSegment()) : "Received intersections for an intersection segment we are not responsible for!";
 
-            getModel().getIntersections().putIfAbsent(message.getIntersectionPointIndex(), new ArrayList<>());
-            getModel().getIntersections().get(message.getIntersectionPointIndex()).add(message.getIntersections());
+            getModel().getIntersections().putIfAbsent(message.getIntersectionSegment(), new ArrayList<>());
+            getModel().getIntersections().get(message.getIntersectionSegment()).add(message.getIntersections());
 
-            createNodes(message.getIntersectionPointIndex());
+            createNodes(message.getIntersectionSegment());
         }
         finally
         {
@@ -237,9 +237,9 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
     }
 
-    private void createNodes(int intersectionPointIndex)
+    private void createNodes(int intersectionSegment)
     {
-        val intersectionList = getModel().getIntersections().get(intersectionPointIndex);
+        val intersectionList = getModel().getIntersections().get(intersectionSegment);
         if (intersectionList.size() != getModel().getIntersectionSegmentResponsibilities().size())
         {
             // not all processor sent their intersections yet
@@ -269,7 +269,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         val localMaximumIndices = Calculate.localMaximumIndices(probabilities);
         val nodeCollection = NodeCollection.builder()
-                                           .intersectionPointIndex(intersectionPointIndex)
+                                           .intersectionSegment(intersectionSegment)
                                            .build();
         for (val localMaximumIndex : localMaximumIndices)
         {
@@ -278,11 +278,24 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                               .build());
         }
 
-        trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodesCreatedEvent.builder()
-                                                                                                       .sender(getModel().getSelf())
-                                                                                                       .receiver(eventDispatcher)
-                                                                                                       .nodeCollection(nodeCollection)
-                                                                                                       .build());
+        publishNodes(nodeCollection);
+    }
+
+    private void publishNodes(NodeCollection nodeCollection)
+    {
+        val nodes = Floats.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
+        for (val worker : getModel().getIntersectionSegmentResponsibilities().keySet())
+        {
+            val protocol = getProtocol(worker.path().root(), ProtocolType.EdgeCreation);
+            assert protocol.isPresent() : "Node creation processors must also implement the Edge creation protocol!";
+
+            send(NodeCreationMessages.NodesMessage.builder()
+                                                  .sender(getModel().getSelf())
+                                                  .receiver(protocol.get().getRootActor())
+                                                  .intersectionSegment(nodeCollection.getIntersectionSegment())
+                                                  .nodes(nodes)
+                                                  .build());
+        }
     }
 
     private double[] toDoubles(float[] floats)

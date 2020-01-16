@@ -40,7 +40,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
     @Override
     protected ProtocolType[] getProcessorProtocols()
     {
-        return new ProtocolType[]{ProtocolType.MessageExchange, ProtocolType.NodeCreation, ProtocolType.DimensionReduction};
+        return new ProtocolType[]{ProtocolType.MessageExchange, ProtocolType.NodeCreation, ProtocolType.DimensionReduction, ProtocolType.EdgeCreation};
     }
 
     private NodeCreationWorkerModel dummyModel()
@@ -130,8 +130,8 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
 
         for (var i = 0; i < numberOfIntersectionSegments; ++i)
         {
-            val intersectionsAtAngle = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.IntersectionsAtAngleMessage.class);
-            assertThat(intersectionsAtAngle.getIntersectionPointIndex()).isEqualTo(i);
+            val intersectionsAtAngle = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.IntersectionsMessage.class);
+            assertThat(intersectionsAtAngle.getIntersectionSegment()).isEqualTo(i);
             assertThat(intersectionsAtAngle.getIntersections()).isNotNull();
 
             val intersectionsCalculatedEvent = expectEvent(NodeCreationEvents.IntersectionsCalculatedEvent.class);
@@ -178,12 +178,12 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
 
         val intersectionPointIndex = 0;
 
-        val localIntersection = NodeCreationMessages.IntersectionsAtAngleMessage.builder()
-                                                                                .sender(self.ref())
-                                                                                .receiver(self.ref())
-                                                                                .intersectionPointIndex(intersectionPointIndex)
-                                                                                .intersections(new float[]{0.0f * localMax, 0.15f * localMax, 0.25f * localMax, 0.33f * localMax, 0.45f * localMax, 0.75f * localMax, 0.99f * localMax})
-                                                                                .build();
+        val localIntersection = NodeCreationMessages.IntersectionsMessage.builder()
+                                                                         .sender(self.ref())
+                                                                         .receiver(self.ref())
+                                                                         .intersectionSegment(intersectionPointIndex)
+                                                                         .intersections(new float[]{0.0f * localMax, 0.15f * localMax, 0.25f * localMax, 0.33f * localMax, 0.45f * localMax, 0.75f * localMax, 0.99f * localMax})
+                                                                         .build();
         messageInterface.apply(localIntersection);
 
         assertThat(control.getModel().getIntersections().get(intersectionPointIndex).get(0)).containsExactly(localIntersection.getIntersections());
@@ -191,17 +191,18 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         // do not extract any nodes yet
         assertThatMessageIsCompleted(localIntersection);
 
-        val remoteIntersections = NodeCreationMessages.IntersectionsAtAngleMessage.builder()
-                                                                                  .sender(remoteActor.ref())
-                                                                                  .receiver(self.ref())
-                                                                                  .intersectionPointIndex(intersectionPointIndex)
-                                                                                  .intersections(new float[]{0.01f * remoteMax, 0.22f * remoteMax, 0.43f * remoteMax, 0.78f * remoteMax})
-                                                                                  .build();
+        val remoteIntersections = NodeCreationMessages.IntersectionsMessage.builder()
+                                                                           .sender(remoteActor.ref())
+                                                                           .receiver(self.ref())
+                                                                           .intersectionSegment(intersectionPointIndex)
+                                                                           .intersections(new float[]{0.01f * remoteMax, 0.22f * remoteMax, 0.43f * remoteMax, 0.78f * remoteMax})
+                                                                           .build();
         messageInterface.apply(remoteIntersections);
 
         assertThat(control.getModel().getIntersections().get(intersectionPointIndex).get(1)).containsExactly(remoteIntersections.getIntersections());
 
-        expectEvent(NodeCreationEvents.NodesCreatedEvent.class);
+        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.NodesMessage.class);
+        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.NodesMessage.class);
 
         assertThatMessageIsCompleted(remoteIntersections);
     }

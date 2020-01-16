@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.coordinator;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
@@ -35,6 +36,14 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     {
         try
         {
+            val protocol = getProtocol(message.getSender().path().root(), ProtocolType.EdgeCreation);
+            if (!protocol.isPresent())
+            {
+                getLog().error(String.format("Processor (%1$s) declared ready for node creation although edge creation is not supported!",
+                                             message.getSender().path().root()));
+                return;
+            }
+
             getModel().getReadyMessages().add(message);
             getModel().setMaximumValue(Math.max(getModel().getMaximumValue(), message.getMaximumValue()));
 
@@ -88,14 +97,14 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
 
     private void initializeNodeCreation(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
-        val messageTemplate = initializationMessage(sortedMessages);
+        val messageTemplate = createInitializationMessage(sortedMessages);
         for (val worker : sortedMessages.stream().map(MessageExchangeMessages.MessageExchangeMessage::getSender).collect(Collectors.toList()))
         {
             send(messageTemplate.redirectTo(worker));
         }
     }
 
-    private NodeCreationMessages.InitializeNodeCreationMessage initializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
+    private NodeCreationMessages.InitializeNodeCreationMessage createInitializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
         val numberOfProcessors = sortedMessages.size();
         val numberOfSamplesPerProcessor = (int) Math.ceil(getModel().getTotalNumberOfSamples() / (double) numberOfProcessors);
@@ -120,7 +129,7 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
                                                                  .sender(getModel().getSelf())
                                                                  .receiver(getModel().getSelf())
                                                                  .numberOfIntersectionSegments(getModel().getTotalNumberOfSamples())
-                                                                 .maximumValue(getModel().getMaximumValue())
+                                                                 .maximumValue(getModel().getMaximumValue() * MAXIMUM_VALUE_SCALE_FACTOR)
                                                                  .intersectionSegmentResponsibilities(segmentResponsibilities)
                                                                  .subSequenceResponsibilities(subSequenceResponsibilities)
                                                                  .build();
