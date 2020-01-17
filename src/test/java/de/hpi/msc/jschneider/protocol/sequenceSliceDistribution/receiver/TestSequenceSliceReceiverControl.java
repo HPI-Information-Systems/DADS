@@ -8,6 +8,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 import lombok.var;
@@ -105,7 +106,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                               .sender(localSliceDistributor.ref())
                                                               .receiver(self.ref())
                                                               .isLastPart(false)
-                                                              .part(slicePart)
+                                                              .part(Serialize.toBytes(slicePart))
                                                               .operationId(OPERATION_ID)
                                                               .build();
         messageInterface.apply(partMessage);
@@ -131,7 +132,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                               .sender(localSliceDistributor.ref())
                                                               .receiver(self.ref())
                                                               .isLastPart(true)
-                                                              .part(slicePart)
+                                                              .part(Serialize.toBytes(slicePart))
                                                               .operationId(OPERATION_ID)
                                                               .build();
         messageInterface.apply(partMessage);
@@ -160,7 +161,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                               .sender(localSliceDistributor.ref())
                                                               .receiver(self.ref())
                                                               .isLastPart(false)
-                                                              .part(slicePart)
+                                                              .part(Serialize.toBytes(slicePart))
                                                               .operationId(OPERATION_ID)
                                                               .build();
         messageInterface.apply(partMessage);
@@ -204,7 +205,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                        .sender(localSliceDistributor.ref())
                                                        .receiver(self.ref())
                                                        .isLastPart(true)
-                                                       .part(slicePart)
+                                                       .part(Serialize.toBytes(slicePart))
                                                        .operationId(OPERATION_ID)
                                                        .build();
         messageInterface.apply(part);

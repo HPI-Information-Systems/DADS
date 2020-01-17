@@ -9,4 +9,5 @@ public enum ProtocolType
     PrincipalComponentAnalysis,
     DimensionReduction,
     NodeCreation,
+    EdgeCreation,
 }

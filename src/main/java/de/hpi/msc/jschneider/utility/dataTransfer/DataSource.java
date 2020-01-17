@@ -4,5 +4,7 @@ public interface DataSource
 {
     boolean isAtEnd();
 
-    float[] read(long length);
+    int elementSizeInBytes();
+
+    byte[] read(int maximumPartSize);
 }

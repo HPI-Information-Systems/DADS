@@ -4,15 +4,39 @@ import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import junit.framework.TestCase;
 import lombok.val;
 import lombok.var;
-import org.assertj.core.data.Offset;
-import org.ojalgo.matrix.store.MatrixStore;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestCalculate extends TestCase
 {
+    public void testIsSame()
+    {
+        assertThat(Calculate.isSame(0.0d, -0.0d)).isTrue();
+        assertThat(Calculate.isSame(0.0d, Calculate.FLOATING_POINT_TOLERANCE)).isTrue();
+        assertThat(Calculate.isSame(0.0d, -Calculate.FLOATING_POINT_TOLERANCE)).isTrue();
+        assertThat(Calculate.isSame(Calculate.FLOATING_POINT_TOLERANCE, 0.0d)).isTrue();
+        assertThat(Calculate.isSame(-Calculate.FLOATING_POINT_TOLERANCE, 0.0d)).isTrue();
+
+        assertThat(Calculate.isSame(0.0d, 1.0d)).isFalse();
+        assertThat(Calculate.isSame(1.0d, 0.0d)).isFalse();
+    }
+
+    public void testIsMore()
+    {
+        assertThat(Calculate.isMore(1.0d, 0.0d)).isTrue();
+        assertThat(Calculate.isMore(0.0d, -0.0d)).isFalse();
+        assertThat(Calculate.isMore(Calculate.FLOATING_POINT_TOLERANCE, 0.0d)).isFalse();
+    }
+
+    public void testIsLess()
+    {
+        assertThat(Calculate.isLess(0.0d, 1.0d)).isTrue();
+        assertThat(Calculate.isLess(-0.0d, 0.0d)).isFalse();
+        assertThat(Calculate.isLess(0.0d, Calculate.FLOATING_POINT_TOLERANCE)).isFalse();
+    }
+
     public void testMakeRange()
     {
         assertThat(Calculate.makeRange(0.0d, 5.0d, 5)).containsExactly(0.0d, 1.0d, 2.0d, 3.0d, 4.0d);
@@ -84,35 +108,47 @@ public class TestCalculate extends TestCase
 
     public void testIntersections()
     {
-        val tolerance = Offset.offset(0.00001f);
         val reducedProjection = (new MatrixInitializer(2L)
                                          .appendRow(new float[]{1.0f, 0.0f})
                                          .appendRow(new float[]{0.0f, 1.0f})
                                          .appendRow(new float[]{-1.0f, 0.0f})
                                          .appendRow(new float[]{0.0f, -1.0f})
+                                         .appendRow(new float[]{1.0f, 0.0f})
                                          .create()
                                          .transpose());
-        val numberOfSamples = 4;
+        val numberOfSegments = 4;
 
-        val intersections = Calculate.intersections(reducedProjection, numberOfSamples);
+        val intersections = Calculate.intersections(reducedProjection, 0L, numberOfSegments);
 
-        assertThat(intersections.length).isEqualTo(numberOfSamples);
-        val intersectionPoints = new ArrayList<MatrixStore<Double>>(numberOfSamples);
-        intersectionPoints.add(Calculate.makeRowVector(1.0d, 0.0d));
-        intersectionPoints.add(Calculate.makeRowVector(0.0d, 1.0d));
-        intersectionPoints.add(Calculate.makeRowVector(-1.0d, 0.0d));
-        intersectionPoints.add(Calculate.makeRowVector(0.0d, -1.0d));
+        assertThat(intersections.length).isEqualTo(numberOfSegments);
+        assertThat(Arrays.stream(intersections)
+                         .allMatch(collection -> collection.getIntersections()
+                                                           .stream()
+                                                           .allMatch(intersection -> Calculate.isSame(intersection.getIntersectionDistance(), 1.0d))))
+                .isTrue();
 
-        for (var i = 0; i < numberOfSamples; ++i)
+        for (var segmentIndex = 0; segmentIndex < numberOfSegments; ++segmentIndex)
         {
-            assertThat(intersections[i].getIntersectionPointIndex()).isEqualTo(i);
-            assertThat(intersections[i].getIntersections().size()).isEqualTo(1);
+            assertThat(intersections[segmentIndex].getIntersectionSegment()).isEqualTo(segmentIndex);
+            assertThat(intersections[segmentIndex].getIntersections().size()).isEqualTo(2);
 
-            for (val intersection : intersections[i].getIntersections())
-            {
-                assertThat(intersection.getVectorLength()).isCloseTo(1.0f, tolerance);
-            }
+            assertThat(intersections[segmentIndex].getIntersections().stream().mapToLong(Intersection::getSubSequenceIndex))
+                    .containsExactlyInAnyOrder((long) segmentIndex, (long) Math.floorMod(segmentIndex - 1, numberOfSegments));
         }
+    }
+
+    public void testIntersections2()
+    {
+        val reducedProjection = (new MatrixInitializer(2L)
+                                         .appendRow(new float[]{0.5f, 0.0f})
+                                         .appendRow(new float[]{1.0f, 0.0f})
+                                         .create()
+                                         .transpose());
+        val numberOfSegments = 4;
+        val intersections = Calculate.intersections(reducedProjection, 0L, numberOfSegments);
+
+        assertThat(intersections.length).isEqualTo(numberOfSegments);
+        assertThat(Arrays.stream(intersections).allMatch(collection -> collection.getIntersections().isEmpty())).isTrue();
     }
 
     public void testLocalMaximumIndices()

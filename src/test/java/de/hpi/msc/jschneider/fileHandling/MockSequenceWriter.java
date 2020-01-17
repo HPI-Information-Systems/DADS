@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.fileHandling;
 
 import de.hpi.msc.jschneider.fileHandling.writing.SequenceWriter;
+import de.hpi.msc.jschneider.utility.Serialize;
 import lombok.val;
 
 public class MockSequenceWriter implements SequenceWriter
@@ -26,6 +27,12 @@ public class MockSequenceWriter implements SequenceWriter
     public boolean isNull()
     {
         return false;
+    }
+
+    @Override
+    public void write(byte[] part)
+    {
+        write(Serialize.toFloats(part));
     }
 
     @Override

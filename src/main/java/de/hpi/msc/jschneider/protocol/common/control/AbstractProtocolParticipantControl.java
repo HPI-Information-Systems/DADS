@@ -65,6 +65,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         try
         {
+            getLog().warn(String.format("%1$s received back pressure!", getClass().getName()));
             Thread.sleep(1000);
         }
         catch (InterruptedException interruptedException)

@@ -1,18 +1,19 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.coordinator;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
+import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.val;
 import lombok.var;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantControl<NodeCreationCoordinatorModel>
@@ -35,6 +36,14 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     {
         try
         {
+            val protocol = getProtocol(message.getSender().path().root(), ProtocolType.EdgeCreation);
+            if (!protocol.isPresent())
+            {
+                getLog().error(String.format("Processor (%1$s) declared ready for node creation although edge creation is not supported!",
+                                             message.getSender().path().root()));
+                return;
+            }
+
             getModel().getReadyMessages().add(message);
             getModel().setMaximumValue(Math.max(getModel().getMaximumValue(), message.getMaximumValue()));
 
@@ -55,7 +64,7 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     private List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortReadyMessages()
     {
         val sortedList = new ArrayList<NodeCreationMessages.NodeCreationWorkerReadyMessage>(getModel().getReadyMessages());
-        sortedList.sort((a, b) -> (int) (a.getSubSequenceIndices().getStart() - b.getSubSequenceIndices().getStart()));
+        sortedList.sort((a, b) -> (int) (a.getSubSequenceIndices().getFrom() - b.getSubSequenceIndices().getFrom()));
 
         return sortedList;
     }
@@ -67,7 +76,7 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
             return false;
         }
 
-        if (sortedMessages.get(0).getSubSequenceIndices().getStart() != 0)
+        if (sortedMessages.get(0).getSubSequenceIndices().getFrom() != 0)
         {
             return false;
         }
@@ -77,7 +86,7 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
             val current = sortedMessages.get(i);
             val previous = sortedMessages.get(i - 1);
 
-            if (current.getSubSequenceIndices().getStart() != previous.getSubSequenceIndices().getEnd())
+            if (current.getSubSequenceIndices().getFrom() != previous.getSubSequenceIndices().getTo())
             {
                 return false;
             }
@@ -88,38 +97,41 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
 
     private void initializeNodeCreation(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
-        val responsibilities = createSampleResponsibilities(sortedMessages);
+        val messageTemplate = createInitializationMessage(sortedMessages);
         for (val worker : sortedMessages.stream().map(MessageExchangeMessages.MessageExchangeMessage::getSender).collect(Collectors.toList()))
         {
-            send(NodeCreationMessages.InitializeNodeCreationMessage.builder()
-                                                                   .sender(getModel().getSelf())
-                                                                   .receiver(worker)
-                                                                   .numberOfSamples(getModel().getTotalNumberOfSamples())
-                                                                   .maximumValue(getModel().getMaximumValue() * MAXIMUM_VALUE_SCALE_FACTOR)
-                                                                   .sampleResponsibilities(responsibilities)
-                                                                   .build());
+            send(messageTemplate.redirectTo(worker));
         }
     }
 
-    private Map<ActorRef, Int32Range> createSampleResponsibilities(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
+    private NodeCreationMessages.InitializeNodeCreationMessage createInitializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
         val numberOfProcessors = sortedMessages.size();
         val numberOfSamplesPerProcessor = (int) Math.ceil(getModel().getTotalNumberOfSamples() / (double) numberOfProcessors);
 
-        val responsibilities = new HashMap<ActorRef, Int32Range>();
+        val segmentResponsibilities = new HashMap<ActorRef, Int32Range>();
+        val subSequenceResponsibilities = new HashMap<ActorRef, Int64Range>();
         var currentSampleStart = 0;
-        for (val sortedMessage : sortedMessages)
+        for (val message : sortedMessages)
         {
             val end = Math.min(getModel().getTotalNumberOfSamples(), currentSampleStart + numberOfSamplesPerProcessor);
             val sampleRange = Int32Range.builder()
-                                        .start(currentSampleStart)
-                                        .end(end)
+                                        .from(currentSampleStart)
+                                        .to(end)
                                         .build();
             currentSampleStart = end;
 
-            responsibilities.put(sortedMessage.getSender(), sampleRange);
+            segmentResponsibilities.put(message.getSender(), sampleRange);
+            subSequenceResponsibilities.put(message.getSender(), message.getSubSequenceIndices());
         }
 
-        return responsibilities;
+        return NodeCreationMessages.InitializeNodeCreationMessage.builder()
+                                                                 .sender(getModel().getSelf())
+                                                                 .receiver(getModel().getSelf())
+                                                                 .numberOfIntersectionSegments(getModel().getTotalNumberOfSamples())
+                                                                 .maximumValue(getModel().getMaximumValue() * MAXIMUM_VALUE_SCALE_FACTOR)
+                                                                 .intersectionSegmentResponsibilities(segmentResponsibilities)
+                                                                 .subSequenceResponsibilities(subSequenceResponsibilities)
+                                                                 .build();
     }
 }

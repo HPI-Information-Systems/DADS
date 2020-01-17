@@ -36,7 +36,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
                                          message.getReceiver().path()));
         }
 
-        decrementTotalQueueSize();
+        getModel().getTotalNumberOfEnqueuedMessages().decrement();
         dequeueAndSend(senderQueue);
 
         if (message.getReceiver().path().root() != getModel().getSelf().path().root())
@@ -45,24 +45,11 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         }
     }
 
-    private void decrementTotalQueueSize()
-    {
-        val current = getModel().getTotalNumberOfEnqueuedMessages().get();
-
-        if (current < 1)
-        {
-            getLog().error("Trying to decrease total queue size failed!");
-            return;
-        }
-
-        getModel().getTotalNumberOfEnqueuedMessages().set(current - 1);
-    }
-
     private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
         val receiverQueue = getOrCreateMessageQueue(message.getReceiver().path());
         val receiverQueueSize = receiverQueue.enqueueBack(message);
-        val totalQueueSize = incrementAndGetTotalQueueSize();
+        val totalQueueSize = getModel().getTotalNumberOfEnqueuedMessages().incrementAndGet();
 
         if (receiverQueueSize == 1)
         {
@@ -90,14 +77,6 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         return queue;
     }
 
-    private long incrementAndGetTotalQueueSize()
-    {
-        val current = getModel().getTotalNumberOfEnqueuedMessages().get();
-        getModel().getTotalNumberOfEnqueuedMessages().set(current + 1);
-
-        return current + 1;
-    }
-
     private void dequeueAndSend(ActorMessageQueue queue)
     {
         if (queue == null)
@@ -111,6 +90,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
             return;
         }
 
+        getModel().getTotalNumberOfEnqueuedMessages().decrement();
         forward(message);
     }
 
@@ -139,8 +119,8 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
                                                                  .sender(getModel().getSelf())
                                                                  .receiver(receiver)
                                                                  .build();
-
         val queueSize = queue.enqueueFront(message);
+        getModel().getTotalNumberOfEnqueuedMessages().increment();
 
         if (queueSize == 1)
         {

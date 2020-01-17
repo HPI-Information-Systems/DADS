@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.fileHandling;
 
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
+import de.hpi.msc.jschneider.utility.Serialize;
 import lombok.val;
 import lombok.var;
 
@@ -50,11 +51,17 @@ public class MockSequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long length)
+    public int elementSizeInBytes()
     {
-        val values = read(currentPosition, length);
+        return Float.BYTES;
+    }
+
+    @Override
+    public byte[] read(int maximumPartSize)
+    {
+        val values = read(currentPosition, (long) Math.floor(maximumPartSize / (double) elementSizeInBytes()));
         currentPosition += values.length;
-        return values;
+        return Serialize.toBytes(values);
     }
 
     @Override

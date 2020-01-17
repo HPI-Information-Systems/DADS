@@ -1,10 +1,11 @@
 package de.hpi.msc.jschneider.math;
 
-import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
-@Builder @Getter
+@SuperBuilder @Getter
 public class Intersection
 {
-    private float vectorLength;
+    private float intersectionDistance;
+    private long subSequenceIndex;
 }

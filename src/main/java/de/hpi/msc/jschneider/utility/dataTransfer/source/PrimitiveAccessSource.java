@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.source;
 
+import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 import lombok.val;
 import lombok.var;
@@ -26,24 +27,29 @@ public class PrimitiveAccessSource implements DataSource
     }
 
     @Override
-    public float[] read(long length)
+    public int elementSizeInBytes()
     {
-        assert length > -1 : "Length < 0!";
+        return Float.BYTES;
+    }
 
-        val end = Math.min(data.count(), currentPosition + length);
+    @Override
+    public byte[] read(int maximumPartSize)
+    {
+        assert maximumPartSize > -1 : "Length < 0!";
+
+        val maximumNumberOfElements = (int) Math.floor(maximumPartSize / (double) elementSizeInBytes());
+
+        val end = Math.min(data.count(), currentPosition + maximumNumberOfElements);
         var actualLength = end - currentPosition;
-        if (actualLength > Integer.MAX_VALUE)
+        val requiredMemory = actualLength * elementSizeInBytes();
+        if (requiredMemory > Integer.MAX_VALUE)
         {
-            Log.error("Unable to allocate more than Integer.MAX_VALUE floats at once!");
-            actualLength = Integer.MAX_VALUE;
+            Log.error("Unable to allocate more than Integer.MAX_VALUE bytes at once!");
+            actualLength = (long) Math.floor(Integer.MAX_VALUE / (double) elementSizeInBytes());
         }
 
-        val values = new float[(int) actualLength];
-        for (var valuesIndex = 0; valuesIndex < values.length; ++valuesIndex)
-        {
-            values[valuesIndex] = data.get(valuesIndex + currentPosition).floatValue();
-        }
-        currentPosition += values.length;
+        val values = Serialize.toBytes(data, currentPosition, currentPosition + actualLength);
+        currentPosition += actualLength;
 
         return values;
     }

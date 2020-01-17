@@ -1,8 +1,10 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation;
 
 import akka.actor.ActorRef;
-import de.hpi.msc.jschneider.math.NodeCollection;
+import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.utility.Int32Range;
+import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -10,17 +12,21 @@ import lombok.experimental.SuperBuilder;
 public class NodeCreationEvents
 {
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class NodesCreatedEvent extends MessageExchangeMessages.RedirectableMessage
+    public static class ResponsibilitiesReceivedEvent extends MessageExchangeMessages.RedirectableMessage
     {
-        private static final long serialVersionUID = -2498630888365348442L;
-        private NodeCollection nodeCollection;
+        private static final long serialVersionUID = 8873046118928619016L;
+        private Int32Range segmentResponsibilities;
+        private Int64Range subSequenceResponsibilities;
+        private int numberOfIntersectionSegments;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
-                            .nodeCollection(getNodeCollection())
+                            .segmentResponsibilities(getSegmentResponsibilities())
+                            .subSequenceResponsibilities(getSubSequenceResponsibilities())
+                            .numberOfIntersectionSegments(getNumberOfIntersectionSegments())
                             .build();
         }
     }
@@ -29,16 +35,14 @@ public class NodeCreationEvents
     public static class IntersectionsCalculatedEvent extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = -8226513489732567804L;
-        private int intersectionPointIndex;
-        private float[] intersections;
+        private IntersectionCollection intersectionCollection;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
-                            .intersectionPointIndex(getIntersectionPointIndex())
-                            .intersections(getIntersections())
+                            .intersectionCollection(getIntersectionCollection())
                             .build();
         }
     }

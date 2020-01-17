@@ -1,23 +1,24 @@
 package de.hpi.msc.jschneider.utility;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-@Builder @Getter
+@Builder @Getter @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Int64Range
 {
-    // Start is included.
-    private long start;
-    // End is excluded.
-    private long end;
+    @EqualsAndHashCode.Include
+    private long from;
+    @EqualsAndHashCode.Include
+    private long to;
 
     public long length()
     {
-        return end - start;
+        return to - from;
     }
 
     public boolean contains(long value)
     {
-        return value >= start && value < end;
+        return value >= from && value < to;
     }
 }

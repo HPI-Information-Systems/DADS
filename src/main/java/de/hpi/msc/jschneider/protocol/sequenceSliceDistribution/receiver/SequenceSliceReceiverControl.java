@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
@@ -51,12 +52,14 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
             return;
         }
 
-        getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), Floats.min(message.getPart())));
-        getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), Floats.max(message.getPart())));
+        val floats = Serialize.toFloats(message.getPart());
 
-        val newUnusedRecords = new float[getModel().getUnusedRecords().length + message.getPart().length];
+        getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), Floats.min(floats)));
+        getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), Floats.max(floats)));
+
+        val newUnusedRecords = new float[getModel().getUnusedRecords().length + floats.length];
         System.arraycopy(getModel().getUnusedRecords(), 0, newUnusedRecords, 0, getModel().getUnusedRecords().length);
-        System.arraycopy(message.getPart(), 0, newUnusedRecords, getModel().getUnusedRecords().length, message.getPart().length);
+        System.arraycopy(floats, 0, newUnusedRecords, getModel().getUnusedRecords().length, floats.length);
         getModel().setUnusedRecords(newUnusedRecords);
 
         embedSubSequences();
