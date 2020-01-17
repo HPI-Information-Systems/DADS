@@ -72,7 +72,7 @@ public class DataDistributor
             return;
         }
 
-        val data = dataSource.read((long) (control.getModel().getMaximumMessageSize() / Float.BYTES * MESSAGE_SIZE_FACTOR));
+        val data = dataSource.read((int) (control.getModel().getMaximumMessageSize() * MESSAGE_SIZE_FACTOR));
         val message = DataTransferMessages.DataPartMessage.builder()
                                                           .sender(control.getModel().getSelf())
                                                           .receiver(receiver)

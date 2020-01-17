@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.fileHandling.MockSequenceReader;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
+import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataDistributor;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
@@ -106,7 +107,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val slicePartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(slicePartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(slicePartMessage.isLastPart()).isTrue();
-        assertThat(slicePartMessage.getPart()).containsExactly(range(0, SEQUENCE_LENGTH));
+        assertThat(Serialize.toFloats(slicePartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH));
 
         assertThatMessageIsCompleted(request);
     }
@@ -127,7 +128,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val firstPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(firstPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(firstPartMessage.isLastPart()).isFalse();
-        assertThat(firstPartMessage.getPart()).containsExactly(range(0, (int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR)));
+        assertThat(Serialize.toFloats(firstPartMessage.getPart())).containsExactly(range(0, (int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR)));
         assertThatMessageIsCompleted(request);
 
         messageInterface.apply(request);
@@ -135,7 +136,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val secondPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(secondPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(secondPartMessage.isLastPart()).isTrue();
-        assertThat(secondPartMessage.getPart()).containsExactly(range((int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR), (int) (SEQUENCE_LENGTH * (1.0f - DataDistributor.MESSAGE_SIZE_FACTOR))));
+        assertThat(Serialize.toFloats(secondPartMessage.getPart())).containsExactly(range((int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR), (int) (SEQUENCE_LENGTH * (1.0f - DataDistributor.MESSAGE_SIZE_FACTOR))));
         assertThatMessageIsCompleted(request);
     }
 
@@ -155,7 +156,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val slicePartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(slicePartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(slicePartMessage.isLastPart()).isTrue();
-        assertThat(slicePartMessage.getPart()).containsExactly(range(0, SEQUENCE_LENGTH));
+        assertThat(Serialize.toFloats(slicePartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH));
 
         assertThatMessageIsCompleted(request);
 

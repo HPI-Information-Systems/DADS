@@ -25,6 +25,11 @@ public class NullSequenceWriter implements SequenceWriter
     }
 
     @Override
+    public void write(byte[] part)
+    {
+    }
+
+    @Override
     public void close()
     {
     }
