@@ -234,8 +234,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             if (distance >= closestDistance)
             {
                 // since the nodes are already sorted by their distance to the origin,
-                // we can safely assume that once the distance is getting bigger, that we
-                // have found the best match already
+                // we can safely assume that once the distance is getting bigger we
+                // have found the best match
                 break;
             }
 
