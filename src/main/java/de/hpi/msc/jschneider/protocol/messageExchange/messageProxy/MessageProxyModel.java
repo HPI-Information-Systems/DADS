@@ -24,7 +24,7 @@ public class MessageProxyModel extends AbstractProtocolParticipantModel
     @NonNull @Getter
     private ActorRef messageDispatcher;
     @Getter @Setter @Builder.Default
-    private int singleQueueBackPressureThreshold = 100;
+    private int singleQueueBackPressureThreshold = 1000;
     @Getter @Setter @Builder.Default
     private int totalQueueBackPressureThreshold = 10000;
 }

@@ -267,6 +267,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         val h = Calculate.scottsFactor(intersections.length, 1L);
         val kde = new KernelDensity(intersections, h);
         val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
+//        val densitySamples = Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES);
         val densitySamples = Calculate.makeRange(0.0d, Doubles.max(intersections) * DENSITY_SAMPLES_SCALING_FACTOR, NUMBER_OF_DENSITY_SAMPLES);
 
         for (var i = 0; i < densitySamples.length; ++i)

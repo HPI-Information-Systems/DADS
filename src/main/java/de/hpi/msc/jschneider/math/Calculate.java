@@ -149,10 +149,10 @@ public class Calculate
 
         for (var columnIndex = 0; columnIndex < reducedProjection.countColumns() - 1; ++columnIndex)
         {
-            var intersectionFound = false;
             val current = reducedProjection.sliceColumn(columnIndex);
             val next = reducedProjection.sliceColumn(columnIndex + 1);
 
+//            var intersectionFound = false;
 //            for (var intersectionSegment = 0; intersectionSegment < numberOfSegments; ++intersectionSegment)
 //            {
 //                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
@@ -303,6 +303,16 @@ public class Calculate
         {
             return Optional.empty();
         }
+
+//        if (intersectionX > line1MaxX || intersectionX < line1MinX || intersectionX > line2MaxX || intersectionX < line2MinX)
+//        {
+//            return Optional.empty();
+//        }
+//
+//        if (intersectionY > line1MaxY || intersectionY < line1MinY || intersectionY > line2MaxY || intersectionY < line2MinY)
+//        {
+//            return Optional.empty();
+//        }
 
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
