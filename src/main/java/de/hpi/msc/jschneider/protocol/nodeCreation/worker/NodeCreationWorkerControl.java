@@ -182,6 +182,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         val intersectionCollections = Calculate.intersections(projection, getModel().getFirstSubSequenceIndex(), getModel().getNumberOfIntersectionSegments());
         for (val intersectionCollection : intersectionCollections)
         {
+            // TODO: send via DataTransfer?!
             sendIntersections(intersectionCollection);
         }
     }
@@ -291,6 +292,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private void publishNodes(NodeCollection nodeCollection)
     {
+        // TODO: send via DataTransfer
+
         val nodes = Floats.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
         for (val worker : getModel().getIntersectionSegmentResponsibilities().keySet())
         {

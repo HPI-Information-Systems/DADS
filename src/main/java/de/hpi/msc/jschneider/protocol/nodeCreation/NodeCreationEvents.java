@@ -17,6 +17,7 @@ public class NodeCreationEvents
         private static final long serialVersionUID = 8873046118928619016L;
         private Int32Range segmentResponsibilities;
         private Int64Range subSequenceResponsibilities;
+        private int numberOfIntersectionSegments;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -25,6 +26,7 @@ public class NodeCreationEvents
                             .receiver(newReceiver)
                             .segmentResponsibilities(getSegmentResponsibilities())
                             .subSequenceResponsibilities(getSubSequenceResponsibilities())
+                            .numberOfIntersectionSegments(getNumberOfIntersectionSegments())
                             .build();
         }
     }

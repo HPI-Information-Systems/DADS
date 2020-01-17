@@ -21,6 +21,8 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private Int32Range localSegments;
     @Setter @Getter
+    private int numberOfIntersectionSegments;
+    @Setter @Getter
     private Int64Range localSubSequences;
     @Setter @Getter
     private Counter nextSubSequenceIndex;

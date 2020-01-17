@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.Counter;
@@ -44,6 +45,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             getModel().setLocalSegments(message.getSegmentResponsibilities());
             getModel().setLocalSubSequences(message.getSubSequenceResponsibilities());
+            getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
             getModel().setNextSubSequenceIndex(new Counter(message.getSubSequenceResponsibilities().getFrom()));
             enqueueIntersections();
         }
@@ -101,17 +103,17 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private boolean isReadyToEnqueueIntersections()
     {
-        if (getModel().getLocalSegments() == null)
+        if (getModel().getNumberOfIntersectionSegments() == 0)
         {
             return false;
         }
 
-        if (getModel().getIntersectionsInSegment().size() != getModel().getLocalSegments().length())
+        if (getModel().getIntersectionsInSegment().size() != getModel().getNumberOfIntersectionSegments())
         {
             return false;
         }
 
-        for (var segment = getModel().getLocalSegments().getFrom(); segment < getModel().getLocalSegments().getTo(); ++segment)
+        for (var segment = 0; segment < getModel().getNumberOfIntersectionSegments(); ++segment)
         {
             if (!getModel().getIntersectionsInSegment().containsKey(segment))
             {
@@ -195,6 +197,12 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                     getModel().getEdges().size(),
                                     getModel().getLocalSubSequences().getFrom(),
                                     getModel().getLocalSubSequences().getTo()));
+
+        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
+                                                                                                                     .sender(getModel().getSelf())
+                                                                                                                     .receiver(eventDispatcher)
+                                                                                                                     .edges(getModel().getEdges().values().toArray(new LocalEdge[0]))
+                                                                                                                     .build());
     }
 
     private void addEdge(LocalNode from, LocalNode to)
