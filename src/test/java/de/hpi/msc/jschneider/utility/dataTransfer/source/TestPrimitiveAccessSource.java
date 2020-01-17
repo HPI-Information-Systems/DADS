@@ -21,7 +21,8 @@ public class TestPrimitiveAccessSource extends TestCase
         assertThat(source.isAtEnd()).isFalse();
 
         assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).containsExactly(0.0f, 1.0f, 2.0f, 3.0f, 4.0f);
-        assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).containsExactly(5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
+        assertThat(Serialize.toFloats(source.read(5))).containsExactly(5.0f);
+        assertThat(Serialize.toFloats(source.read(4 * Float.BYTES))).containsExactly(6.0f, 7.0f, 8.0f, 9.0f);
         assertThat(Serialize.toFloats(source.read(1 * Float.BYTES))).containsExactly(10.0f);
         assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).containsExactly(11.0f);
         assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).isEmpty();
