@@ -74,7 +74,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private void enqueueIntersections()
     {
-        if (!isReadyToEnqueueIntersections())
+        if (!isReadyToEnqueueIntersections() || getModel().getIntersectionsToMatch() != null)
         {
             return;
         }
@@ -155,7 +155,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             if (getModel().getNodesInSegment().get(intersection.getIntersectionSegment()) == null)
             {
                 // we did not receive these nodes yet
-                break;
+                return;
             }
 
             while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
@@ -205,6 +205,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                                      .build());
     }
 
+    private boolean isReadyToCreateEdges()
+    {
+        return getModel().getIntersectionsToMatch() != null;
+    }
+
     private void addEdge(LocalNode from, LocalNode to)
     {
         val edge = LocalEdge.builder()
@@ -222,11 +227,6 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             existingEdge.getWeight().increment();
         }
-    }
-
-    private boolean isReadyToCreateEdges()
-    {
-        return getModel().getIntersectionsToMatch() != null;
     }
 
     private LocalNode findClosestNode(LocalIntersection intersection)

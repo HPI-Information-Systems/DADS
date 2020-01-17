@@ -283,7 +283,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (val localMaximumIndex : localMaximumIndices)
         {
             nodeCollection.getNodes().add(Node.builder()
-                                              .intersectionLength(densitySamples[localMaximumIndex])
+                                              .intersectionLength((float) densitySamples[localMaximumIndex])
                                               .build());
         }
 

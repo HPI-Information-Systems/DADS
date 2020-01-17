@@ -6,5 +6,5 @@ import lombok.Getter;
 @Builder @Getter
 public class Node
 {
-    private double intersectionLength;
+    private float intersectionLength;
 }
