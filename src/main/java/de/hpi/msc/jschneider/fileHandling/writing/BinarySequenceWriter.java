@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
+import de.hpi.msc.jschneider.utility.Serialize;
 import lombok.val;
 
 import java.io.File;
@@ -86,6 +87,12 @@ public class BinarySequenceWriter implements SequenceWriter
             ioException.printStackTrace();
             close();
         }
+    }
+
+    @Override
+    public void write(byte[] part)
+    {
+        write(Serialize.toFloats(part));
     }
 
     @Override

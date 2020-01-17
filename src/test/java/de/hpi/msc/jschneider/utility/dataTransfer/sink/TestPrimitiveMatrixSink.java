@@ -1,13 +1,13 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.sink;
 
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.Serialize;
 import junit.framework.TestCase;
 import lombok.val;
 import org.ojalgo.type.context.NumberContext;
 
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,10 +30,10 @@ public class TestPrimitiveMatrixSink extends TestCase
 
         val sink = new PrimitiveMatrixSink();
 
-        sink.write(Arrays.copyOfRange(values, 0, 4));
-        sink.write(Arrays.copyOfRange(values, 4, 6));
-        sink.write(Arrays.copyOfRange(values, 6, 11));
-        sink.write(Arrays.copyOfRange(values, 11, 12));
+        sink.write(Serialize.toBytes(values, 0, 4));
+        sink.write(Serialize.toBytes(values, 4, 6));
+        sink.write(Serialize.toBytes(values, 6, 11));
+        sink.write(Serialize.toBytes(values, 11, 12));
         sink.close();
 
         val actualMatrix = sink.getMatrix(expectedMatrix.countColumns());

@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
+import de.hpi.msc.jschneider.utility.Serialize;
 import lombok.val;
 
 import java.io.File;
@@ -58,6 +59,12 @@ public class BinaryDirectoryWriter implements SequenceWriter
     public boolean isNull()
     {
         return false;
+    }
+
+    @Override
+    public void write(byte[] part)
+    {
+        write(Serialize.toFloats(part));
     }
 
     @Override

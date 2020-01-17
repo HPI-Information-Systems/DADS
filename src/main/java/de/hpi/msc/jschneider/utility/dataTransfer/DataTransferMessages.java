@@ -25,7 +25,7 @@ public class DataTransferMessages
         @NonNull
         private UUID operationId;
         @NonNull
-        private float[] part;
+        private byte[] part;
         @NonNull
         private boolean isLastPart;
     }
