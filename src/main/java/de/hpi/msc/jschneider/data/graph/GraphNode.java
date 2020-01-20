@@ -1,11 +1,11 @@
-package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
+package de.hpi.msc.jschneider.data.graph;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Builder @Getter @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class LocalNode
+public class GraphNode
 {
     @EqualsAndHashCode.Include
     private int intersectionSegment;

@@ -1,5 +1,8 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
@@ -192,7 +195,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        val summedEdgeWeights = getModel().getEdges().values().stream().mapToLong(edge -> edge.getWeight().get()).sum();
+        val summedEdgeWeights = getModel().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum();
 
         getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d, tot. edge weights = %3$d) for sub sequences [%4$d, %5$d).",
                                     getModel().getNodes().size(),
@@ -204,7 +207,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                                      .sender(getModel().getSelf())
                                                                                                                      .receiver(eventDispatcher)
-                                                                                                                     .edges(getModel().getEdges().values().toArray(new LocalEdge[0]))
+                                                                                                                     .edges(getModel().getEdges().values().toArray(new GraphEdge[0]))
+                                                                                                                     .edgeCreationOrder(Ints.toArray(getModel().getEdgeCreationOrder()))
                                                                                                                      .build());
     }
 
@@ -213,9 +217,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         return getModel().getIntersectionsToMatch() != null;
     }
 
-    private void addEdge(LocalNode from, LocalNode to)
+    private void addEdge(GraphNode from, GraphNode to)
     {
-        val edge = LocalEdge.builder()
+        val edge = GraphEdge.builder()
                             .from(from)
                             .to(to)
                             .build();
@@ -230,11 +234,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
         else
         {
-            existingEdge.getWeight().increment();
+            existingEdge.incrementWeight();
         }
     }
 
-    private LocalNode findClosestNode(LocalIntersection intersection)
+    private GraphNode findClosestNode(LocalIntersection intersection)
     {
         val nodes = getModel().getNodesInSegment().get(intersection.getIntersectionSegment());
         assert nodes != null : "Nodes must not be null to match an intersection! (That should have been checked earlier)";
@@ -256,7 +260,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             closestDistance = distance;
         }
 
-        return LocalNode.builder()
+        return GraphNode.builder()
                         .intersectionSegment(intersection.getIntersectionSegment())
                         .index(closestIndex)
                         .build();

@@ -4,6 +4,7 @@ import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
+import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.val;
@@ -39,7 +40,7 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
     private NodeCreationCoordinatorModel dummyModel()
     {
         return finalizeModel(NodeCreationCoordinatorModel.builder()
-                                                         .totalNumberOfSamples(NUMBER_OF_SAMPLES)
+                                                         .totalNumberOfIntersectionSegments(NUMBER_OF_SAMPLES)
                                                          .build());
     }
 
@@ -50,6 +51,10 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
 
     private void assertThatInitializationMessagesAreSent(TestProbe... participants)
     {
+        val responsibilitiesCreatedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesCreatedEvent.class);
+        assertThat(responsibilitiesCreatedEvent.getSubSequenceResponsibilities().size()).isEqualTo(participants.length);
+        assertThat(responsibilitiesCreatedEvent.getSegmentResponsibilities().size()).isEqualTo(participants.length);
+
         val initializeMessages = new ArrayList<NodeCreationMessages.InitializeNodeCreationMessage>();
         for (val participant : participants)
         {
@@ -58,7 +63,10 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
 
         for (val participant : participants)
         {
-            assertThat(initializeMessages.stream().anyMatch(message -> message.getReceiver().equals(participant.ref()))).isTrue();
+            val message = initializeMessages.stream().filter(m -> m.getReceiver().equals(participant.ref())).findFirst();
+            assertThat(message.isPresent()).isTrue();
+            assertThat(message.get().getSubSequenceResponsibilities()).isEqualTo(responsibilitiesCreatedEvent.getSubSequenceResponsibilities());
+            assertThat(message.get().getIntersectionSegmentResponsibilities()).isEqualTo(responsibilitiesCreatedEvent.getSegmentResponsibilities());
         }
 
         assertThat(initializeMessages.stream().map(NodeCreationMessages.InitializeNodeCreationMessage::getMaximumValue).collect(Collectors.toSet())).hasSize(1);

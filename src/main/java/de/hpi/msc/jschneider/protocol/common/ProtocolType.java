@@ -10,4 +10,5 @@ public enum ProtocolType
     DimensionReduction,
     NodeCreation,
     EdgeCreation,
+    GraphMerging,
 }

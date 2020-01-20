@@ -1,5 +1,7 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
@@ -34,11 +36,11 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private Queue<LocalIntersection> intersectionsToMatch;
     @Setter @Getter
-    private LocalNode lastNode;
+    private GraphNode lastNode;
     @Getter
-    private final Map<Integer, LocalEdge> edges = new HashMap<>();
+    private final Map<Integer, GraphEdge> edges = new HashMap<>();
     @Getter
     private final List<Integer> edgeCreationOrder = new ArrayList<>();
     @Getter
-    private final Set<LocalNode> nodes = new HashSet<>();
+    private final Set<GraphNode> nodes = new HashSet<>();
 }

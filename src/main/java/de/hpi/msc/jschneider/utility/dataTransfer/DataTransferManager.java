@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.utility.dataTransfer;
 
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.PrimitiveAccessSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import de.hpi.msc.jschneider.utility.event.EventHandler;
 import de.hpi.msc.jschneider.utility.event.EventImpl;
 import lombok.Getter;
@@ -46,7 +46,7 @@ public class DataTransferManager
 
     public void transfer(Access1D<Double> data, Function<DataDistributor, DataDistributor> dataDistributorInitializer, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
     {
-        transfer(new PrimitiveAccessSource(data), dataDistributorInitializer, initializationMessageFactory);
+        transfer(GenericDataSource.create(data), dataDistributorInitializer, initializationMessageFactory);
     }
 
     public void transfer(DataSource dataSource, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)

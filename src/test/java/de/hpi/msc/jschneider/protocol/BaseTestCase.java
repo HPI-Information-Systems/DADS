@@ -2,17 +2,20 @@ package de.hpi.msc.jschneider.protocol;
 
 import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.PrimitiveAccessSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import junit.framework.TestCase;
 import lombok.val;
 import lombok.var;
@@ -28,6 +31,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +40,18 @@ public abstract class BaseTestCase extends TestCase
     protected static final int MATRIX_PRECISION = 5;
     protected static final RoundingMode MATRIX_ROUNDING_MODE = RoundingMode.HALF_UP;
     protected static final NumberContext MATRIX_COMPARISON_CONTEXT = NumberContext.getMath(new MathContext(MATRIX_PRECISION, MATRIX_ROUNDING_MODE));
+
+    protected static final String GRAPH_EDGE_PATTERN_FROM_SEGMENT = "FromSegment";
+    protected static final String GRAPH_EDGE_PATTERN_FROM_INDEX = "FromIndex";
+    protected static final String GRAPH_EDGE_PATTERN_TO_SEGMENT = "ToSegment";
+    protected static final String GRAPH_EDGE_PATTERN_TO_INDEX = "ToIndex";
+    protected static final String GRAPH_EDGE_PATTERN_WEIGHT = "Weight";
+    protected static final Pattern GRAPH_EDGE_PATTERN = Pattern.compile(String.format("^\\{(?<%1$s>\\d+)_(?<%2$s>\\d+)} -\\[(?<%3$s>\\d+)]-> \\{(?<%4$s>\\d+)_(?<%5$s>\\d+)}$",
+                                                                                      GRAPH_EDGE_PATTERN_FROM_SEGMENT,
+                                                                                      GRAPH_EDGE_PATTERN_FROM_INDEX,
+                                                                                      GRAPH_EDGE_PATTERN_WEIGHT,
+                                                                                      GRAPH_EDGE_PATTERN_TO_SEGMENT,
+                                                                                      GRAPH_EDGE_PATTERN_TO_INDEX));
 
     private final List<TestProcessor> processors = new ArrayList<>();
 
@@ -209,7 +225,7 @@ public abstract class BaseTestCase extends TestCase
 
         val operationId = initializeDataTransferMessage.getOperationId();
 
-        val source = new PrimitiveAccessSource(data);
+        val source = GenericDataSource.create(data);
 
         MessageExchangeMessages.MessageExchangeMessage nextMessageToComplete = initializeDataTransferMessage;
         dataReceiverMessageInterface.apply(initializeDataTransferMessage);
@@ -246,6 +262,30 @@ public abstract class BaseTestCase extends TestCase
 
             break;
         }
+    }
+
+    protected GraphEdge[] createGraphEdges(String... edges)
+    {
+        val parsedEdges = new GraphEdge[edges.length];
+        for (var edgesIndex = 0; edgesIndex < edges.length; ++edgesIndex)
+        {
+            val matcher = GRAPH_EDGE_PATTERN.matcher(edges[edgesIndex]);
+            assertThat(matcher.matches()).isTrue();
+
+            parsedEdges[edgesIndex] = GraphEdge.builder()
+                                               .from(GraphNode.builder()
+                                                              .intersectionSegment(Integer.parseInt(matcher.group(GRAPH_EDGE_PATTERN_FROM_SEGMENT)))
+                                                              .index(Integer.parseInt(matcher.group(GRAPH_EDGE_PATTERN_FROM_INDEX)))
+                                                              .build())
+                                               .to(GraphNode.builder()
+                                                            .intersectionSegment(Integer.parseInt(matcher.group(GRAPH_EDGE_PATTERN_TO_SEGMENT)))
+                                                            .index(Integer.parseInt(matcher.group(GRAPH_EDGE_PATTERN_TO_INDEX)))
+                                                            .build())
+                                               .weight(new Counter(Long.parseLong(matcher.group(GRAPH_EDGE_PATTERN_WEIGHT))))
+                                               .build();
+        }
+
+        return parsedEdges;
     }
 
     @Override
