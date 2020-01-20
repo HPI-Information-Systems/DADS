@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,8 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     private LocalNode lastNode;
     @Getter
     private final Map<Integer, LocalEdge> edges = new HashMap<>();
+    @Getter
+    private final List<Integer> edgeCreationOrder = new ArrayList<>();
     @Getter
     private final Set<LocalNode> nodes = new HashSet<>();
 }

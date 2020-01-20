@@ -222,6 +222,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         val hash = edge.hashCode();
         val existingEdge = getModel().getEdges().get(hash);
 
+        getModel().getEdgeCreationOrder().add(hash);
+
         if (existingEdge == null)
         {
             getModel().getEdges().put(hash, edge);
