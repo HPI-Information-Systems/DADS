@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.protocol.edgeCreation;
+package de.hpi.msc.jschneider.protocol.graphMerging;
 
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
@@ -7,22 +7,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-public class EdgeCreationEvents
+import java.util.Map;
+
+public class GraphMergingEvents
 {
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class LocalGraphPartitionCreatedEvent extends MessageExchangeMessages.RedirectableMessage
+    public static class GraphReceivedEvent extends MessageExchangeMessages.RedirectableMessage
     {
-        private static final long serialVersionUID = -8606899178152425096L;
-        private GraphEdge[] edges;
-        private int[] edgeCreationOrder;
+        private static final long serialVersionUID = -5337592448259457784L;
+        private Map<Integer, GraphEdge> graph;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
-                            .edges(getEdges())
-                            .edgeCreationOrder(getEdgeCreationOrder())
+                            .graph(getGraph())
                             .build();
         }
     }

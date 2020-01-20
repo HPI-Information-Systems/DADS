@@ -16,7 +16,7 @@ public class TestPrimitiveAccessSource extends TestCase
                                                .appendRow(new float[]{2.0f, 6.0f, 10.0f})
                                                .appendRow(new float[]{3.0f, 7.0f, 11.0f})
                                                .create());
-        val source = new PrimitiveAccessSource(matrix);
+        val source = GenericDataSource.create(matrix);
 
         assertThat(source.isAtEnd()).isFalse();
 

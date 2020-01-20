@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
@@ -107,14 +108,14 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     private NodeCreationMessages.InitializeNodeCreationMessage createInitializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
         val numberOfProcessors = sortedMessages.size();
-        val numberOfSamplesPerProcessor = (int) Math.ceil(getModel().getTotalNumberOfSamples() / (double) numberOfProcessors);
+        val numberOfSamplesPerProcessor = (int) Math.ceil(getModel().getTotalNumberOfIntersectionSegments() / (double) numberOfProcessors);
 
         val segmentResponsibilities = new HashMap<ActorRef, Int32Range>();
         val subSequenceResponsibilities = new HashMap<ActorRef, Int64Range>();
         var currentSampleStart = 0;
         for (val message : sortedMessages)
         {
-            val end = Math.min(getModel().getTotalNumberOfSamples(), currentSampleStart + numberOfSamplesPerProcessor);
+            val end = Math.min(getModel().getTotalNumberOfIntersectionSegments(), currentSampleStart + numberOfSamplesPerProcessor);
             val sampleRange = Int32Range.builder()
                                         .from(currentSampleStart)
                                         .to(end)
@@ -125,10 +126,18 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
             subSequenceResponsibilities.put(message.getSender(), message.getSubSequenceIndices());
         }
 
+        trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesCreatedEvent.builder()
+                                                                                                                  .sender(getModel().getSelf())
+                                                                                                                  .receiver(eventDispatcher)
+                                                                                                                  .segmentResponsibilities(segmentResponsibilities)
+                                                                                                                  .subSequenceResponsibilities(subSequenceResponsibilities)
+                                                                                                                  .numberOfIntersectionSegments(getModel().getTotalNumberOfIntersectionSegments())
+                                                                                                                  .build());
+
         return NodeCreationMessages.InitializeNodeCreationMessage.builder()
                                                                  .sender(getModel().getSelf())
                                                                  .receiver(getModel().getSelf())
-                                                                 .numberOfIntersectionSegments(getModel().getTotalNumberOfSamples())
+                                                                 .numberOfIntersectionSegments(getModel().getTotalNumberOfIntersectionSegments())
                                                                  .maximumValue(getModel().getMaximumValue() * MAXIMUM_VALUE_SCALE_FACTOR)
                                                                  .intersectionSegmentResponsibilities(segmentResponsibilities)
                                                                  .subSequenceResponsibilities(subSequenceResponsibilities)

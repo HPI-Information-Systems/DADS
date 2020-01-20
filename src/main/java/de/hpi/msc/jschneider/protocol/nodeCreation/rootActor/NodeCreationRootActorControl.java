@@ -66,7 +66,7 @@ public class NodeCreationRootActorControl extends AbstractProtocolParticipantCon
         val numberOfSamples = ((MasterCommand) SystemParameters.getCommand()).getNumberOfIntersectionSegments();
 
         val model = NodeCreationCoordinatorModel.builder()
-                                                .totalNumberOfSamples(numberOfSamples)
+                                                .totalNumberOfIntersectionSegments(numberOfSamples)
                                                 .build();
         val control = new NodeCreationCoordinatorControl(model);
 

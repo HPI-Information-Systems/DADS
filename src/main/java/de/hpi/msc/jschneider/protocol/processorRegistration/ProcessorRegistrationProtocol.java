@@ -13,6 +13,7 @@ import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcher
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionProtocol;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationProtocol;
+import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingProtocol;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationProtocol;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAProtocol;
@@ -91,6 +92,7 @@ public class ProcessorRegistrationProtocol
         protocols.add(DimensionReductionProtocol.initialize(actorSystem));
         protocols.add(NodeCreationProtocol.initialize(actorSystem));
         protocols.add(EdgeCreationProtocol.initialize(actorSystem));
+        protocols.add(GraphMergingProtocol.initialize(actorSystem));
 
         return protocols;
     }

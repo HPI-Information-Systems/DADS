@@ -19,5 +19,5 @@ public class NodeCreationCoordinatorModel extends AbstractProtocolParticipantMod
     @Setter @Getter @Builder.Default
     private double maximumValue = Double.MIN_VALUE;
     @Getter
-    private int totalNumberOfSamples;
+    private int totalNumberOfIntersectionSegments;
 }
