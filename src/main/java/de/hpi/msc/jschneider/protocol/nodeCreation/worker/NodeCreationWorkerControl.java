@@ -102,6 +102,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                                        .receiver(eventDispatcher)
                                                                                                                        .segmentResponsibilities(message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()))
                                                                                                                        .subSequenceResponsibilities(message.getSubSequenceResponsibilities().get(getModel().getSelf()))
+                                                                                                                       .numberOfIntersectionSegments(message.getNumberOfIntersectionSegments())
                                                                                                                        .build());
 
             sendReducedSubSequenceToNextProcessor();

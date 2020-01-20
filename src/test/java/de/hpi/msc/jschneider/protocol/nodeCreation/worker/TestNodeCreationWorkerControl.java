@@ -127,8 +127,10 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
                                                                                        .build();
         messageInterface.apply(initializeNodeCreation);
 
-        val segmentResponsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
-        assertThat(segmentResponsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.get(self.ref()));
+        val responsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
+        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.get(self.ref()));
+        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.get(self.ref()));
+        assertThat(responsibilitiesReceivedEvent.getNumberOfIntersectionSegments()).isEqualTo(numberOfIntersectionSegments);
 
         for (var i = 0; i < numberOfIntersectionSegments; ++i)
         {

@@ -192,9 +192,12 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d) for sub sequences [%3$d, %4$d).",
+        val summedEdgeWeights = getModel().getEdges().values().stream().mapToLong(edge -> edge.getWeight().get()).sum();
+
+        getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d, tot. edge weights = %3$d) for sub sequences [%4$d, %5$d).",
                                     getModel().getNodes().size(),
                                     getModel().getEdges().size(),
+                                    summedEdgeWeights,
                                     getModel().getLocalSubSequences().getFrom(),
                                     getModel().getLocalSubSequences().getTo()));
 
