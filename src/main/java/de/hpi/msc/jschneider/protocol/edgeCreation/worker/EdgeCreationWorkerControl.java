@@ -46,10 +46,10 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             assert getModel().getLocalSegments() == null : "Already received intersection segment responsibilities!";
 
-            getModel().setLocalSegments(message.getSegmentResponsibilities());
-            getModel().setLocalSubSequences(message.getSubSequenceResponsibilities());
+            getModel().setLocalSegments(message.getSegmentResponsibilities().get(getModel().getSelf().path().root()));
+            getModel().setLocalSubSequences(message.getSubSequenceResponsibilities().get(getModel().getSelf().path().root()));
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
-            getModel().setNextSubSequenceIndex(new Counter(message.getSubSequenceResponsibilities().getFrom()));
+            getModel().setNextSubSequenceIndex(new Counter(getModel().getLocalSubSequences().getFrom()));
             enqueueIntersections();
         }
         finally

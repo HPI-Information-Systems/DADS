@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.protocol.nodeCreation;
+package de.hpi.msc.jschneider.protocol.scoring;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -9,42 +9,42 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
-import de.hpi.msc.jschneider.protocol.nodeCreation.rootActor.NodeCreationRootActorControl;
-import de.hpi.msc.jschneider.protocol.nodeCreation.rootActor.NodeCreationRootActorModel;
+import de.hpi.msc.jschneider.protocol.scoring.rootActor.ScoringRootActorControl;
+import de.hpi.msc.jschneider.protocol.scoring.rootActor.ScoringRootActorModel;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class NodeCreationProtocol
+public class ScoringProtocol
 {
-    private static final Logger Log = LogManager.getLogger(NodeCreationProtocol.class);
-    private static final String ROOT_ACTOR_NAME = "NodeCreationRootActor";
-    private static final String EVENT_DISPATCHER_NAME = "NodeCreationEventDispatcher";
+    private static final Logger Log = LogManager.getLogger(ScoringProtocol.class);
+    private static final String ROOT_ACTOR_NAME = "ScoringRootActor";
+    private static final String EVENT_DISPATCHER_NAME = "ScoringEventDispatcher";
 
     public static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
-                                        .type(ProtocolType.NodeCreation)
+                                        .type(ProtocolType.Scoring)
                                         .rootActor(createRootActor(actorSystem))
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", NodeCreationProtocol.class.getName()));
+        Log.info(String.format("%1$s successfully initialized.", ScoringProtocol.class.getName()));
         return localProtocol;
     }
 
     private static ActorRef createRootActor(ActorSystem actorSystem)
     {
-        val model = NodeCreationRootActorModel.builder().build();
-        val control = new NodeCreationRootActorControl(model);
+        val model = ScoringRootActorModel.builder()
+                                         .build();
+        val control = new ScoringRootActorControl(model);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);
     }
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(NodeCreationEvents.ResponsibilitiesReceivedEvent.class,
-                                                    NodeCreationEvents.IntersectionsCalculatedEvent.class);
+        val model = BaseEventDispatcherModel.create(); // TODO: add events
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

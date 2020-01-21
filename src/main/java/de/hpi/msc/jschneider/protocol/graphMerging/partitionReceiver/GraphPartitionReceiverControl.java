@@ -13,6 +13,7 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 public class GraphPartitionReceiverControl extends AbstractProtocolParticipantControl<GraphPartitionReceiverModel>
@@ -27,24 +28,24 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
     {
         super.preStart();
 
-        subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.ResponsibilitiesCreatedEvent.class);
+        subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
     }
 
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
-                    .match(NodeCreationEvents.ResponsibilitiesCreatedEvent.class, this::onResponsibilitiesCreated)
+                    .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(GraphMergingMessages.InitializeEdgePartitionTransferMessage.class, this::onInitializeEdgePartitionTransfer);
     }
 
-    private void onResponsibilitiesCreated(NodeCreationEvents.ResponsibilitiesCreatedEvent message)
+    private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
     {
         try
         {
             assert getModel().getRunningDataTransfers() == null : "Responsibilities were received already!";
 
-            getModel().setRunningDataTransfers(message.getSubSequenceResponsibilities().keySet().stream().map(worker -> worker.path().root()).collect(Collectors.toSet()));
+            getModel().setRunningDataTransfers(message.getSubSequenceResponsibilities().keySet());
             getModel().setWorkerSystems(getModel().getRunningDataTransfers().toArray(new RootActorPath[0]));
         }
         finally

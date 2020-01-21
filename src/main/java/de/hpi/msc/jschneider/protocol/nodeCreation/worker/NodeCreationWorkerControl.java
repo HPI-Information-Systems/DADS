@@ -97,11 +97,14 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setMaximumValue(message.getMaximumValue());
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
 
+            val transformedSubSequenceResponsibilities = message.getSubSequenceResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue));
+            val transformedSegmentResponsibilities = message.getIntersectionSegmentResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue));
+
             trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                                                        .sender(getModel().getSelf())
                                                                                                                        .receiver(eventDispatcher)
-                                                                                                                       .segmentResponsibilities(message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()))
-                                                                                                                       .subSequenceResponsibilities(message.getSubSequenceResponsibilities().get(getModel().getSelf()))
+                                                                                                                       .segmentResponsibilities(transformedSegmentResponsibilities)
+                                                                                                                       .subSequenceResponsibilities(transformedSubSequenceResponsibilities)
                                                                                                                        .numberOfIntersectionSegments(message.getNumberOfIntersectionSegments())
                                                                                                                        .build());
 

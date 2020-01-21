@@ -26,4 +26,7 @@ public class MasterCommand extends AbstractCommand
 
     @Parameter(names = "--intersection-segments", description = "number of intersection segments to create for the node creation", required = true)
     private int numberOfIntersectionSegments;
+
+    @Parameter(names = "--query-length", description = "length of paths to score", required = true)
+    private int queryPathLength;
 }

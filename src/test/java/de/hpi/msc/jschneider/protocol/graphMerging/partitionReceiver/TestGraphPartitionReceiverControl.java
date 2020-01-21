@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
-import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
@@ -59,9 +58,9 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
 
         control.preStart();
 
-        val responsibilitiesCreatedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
-        assertThat(responsibilitiesCreatedSubscription.getReceiver().path().root()).isEqualTo(localProcessor.getRootPath());
-        assertThat(responsibilitiesCreatedSubscription.getEventType()).isEqualTo(NodeCreationEvents.ResponsibilitiesCreatedEvent.class);
+        val responsibilitiesReceivedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
+        assertThat(responsibilitiesReceivedSubscription.getReceiver().path().root()).isEqualTo(localProcessor.getRootPath());
+        assertThat(responsibilitiesReceivedSubscription.getEventType()).isEqualTo(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
     }
 
     private void sendResponsibilities(GraphPartitionReceiverControl control,
@@ -70,33 +69,33 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
                                       long numberOfSubSequences,
                                       TestProbe... participants)
     {
-        val subSequenceResponsibilities = new HashMap<ActorRef, Int64Range>();
+        val subSequenceResponsibilities = new HashMap<RootActorPath, Int64Range>();
         val subSequencesPerParticipant = Math.ceil(numberOfSubSequences / (double) participants.length);
-        val segmentResponsibilities = new HashMap<ActorRef, Int32Range>();
+        val segmentResponsibilities = new HashMap<RootActorPath, Int32Range>();
         val segmentsPerParticipant = Math.ceil(numberOfIntersectionSegments / (double) participants.length);
 
         for (var participantIndex = 0; participantIndex < participants.length; ++participantIndex)
         {
             val participant = participants[participantIndex];
-            subSequenceResponsibilities.put(participant.ref(),
+            subSequenceResponsibilities.put(participant.ref().path().root(),
                                             Int64Range.builder()
                                                       .from((long) (participantIndex * subSequencesPerParticipant))
                                                       .to((long) Math.min(numberOfSubSequences, ((participantIndex + 1) * subSequencesPerParticipant)))
                                                       .build());
-            segmentResponsibilities.put(participant.ref(),
+            segmentResponsibilities.put(participant.ref().path().root(),
                                         Int32Range.builder()
                                                   .from((int) (participantIndex * segmentsPerParticipant))
                                                   .to((int) Math.min(numberOfIntersectionSegments, (participantIndex + 1) * segmentsPerParticipant))
                                                   .build());
         }
 
-        val message = NodeCreationEvents.ResponsibilitiesCreatedEvent.builder()
-                                                                     .sender(self.ref())
-                                                                     .receiver(self.ref())
-                                                                     .numberOfIntersectionSegments(numberOfIntersectionSegments)
-                                                                     .subSequenceResponsibilities(subSequenceResponsibilities)
-                                                                     .segmentResponsibilities(segmentResponsibilities)
-                                                                     .build();
+        val message = NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
+                                                                      .sender(self.ref())
+                                                                      .receiver(self.ref())
+                                                                      .numberOfIntersectionSegments(numberOfIntersectionSegments)
+                                                                      .subSequenceResponsibilities(subSequenceResponsibilities)
+                                                                      .segmentResponsibilities(segmentResponsibilities)
+                                                                      .build();
         messageInterface.apply(message);
 
         val workerSystems = Arrays.stream(participants).map(participant -> participant.ref().path().root()).toArray(RootActorPath[]::new);

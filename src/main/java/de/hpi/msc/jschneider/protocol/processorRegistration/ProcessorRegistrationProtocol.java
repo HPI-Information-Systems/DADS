@@ -20,6 +20,7 @@ import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.ProcessorRegistryModel;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
+import de.hpi.msc.jschneider.protocol.scoring.ScoringProtocol;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionProtocol;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
@@ -93,6 +94,7 @@ public class ProcessorRegistrationProtocol
         protocols.add(NodeCreationProtocol.initialize(actorSystem));
         protocols.add(EdgeCreationProtocol.initialize(actorSystem));
         protocols.add(GraphMergingProtocol.initialize(actorSystem));
+        protocols.add(ScoringProtocol.initialize(actorSystem));
 
         return protocols;
     }

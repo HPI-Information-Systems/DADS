@@ -51,10 +51,6 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
 
     private void assertThatInitializationMessagesAreSent(TestProbe... participants)
     {
-        val responsibilitiesCreatedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesCreatedEvent.class);
-        assertThat(responsibilitiesCreatedEvent.getSubSequenceResponsibilities().size()).isEqualTo(participants.length);
-        assertThat(responsibilitiesCreatedEvent.getSegmentResponsibilities().size()).isEqualTo(participants.length);
-
         val initializeMessages = new ArrayList<NodeCreationMessages.InitializeNodeCreationMessage>();
         for (val participant : participants)
         {
@@ -65,8 +61,6 @@ public class TestNodeCreationCoordinatorControl extends ProtocolTestCase
         {
             val message = initializeMessages.stream().filter(m -> m.getReceiver().equals(participant.ref())).findFirst();
             assertThat(message.isPresent()).isTrue();
-            assertThat(message.get().getSubSequenceResponsibilities()).isEqualTo(responsibilitiesCreatedEvent.getSubSequenceResponsibilities());
-            assertThat(message.get().getIntersectionSegmentResponsibilities()).isEqualTo(responsibilitiesCreatedEvent.getSegmentResponsibilities());
         }
 
         assertThat(initializeMessages.stream().map(NodeCreationMessages.InitializeNodeCreationMessage::getMaximumValue).collect(Collectors.toSet())).hasSize(1);

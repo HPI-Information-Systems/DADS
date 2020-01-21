@@ -126,14 +126,6 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
             subSequenceResponsibilities.put(message.getSender(), message.getSubSequenceIndices());
         }
 
-        trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesCreatedEvent.builder()
-                                                                                                                  .sender(getModel().getSelf())
-                                                                                                                  .receiver(eventDispatcher)
-                                                                                                                  .segmentResponsibilities(segmentResponsibilities)
-                                                                                                                  .subSequenceResponsibilities(subSequenceResponsibilities)
-                                                                                                                  .numberOfIntersectionSegments(getModel().getTotalNumberOfIntersectionSegments())
-                                                                                                                  .build());
-
         return NodeCreationMessages.InitializeNodeCreationMessage.builder()
                                                                  .sender(getModel().getSelf())
                                                                  .receiver(getModel().getSelf())

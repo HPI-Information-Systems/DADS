@@ -5,10 +5,19 @@ import lombok.val;
 public class Counter
 {
     private long value;
+    private final long minimum;
+    private final long maximum;
 
     public Counter(long initialValue)
     {
+        this(initialValue, 0L, Long.MAX_VALUE);
+    }
+
+    public Counter(long initialValue, long minValue, long maxValue)
+    {
         value = initialValue;
+        minimum = minValue;
+        maximum = maxValue;
     }
 
     public long get()
@@ -16,35 +25,74 @@ public class Counter
         return value;
     }
 
-    public void increment()
+    public void set(long value)
     {
-        value += 1;
+        this.value = Math.min(maximum, Math.max(minimum, value));
     }
 
-    public void decrement() { value = Math.max(0L, value - 1);}
+    public void increment(long value)
+    {
+        set(get() + value);
+    }
+
+    public void increment()
+    {
+        increment(1L);
+    }
+
+    public void decrement(long value)
+    {
+        set(get() - value);
+    }
+
+    public void decrement()
+    {
+        decrement(1L);
+    }
+
+    public long getAndIncrement(long value)
+    {
+        val result = get();
+        set(get() + value);
+        return result;
+    }
+
+    public long incrementAndGet(long value)
+    {
+        set(get() + value);
+        return get();
+    }
+
+    public long getAndDecrement(long value)
+    {
+        val result = get();
+        set(get() - value);
+        return result;
+    }
+
+    public long decrementAndGet(long value)
+    {
+        set(get() - value);
+        return get();
+    }
 
     public long getAndIncrement()
     {
-        increment();
-        return value - 1;
+        return getAndIncrement(1L);
     }
 
     public long incrementAndGet()
     {
-        increment();
-        return get();
+        return incrementAndGet(1L);
     }
 
     public long getAndDecrement()
     {
-        val value = get();
-        decrement();
-        return value;
+        return getAndDecrement(1L);
     }
 
     public long decrementAndGet()
     {
-        decrement();
-        return get();
+        return decrementAndGet(1L);
     }
 }
