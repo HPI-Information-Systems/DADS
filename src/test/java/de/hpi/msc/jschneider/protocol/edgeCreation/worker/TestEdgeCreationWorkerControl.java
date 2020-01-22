@@ -425,7 +425,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
 
         val partitionCreatedEvent = expectEvent(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
         assertThat(partitionCreatedEvent.getGraphPartition().getEdges().values()).containsExactlyInAnyOrder(control.getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]));
-        assertThat(partitionCreatedEvent.getGraphPartition().getEdgeCreationOrder().size()).isEqualTo(control.getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum());
+        assertThat(partitionCreatedEvent.getGraphPartition().getCreatedEdgesBySubSequenceIndex().size()).isEqualTo(control.getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum());
 
         assertThatMessageIsCompleted(nodesMessage);
     }

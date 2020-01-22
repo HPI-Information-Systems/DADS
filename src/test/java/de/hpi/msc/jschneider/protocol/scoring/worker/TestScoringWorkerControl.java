@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import akka.testkit.TestProbe;
-import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -11,6 +10,9 @@ import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import lombok.val;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -99,17 +101,21 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         assertThatMessageIsCompleted(queryLengthMessage);
 
         val localGraphPartition = createGraph(360, 180);
+        val sortedEdgeCreationOrder = localGraphPartition.getCreatedEdgesBySubSequenceIndex().entrySet().stream()
+                                                         .sorted((a, b) -> (int) (a.getKey() - b.getKey()))
+                                                         .map(Map.Entry::getValue)
+                                                         .collect(Collectors.toList());
         val localGraphPartitionCreatedEvent = EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                 .sender(self.ref())
                                                                                                 .receiver(self.ref())
                                                                                                 .graphPartition(localGraphPartition)
                                                                                                 .build();
         messageInterface.apply(localGraphPartitionCreatedEvent);
-        assertThat(control.getModel().getEdgeCreationOrder()).containsExactly(localGraphPartition.getEdgeCreationOrder().toArray(new Integer[0]));
+        assertThat(control.getModel().getEdgeCreationOrder()).isEqualTo(sortedEdgeCreationOrder);
 
         val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrder.class);
         assertThat(overlappingEdgeCreationOrder.getReceiver()).isEqualTo(remoteProcessor.getProtocolRootActor(ProtocolType.Scoring).ref());
-        assertThat(overlappingEdgeCreationOrder.getOverlappingEdgeCreationOrder()).containsExactly(Ints.toArray(localGraphPartition.getEdgeCreationOrder().subList(0, 49)));
+        assertThat(overlappingEdgeCreationOrder.getOverlappingEdgeCreationOrder().size()).isEqualTo(49);
         assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
     }
 }

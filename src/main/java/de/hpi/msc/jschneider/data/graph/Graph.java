@@ -18,31 +18,32 @@ public class Graph
     @Getter @NonNull
     private final Map<Integer, GraphEdge> edges = new HashMap<>();
     @Getter @NonNull
-    private final List<Integer> edgeCreationOrder = new ArrayList<>();
+    private final Map<Long, List<Integer>> createdEdgesBySubSequenceIndex = new HashMap<>();
 
-    public static Graph construct(GraphEdge[] edges, int[] edgeCreationOrder)
+//    public static Graph construct(GraphEdge[] edges, int[] edgeCreationOrder)
+//    {
+//        val graph = new Graph();
+//        for (val edge : edges)
+//        {
+//            val hash = edge.hashCode();
+//            graph.edges.put(hash, edge);
+//        }
+//        graph.createdEdgesBySubSequenceIndex.addAll(Arrays.stream(edgeCreationOrder).boxed().collect(Collectors.toList()));
+//
+//        return graph;
+//    }
+
+    public void addEdge(long subSequenceIndex, GraphNode from, GraphNode to)
     {
-        val graph = new Graph();
-        for (val edge : edges)
-        {
-            val hash = edge.hashCode();
-            graph.edges.put(hash, edge);
-        }
-        graph.edgeCreationOrder.addAll(Arrays.stream(edgeCreationOrder).boxed().collect(Collectors.toList()));
-
-        return graph;
-    }
-
-    public void addEdge(GraphNode from, GraphNode to)
-    {
-        addEdge(GraphEdge.builder()
+        addEdge(subSequenceIndex,
+                GraphEdge.builder()
                          .from(from)
                          .to(to)
                          .weight(new Counter(1L))
                          .build());
     }
 
-    public void addEdge(GraphEdge edge)
+    public void addEdge(long subSequenceIndex, GraphEdge edge)
     {
         assert edge.getWeight() == 1L : "New edges must always have a weight of 1!";
 
@@ -57,7 +58,8 @@ public class Graph
             edges.put(hash, edge);
         }
 
-        edgeCreationOrder.add(hash);
+        createdEdgesBySubSequenceIndex.putIfAbsent(subSequenceIndex, new ArrayList<>());
+        createdEdgesBySubSequenceIndex.get(subSequenceIndex).add(hash);
     }
 
     public Collection<GraphNode> getNodes()

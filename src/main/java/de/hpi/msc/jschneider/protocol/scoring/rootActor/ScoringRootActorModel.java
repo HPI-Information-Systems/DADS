@@ -11,4 +11,6 @@ public class ScoringRootActorModel extends AbstractProtocolParticipantModel
 {
     @Setter @Getter
     private ActorRef worker;
+    @Setter @Getter
+    private ActorRef receiver;
 }

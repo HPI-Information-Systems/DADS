@@ -278,7 +278,8 @@ public abstract class BaseTestCase extends TestCase
         {
             val intersectionSegment = edgeIndex % numberOfIntersectionSegments;
             val nextIntersectionSegment = (edgeIndex + 1) % numberOfIntersectionSegments;
-            graph.addEdge(createGraphEdges(String.format("{%1$d_%2$d} -[1]-> {%3$d_%4$d}",
+            graph.addEdge(edgeIndex,
+                          createGraphEdges(String.format("{%1$d_%2$d} -[1]-> {%3$d_%4$d}",
                                                          intersectionSegment,
                                                          edgeIndex,
                                                          nextIntersectionSegment,

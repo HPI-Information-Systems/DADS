@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.math;
 
 import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
@@ -12,6 +13,7 @@ import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access1D;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -385,27 +387,30 @@ public class Calculate
         return Math.pow(numberOfRecords, -1.0d / (numberOfDimensions + 4.0d));
     }
 
-    public static Map<Integer, Long> nodeIndegrees(Collection<GraphEdge> edges)
+    public static Map<Integer, Long> nodeDegrees(Collection<GraphEdge> edges)
     {
-        val indegrees = new HashMap<Integer, Counter>();
+        val incomingEdges = new HashMap<Integer, Counter>();
+        val outgoingEdges = new HashMap<Integer, Counter>();
+        val nodes = edges.stream().flatMap(edge -> Arrays.stream(new GraphNode[]{edge.getFrom(), edge.getTo()})).collect(Collectors.toSet());
+        for (var node : nodes)
+        {
+            val hash = node.hashCode();
+            incomingEdges.put(hash, new Counter(0L));
+            outgoingEdges.put(hash, new Counter(0L));
+        }
+
         for (val edge : edges)
         {
             val nodeFromHash = edge.getFrom().hashCode();
-            indegrees.putIfAbsent(nodeFromHash, new Counter(0L));
-
             val nodeToHash = edge.getTo().hashCode();
-            val indegree = indegrees.get(nodeToHash);
-            if (indegree == null)
-            {
-                indegrees.put(nodeToHash, new Counter(edge.getWeight()));
-            }
-            else
-            {
-                indegree.increment(edge.getWeight());
-            }
+
+            outgoingEdges.get(nodeFromHash).increment();
+            incomingEdges.get(nodeToHash).increment();
+            ;
         }
 
-        return indegrees.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
+        return nodes.stream().collect(Collectors.toMap(GraphNode::hashCode,
+                                                       node -> incomingEdges.get(node.hashCode()).get() + outgoingEdges.get(node.hashCode()).get()));
     }
 
     public static double log2(double value)

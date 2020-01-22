@@ -10,6 +10,8 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
+import de.hpi.msc.jschneider.protocol.scoring.receiver.ScoringReceiverControl;
+import de.hpi.msc.jschneider.protocol.scoring.receiver.ScoringReceiverModel;
 import de.hpi.msc.jschneider.protocol.scoring.worker.ScoringWorkerControl;
 import de.hpi.msc.jschneider.protocol.scoring.worker.ScoringWorkerModel;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
@@ -30,7 +32,8 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         return super.complementReceiveBuilder(builder)
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
-                    .match(ScoringMessages.QueryPathLengthMessage.class, message -> forward(message, getModel().getWorker()));
+                    .match(ScoringMessages.QueryPathLengthMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.InitializePathScoresTransferMessage.class, message -> forward(message, getModel().getReceiver()));
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)
@@ -42,6 +45,7 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
             return;
         }
 
+        createReceiver();
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
     }
 
@@ -60,6 +64,23 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         }
 
         getModel().setWorker(worker.get());
+    }
+
+    private void createReceiver()
+    {
+        val model = ScoringReceiverModel.builder()
+                                        .build();
+        val control = new ScoringReceiverControl(model);
+        val receiver = trySpawnChild(ProtocolParticipant.props(control), "ScoringReceiver");
+
+        if (!receiver.isPresent())
+        {
+            getLog().error("Unable to create ScoringReceiver!");
+            getModel().setReceiver(ActorRef.noSender());
+            return;
+        }
+
+        getModel().setReceiver(receiver.get());
     }
 
     private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)

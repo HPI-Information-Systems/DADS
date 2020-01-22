@@ -162,14 +162,14 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
             {
-                getModel().getNextSubSequenceIndex().increment();
+                val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
                 val lastNode = getModel().getLastNode();
                 if (lastNode == null)
                 {
                     continue;
                 }
 
-                getModel().getGraph().addEdge(lastNode, lastNode);
+                getModel().getGraph().addEdge(subSequenceIndex, lastNode, lastNode);
             }
 
             val matchedNode = findClosestNode(intersection);
@@ -182,7 +182,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             if (getModel().getLastNode() != null)
             {
-                getModel().getGraph().addEdge(getModel().getLastNode(), matchedNode);
+                getModel().getGraph().addEdge(getModel().getNextSubSequenceIndex().get() - 1, getModel().getLastNode(), matchedNode);
             }
 
             getModel().setLastNode(matchedNode);
