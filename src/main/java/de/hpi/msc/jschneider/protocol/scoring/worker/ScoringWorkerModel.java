@@ -22,7 +22,7 @@ public class ScoringWorkerModel extends AbstractProtocolParticipantModel
     @Getter
     private final List<Integer> remoteEdgeCreationOrder = new ArrayList<>();
     @Setter @Getter
-    private ActorRef processorResponsibleForNextSubSequences;
+    private ActorRef processorResponsibleForPreviousSubSequences;
     @Setter @Getter
     private int queryPathLength;
     @Setter @Getter

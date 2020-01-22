@@ -1,7 +1,9 @@
 package de.hpi.msc.jschneider.protocol;
 
 import akka.actor.ActorRef;
+import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
+import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -9,9 +11,12 @@ import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.Int32Range;
+import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
@@ -29,7 +34,9 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -264,6 +271,23 @@ public abstract class BaseTestCase extends TestCase
         }
     }
 
+    protected Graph createGraph(int numberOfEdges, int numberOfIntersectionSegments)
+    {
+        val graph = new Graph();
+        for (var edgeIndex = 0; edgeIndex < numberOfEdges; ++edgeIndex)
+        {
+            val intersectionSegment = edgeIndex % numberOfIntersectionSegments;
+            val nextIntersectionSegment = (edgeIndex + 1) % numberOfIntersectionSegments;
+            graph.addEdge(createGraphEdges(String.format("{%1$d_%2$d} -[1]-> {%3$d_%4$d}",
+                                                         intersectionSegment,
+                                                         edgeIndex,
+                                                         nextIntersectionSegment,
+                                                         edgeIndex + 1))[0]);
+        }
+
+        return graph;
+    }
+
     protected GraphEdge[] createGraphEdges(String... edges)
     {
         val parsedEdges = new GraphEdge[edges.length];
@@ -286,6 +310,55 @@ public abstract class BaseTestCase extends TestCase
         }
 
         return parsedEdges;
+    }
+
+    protected NodeCreationEvents.ResponsibilitiesReceivedEvent createResponsibilitiesReceivedEvent(TestProbe sender,
+                                                                                                   TestProbe receiver,
+                                                                                                   int numberOfIntersectionSegments,
+                                                                                                   long numberOfSubSequences,
+                                                                                                   TestProbe... participants)
+    {
+        return NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
+                                                               .sender(sender.ref())
+                                                               .receiver(receiver.ref())
+                                                               .numberOfIntersectionSegments(numberOfIntersectionSegments)
+                                                               .segmentResponsibilities(createIntersectionSegmentResponsibilities(numberOfIntersectionSegments, participants))
+                                                               .subSequenceResponsibilities(createSubSequenceResponsibilities(numberOfSubSequences, participants))
+                                                               .build();
+    }
+
+    protected Map<RootActorPath, Int64Range> createSubSequenceResponsibilities(long numberOfSubSequences, TestProbe... participants)
+    {
+        val responsibilities = new HashMap<RootActorPath, Int64Range>();
+        val subSequencesPerParticipant = Math.ceil(numberOfSubSequences / (double) participants.length);
+        for (var participantsIndex = 0; participantsIndex < participants.length; ++participantsIndex)
+        {
+            val participant = participants[participantsIndex];
+            responsibilities.put(participant.ref().path().root(),
+                                 Int64Range.builder()
+                                           .from((long) (participantsIndex * subSequencesPerParticipant))
+                                           .to((long) Math.min(numberOfSubSequences, (participantsIndex + 1) * subSequencesPerParticipant))
+                                           .build());
+        }
+
+        return responsibilities;
+    }
+
+    protected Map<RootActorPath, Int32Range> createIntersectionSegmentResponsibilities(int numberOfIntersectionSegments, TestProbe... participants)
+    {
+        val responsibilities = new HashMap<RootActorPath, Int32Range>();
+        val segmentsPerParticipant = Math.ceil(numberOfIntersectionSegments / (double) participants.length);
+        for (var participantsIndex = 0; participantsIndex < participants.length; ++participantsIndex)
+        {
+            val participant = participants[participantsIndex];
+            responsibilities.put(participant.ref().path().root(),
+                                 Int32Range.builder()
+                                           .from((int) (participantsIndex * segmentsPerParticipant))
+                                           .to((int) Math.min(numberOfIntersectionSegments, (participantsIndex + 1) * segmentsPerParticipant))
+                                           .build());
+        }
+
+        return responsibilities;
     }
 
     @Override
