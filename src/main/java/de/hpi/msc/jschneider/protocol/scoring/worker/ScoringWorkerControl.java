@@ -103,7 +103,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             assert getModel().getEdgeCreationOrder().isEmpty() : "Edge creation order was received already!";
 
-            getModel().getEdgeCreationOrder().addAll(Arrays.stream(message.getEdgeCreationOrder()).boxed().collect(Collectors.toList()));
+            getModel().getEdgeCreationOrder().addAll(message.getGraphPartition().getEdgeCreationOrder());
             sendEdgeCreationOrderToPreviousResponsibleProcessor();
             scoreSubSequences();
         }

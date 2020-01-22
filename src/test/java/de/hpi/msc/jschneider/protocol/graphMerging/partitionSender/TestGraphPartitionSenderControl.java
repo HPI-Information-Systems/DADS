@@ -44,15 +44,12 @@ public class TestGraphPartitionSenderControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        val edges = createGraphEdges("{0_0} -[3]-> {1_1}",
-                                     "{1_1} -[2]-> {0_0}");
-        val edgeCreationOrder = new int[]{0, 1, 2, 3, 4}; // this contains the edge hashes
+        val graph = createGraph(360, 180);
 
         val message = EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                         .sender(self.ref())
                                                                         .receiver(self.ref())
-                                                                        .edges(edges)
-                                                                        .edgeCreationOrder(edgeCreationOrder)
+                                                                        .graphPartition(graph)
                                                                         .build();
         messageInterface.apply(message);
 

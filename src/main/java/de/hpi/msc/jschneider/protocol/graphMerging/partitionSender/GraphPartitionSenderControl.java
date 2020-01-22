@@ -40,7 +40,7 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
             val receiverProtocol = getMasterProtocol(ProtocolType.GraphMerging);
             assert receiverProtocol.isPresent() : "Unable to send local graph partition to master!";
 
-            initializeEdgePartitionTransfer(message.getEdges(), receiverProtocol.get().getRootActor());
+            initializeEdgePartitionTransfer(message.getGraphPartition().getEdges().values().toArray(new GraphEdge[0]), receiverProtocol.get().getRootActor());
         }
         finally
         {

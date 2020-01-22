@@ -402,19 +402,19 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         assertThatMessageIsCompleted(responsibilitiesMessage);
 
         sendNodes(control, messageInterface, nodeCollections[0], true);
-        assertThat(control.getModel().getEdges()).isEmpty();
+        assertThat(control.getModel().getGraph().getEdges()).isEmpty();
 
         sendNodes(control, messageInterface, nodeCollections[1], true);
-        assertThat(control.getModel().getEdges()).isEmpty();
+        assertThat(control.getModel().getGraph().getEdges()).isEmpty();
 
         sendNodes(control, messageInterface, nodeCollections[2], true);
-        assertThat(control.getModel().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
+        assertThat(control.getModel().getGraph().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
                 .containsExactlyInAnyOrder("{2_0} -[1]-> {1_0}",
                                            "{1_0} -[2]-> {1_1}",
                                            "{1_1} -[1]-> {1_0}");
 
         val nodesMessage = sendNodes(control, messageInterface, nodeCollections[3], false);
-        assertThat(control.getModel().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
+        assertThat(control.getModel().getGraph().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
                 .containsExactlyInAnyOrder("{2_0} -[1]-> {1_0}",
                                            "{1_0} -[2]-> {1_1}",
                                            "{1_1} -[1]-> {1_0}",
@@ -424,8 +424,8 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         assertThat(control.getModel().getIntersectionsToMatch()).isEmpty();
 
         val partitionCreatedEvent = expectEvent(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
-        assertThat(partitionCreatedEvent.getEdges()).containsExactlyInAnyOrder(control.getModel().getEdges().values().toArray(new GraphEdge[0]));
-        assertThat(partitionCreatedEvent.getEdgeCreationOrder().length).isEqualTo(control.getModel().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum());
+        assertThat(partitionCreatedEvent.getGraphPartition().getEdges().values()).containsExactlyInAnyOrder(control.getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]));
+        assertThat(partitionCreatedEvent.getGraphPartition().getEdgeCreationOrder().size()).isEqualTo(control.getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum());
 
         assertThatMessageIsCompleted(nodesMessage);
     }

@@ -1,22 +1,21 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 @SuperBuilder
 public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
@@ -37,10 +36,6 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     private Queue<LocalIntersection> intersectionsToMatch;
     @Setter @Getter
     private GraphNode lastNode;
-    @Getter
-    private final Map<Integer, GraphEdge> edges = new HashMap<>();
-    @Getter
-    private final List<Integer> edgeCreationOrder = new ArrayList<>();
-    @Getter
-    private final Set<GraphNode> nodes = new HashSet<>();
+    @NonNull @Getter @Builder.Default
+    private final Graph graph = new Graph();
 }

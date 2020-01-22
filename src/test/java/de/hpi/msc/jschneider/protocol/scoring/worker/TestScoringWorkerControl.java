@@ -2,7 +2,6 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import akka.testkit.TestProbe;
 import com.google.common.primitives.Ints;
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -103,8 +102,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         val localGraphPartitionCreatedEvent = EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                 .sender(self.ref())
                                                                                                 .receiver(self.ref())
-                                                                                                .edgeCreationOrder(Ints.toArray(localGraphPartition.getEdgeCreationOrder()))
-                                                                                                .edges(localGraphPartition.getEdges().values().toArray(new GraphEdge[0]))
+                                                                                                .graphPartition(localGraphPartition)
                                                                                                 .build();
         messageInterface.apply(localGraphPartitionCreatedEvent);
         assertThat(control.getModel().getEdgeCreationOrder()).containsExactly(localGraphPartition.getEdgeCreationOrder().toArray(new Integer[0]));

@@ -1,11 +1,13 @@
 package de.hpi.msc.jschneider.data.graph;
 
+import de.hpi.msc.jschneider.utility.Counter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.val;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,15 @@ public class Graph
         return graph;
     }
 
+    public void addEdge(GraphNode from, GraphNode to)
+    {
+        addEdge(GraphEdge.builder()
+                         .from(from)
+                         .to(to)
+                         .weight(new Counter(1L))
+                         .build());
+    }
+
     public void addEdge(GraphEdge edge)
     {
         assert edge.getWeight() == 1L : "New edges must always have a weight of 1!";
@@ -47,5 +58,10 @@ public class Graph
         }
 
         edgeCreationOrder.add(hash);
+    }
+
+    public Collection<GraphNode> getNodes()
+    {
+        return edges.values().stream().flatMap(edge -> Arrays.stream(new GraphNode[]{edge.getFrom(), edge.getTo()})).collect(Collectors.toSet());
     }
 }
