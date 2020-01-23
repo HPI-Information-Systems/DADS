@@ -30,8 +30,8 @@ public class ActorSystemInitializer
 
     public static void runMaster(MasterCommand masterCommand) throws Exception
     {
-        val processorId = new ProcessorId(masterCommand.getHost(), masterCommand.getPort());
-        val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME + "-" + processorId, masterCommand);
+        val processorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, masterCommand.getHost(), masterCommand.getPort());
+        val actorSystem = initializeActorSystem(processorId.toString(), masterCommand);
 
         val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, true);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
@@ -42,12 +42,12 @@ public class ActorSystemInitializer
 
     public static void runSlave(SlaveCommand slaveCommand) throws Exception
     {
-        val processorId = new ProcessorId(slaveCommand.getHost(), slaveCommand.getPort());
-        val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME + "-" + processorId, slaveCommand);
+        val processorId = new ProcessorId(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand.getHost(), slaveCommand.getPort());
+        val actorSystem = initializeActorSystem(processorId.toString(), slaveCommand);
 
-        val masterProcessorId = new ProcessorId(slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
+        val masterProcessorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
         val masterSystemAddress = new Address("akka",
-                                              MASTER_ACTOR_SYSTEM_NAME + "-" + masterProcessorId,
+                                              masterProcessorId.toString(),
                                               slaveCommand.getMasterHost(),
                                               slaveCommand.getMasterPort());
 

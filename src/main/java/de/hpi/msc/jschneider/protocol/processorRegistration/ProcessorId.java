@@ -13,19 +13,24 @@ import java.util.regex.Pattern;
 @NoArgsConstructor @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class ProcessorId
 {
+    private static final String ACTOR_SYSTEM_NAME_GROUP_NAME = "ActorSystemName";
     private static final String HOST_GROUP_NAME = "Host";
     private static final String PORT_GROUP_NAME = "Port";
-    private static final Pattern EXTRACT_PATTERN = Pattern.compile(String.format("^akka:\\/\\/(?<ActorSystemName>\\w+)-(?<%1$s>(?>\\d+_){3}(?>\\d+))-(?<%2$s>\\d+)",
+    private static final Pattern EXTRACT_PATTERN = Pattern.compile(String.format("^akka:\\/\\/(?<%1$s>\\w+)-(?<%2$s>(?>\\d+_){3}(?>\\d+))-(?<%3$s>\\d+)",
+                                                                                 ACTOR_SYSTEM_NAME_GROUP_NAME,
                                                                                  HOST_GROUP_NAME,
                                                                                  PORT_GROUP_NAME));
 
+    @EqualsAndHashCode.Include
+    private String actorSystemName;
     @EqualsAndHashCode.Include
     private String host;
     @EqualsAndHashCode.Include
     private int port;
 
-    public ProcessorId(String host, int port)
+    public ProcessorId(String actorSystemName, String host, int port)
     {
+        this.actorSystemName = actorSystemName;
         this.host = host.replaceAll("\\.", "_");
         this.port = port;
     }
@@ -49,17 +54,22 @@ public class ProcessorId
     public static ProcessorId of(String rootActorPath)
     {
         val matcher = EXTRACT_PATTERN.matcher(rootActorPath);
-        if (!matcher.matches())
+        if (!matcher.find())
         {
             throw new Exception(String.format("Unable to convert $1%s to ProcessorId!", rootActorPath));
         }
 
-        return new ProcessorId(matcher.group(HOST_GROUP_NAME), Integer.parseInt(matcher.group(PORT_GROUP_NAME)));
+        return new ProcessorId(matcher.group(ACTOR_SYSTEM_NAME_GROUP_NAME),
+                               matcher.group(HOST_GROUP_NAME),
+                               Integer.parseInt(matcher.group(PORT_GROUP_NAME)));
     }
 
     @Override
     public String toString()
     {
-        return host + "-" + port;
+        return String.format("%1$s-%2$s-%3$d",
+                             actorSystemName,
+                             host,
+                             port);
     }
 }
