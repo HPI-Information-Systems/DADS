@@ -44,7 +44,7 @@ public class ReaperProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(ReaperEvents.ActorSystemReapedEvents.class);
+        val model = BaseEventDispatcherModel.create(ReaperEvents.ActorSystemReapedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

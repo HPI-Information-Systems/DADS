@@ -17,6 +17,8 @@ import java.util.Set;
 public class ScoringReceiverModel extends AbstractProtocolParticipantModel
 {
     @Setter @Getter
+    private int subSequenceLength;
+    @Setter @Getter
     private Set<RootActorPath> runningDataTransfers;
     @Setter @Getter
     private Map<RootActorPath, Int64Range> subSequenceResponsibilities;

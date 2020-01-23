@@ -2,21 +2,19 @@ package de.hpi.msc.jschneider.bootstrap.command.validation;
 
 import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.ParameterException;
-import lombok.SneakyThrows;
 import lombok.val;
 
 import java.nio.file.Path;
 
-public class FileValidator implements IValueValidator<Path>
+public class ExistingFileValidator implements IValueValidator<Path>
 {
-    @SneakyThrows
     @Override
     public void validate(String parameterName, Path parameterValue) throws ParameterException
     {
         val file = parameterValue.toFile();
-        if (!file.exists() && !file.createNewFile())
+        if (!file.exists())
         {
-            throw new ParameterException(String.format("\"%1$s\" can not be found/created!", parameterValue));
+            throw new ParameterException(String.format("\"%1$s\" can not be found!", parameterValue));
         }
 
         if (!file.isFile())

@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.bootstrap.command;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import de.hpi.msc.jschneider.bootstrap.command.validation.ExistingFileValidator;
 import de.hpi.msc.jschneider.bootstrap.command.validation.FileValidator;
 import de.hpi.msc.jschneider.bootstrap.command.validation.StringToPathConverter;
 import lombok.Getter;
@@ -15,7 +16,7 @@ public class MasterCommand extends AbstractCommand
     @Parameter(names = "--min-slaves", description = "minimum number of slaves to start processing", required = true)
     private int minimumNumberOfSlaves;
 
-    @Parameter(names = "--sequence", description = "record sequence to analyze", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
+    @Parameter(names = "--sequence", description = "record sequence to analyze", required = true, converter = StringToPathConverter.class, validateValueWith = ExistingFileValidator.class)
     private Path sequenceFilePath;
 
     @Parameter(names = "--sub-sequence-length", description = "length for the sub sequences", required = true)
@@ -29,4 +30,7 @@ public class MasterCommand extends AbstractCommand
 
     @Parameter(names = "--query-length", description = "length of paths to score", required = true)
     private int queryPathLength;
+
+    @Parameter(names = "--output", description = "file to write resulting normality scores to", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
+    private Path outputFilePath;
 }

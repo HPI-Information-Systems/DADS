@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import akka.actor.RootActorPath;
+import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -10,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 import lombok.var;
 
@@ -211,6 +213,8 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
             pathScores.add((float) pathSum);
         }
+
+        publishPathScores(Floats.toArray(pathScores));
     }
 
     private double addSummands(List<Double> pathSummands, List<Integer> edgeCreationOrder, double currentPathSum)
@@ -238,5 +242,18 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                getModel().getEdgeCreationOrder() != null &&
                !getModel().getEdgeCreationOrder().isEmpty() &&
                getModel().getEdges() != null;
+    }
+
+    private void publishPathScores(float[] pathScores)
+    {
+        val protocol = getMasterProtocol(ProtocolType.Scoring);
+        assert protocol.isPresent() : "The master processor must implement the Scoring protocol!";
+
+        getModel().getDataTransferManager().transfer(GenericDataSource.create(pathScores),
+                                                     dataDistributor -> ScoringMessages.InitializePathScoresTransferMessage.builder()
+                                                                                                                           .sender(getModel().getSelf())
+                                                                                                                           .receiver(protocol.get().getRootActor())
+                                                                                                                           .operationId(dataDistributor.getOperationId())
+                                                                                                                           .build());
     }
 }

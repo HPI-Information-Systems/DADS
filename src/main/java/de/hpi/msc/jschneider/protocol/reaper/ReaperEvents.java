@@ -8,7 +8,7 @@ import lombok.experimental.SuperBuilder;
 public class ReaperEvents
 {
     @NoArgsConstructor @SuperBuilder
-    public static class ActorSystemReapedEvents extends MessageExchangeMessages.RedirectableMessage
+    public static class ActorSystemReapedEvent extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = -1134340329548725936L;
 

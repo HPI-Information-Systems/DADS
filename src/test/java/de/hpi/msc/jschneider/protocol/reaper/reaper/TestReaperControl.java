@@ -5,8 +5,11 @@ import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
+import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
+import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import lombok.val;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +35,7 @@ public class TestReaperControl extends ProtocolTestCase
     @Override
     protected ProtocolType[] getProcessorProtocols()
     {
-        return new ProtocolType[]{ProtocolType.Reaper, ProtocolType.MessageExchange};
+        return new ProtocolType[]{ProtocolType.Reaper, ProtocolType.MessageExchange, ProtocolType.ProcessorRegistration, ProtocolType.Scoring};
     }
 
     private ReaperControl control()
@@ -100,6 +103,23 @@ public class TestReaperControl extends ProtocolTestCase
         messageInterface.apply(new Terminated(secondLocalActor.ref(), true, true));
         assertThat(numberOfCalls.get()).isEqualTo(1);
 
-        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ReaperEvents.ActorSystemReapedEvents.class);
+        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ReaperEvents.ActorSystemReapedEvent.class);
+    }
+
+    public void testSubscribeToReadyForTerminationEvent()
+    {
+        val control = control();
+        val messageInterface = createMessageInterface(control);
+
+        val registrationAcknowledgedEvent = ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.builder()
+                                                                                                     .sender(self.ref())
+                                                                                                     .receiver(self.ref())
+                                                                                                     .build();
+        messageInterface.apply(registrationAcknowledgedEvent);
+
+        val subscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
+        assertThat(subscription.getEventType()).isEqualTo(ScoringEvents.ReadyForTerminationEvent.class);
+
+        assertThatMessageIsCompleted(registrationAcknowledgedEvent);
     }
 }
