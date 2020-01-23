@@ -8,6 +8,7 @@ import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.bootstrap.command.SlaveCommand;
 import de.hpi.msc.jschneider.bootstrap.configuration.ConfigurationFactory;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRole;
@@ -29,7 +30,8 @@ public class ActorSystemInitializer
 
     public static void runMaster(MasterCommand masterCommand) throws Exception
     {
-        val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME, masterCommand);
+        val processorId = new ProcessorId(masterCommand.getHost(), masterCommand.getPort());
+        val actorSystem = initializeActorSystem(MASTER_ACTOR_SYSTEM_NAME + "-" + processorId, masterCommand);
 
         val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, true);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
@@ -40,15 +42,18 @@ public class ActorSystemInitializer
 
     public static void runSlave(SlaveCommand slaveCommand) throws Exception
     {
-        val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand);
+        val processorId = new ProcessorId(slaveCommand.getHost(), slaveCommand.getPort());
+        val actorSystem = initializeActorSystem(SLAVE_ACTOR_SYSTEM_NAME + "-" + processorId, slaveCommand);
+
+        val masterProcessorId = new ProcessorId(slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
+        val masterSystemAddress = new Address("akka",
+                                              MASTER_ACTOR_SYSTEM_NAME + "-" + masterProcessorId,
+                                              slaveCommand.getMasterHost(),
+                                              slaveCommand.getMasterPort());
 
         val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, false);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
-                                                                                                               .masterAddress(new Address(
-                                                                                                                       "akka.tcp",
-                                                                                                                       MASTER_ACTOR_SYSTEM_NAME,
-                                                                                                                       slaveCommand.getMasterHost(),
-                                                                                                                       slaveCommand.getMasterPort()))
+                                                                                                               .masterAddress(masterSystemAddress)
                                                                                                                .build(), ActorRef.noSender());
         awaitTermination(actorSystem);
     }
