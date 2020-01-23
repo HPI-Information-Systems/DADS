@@ -1,0 +1,31 @@
+package de.hpi.msc.jschneider.protocol.scoring.worker;
+
+import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+
+import java.util.List;
+import java.util.Map;
+
+@SuperBuilder
+public class ScoringWorkerModel extends AbstractProtocolParticipantModel
+{
+    @Setter @Getter @Builder.Default
+    private boolean responsibilitiesReceived = false;
+    @Setter @Getter
+    private List<List<Integer>> edgeCreationOrder;
+    @Setter @Getter
+    private List<List<Integer>> remoteEdgeCreationOrder;
+    @Setter @Getter
+    private ActorRef processorResponsibleForPreviousSubSequences;
+    @Setter @Getter
+    private int queryPathLength;
+    @Setter @Getter
+    private Map<Integer, GraphEdge> edges;
+    @Setter @Getter
+    private Map<Integer, Long> nodeDegrees;
+}

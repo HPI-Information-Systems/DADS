@@ -32,4 +32,26 @@ public class SequenceSliceDistributionEvents
                             .build();
         }
     }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class SubSequenceParametersReceivedEvent extends MessageExchangeMessages.RedirectableMessage
+    {
+        private static final long serialVersionUID = 6340788448981144705L;
+        private int subSequenceLength;
+        private int convolutionSize;
+        private long firstSubSequenceIndex;
+        private boolean isLastSubSequenceChunk;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .subSequenceLength(getSubSequenceLength())
+                            .convolutionSize(getConvolutionSize())
+                            .firstSubSequenceIndex(getFirstSubSequenceIndex())
+                            .isLastSubSequenceChunk(isLastSubSequenceChunk())
+                            .build();
+        }
+    }
 }

@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.math;
 
 import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
@@ -10,8 +12,13 @@ import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access1D;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 public class Calculate
@@ -377,6 +384,33 @@ public class Calculate
     public static double scottsFactor(long numberOfRecords, long numberOfDimensions)
     {
         return Math.pow(numberOfRecords, -1.0d / (numberOfDimensions + 4.0d));
+    }
+
+    public static Map<Integer, Long> nodeDegrees(Collection<GraphEdge> edges)
+    {
+        val incomingEdges = new HashMap<Integer, Counter>();
+        val outgoingEdges = new HashMap<Integer, Counter>();
+        val nodeHashes = edges.stream()
+                              .flatMap(edge -> Arrays.stream(new Integer[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
+                              .collect(Collectors.toSet());
+        for (var nodeHash : nodeHashes)
+        {
+            val hash = nodeHash.hashCode();
+            incomingEdges.put(hash, new Counter(0L));
+            outgoingEdges.put(hash, new Counter(0L));
+        }
+
+        for (val edge : edges)
+        {
+            val nodeFromHash = edge.getFrom().hashCode();
+            val nodeToHash = edge.getTo().hashCode();
+
+            outgoingEdges.get(nodeFromHash).increment();
+            incomingEdges.get(nodeToHash).increment();
+        }
+
+        return nodeHashes.stream().collect(Collectors.toMap(hash -> hash,
+                                                            hash -> incomingEdges.get(hash).get() + outgoingEdges.get(hash).get()));
     }
 
     public static double log2(double value)

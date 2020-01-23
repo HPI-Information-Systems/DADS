@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
-import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
@@ -8,17 +7,13 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
-import de.hpi.msc.jschneider.utility.Int32Range;
-import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
-import lombok.var;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -53,57 +48,31 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
         return new GraphPartitionReceiverControl(dummyModel());
     }
 
+    private void sendResponsibilitiesCreatedEvent(GraphPartitionReceiverControl control,
+                                                  PartialFunction<Object, BoxedUnit> messageInterface,
+                                                  int numberOfIntersectionSegments,
+                                                  long numberOfSubSequences,
+                                                  TestProbe... participants)
+    {
+        val event = createResponsibilitiesReceivedEvent(self, self, numberOfIntersectionSegments, numberOfSubSequences, participants);
+        messageInterface.apply(event);
+
+        val workerSystems = Arrays.stream(participants).map(participant -> participant.ref().path().root()).toArray(RootActorPath[]::new);
+        assertThat(control.getModel().getRunningDataTransfers()).containsExactlyInAnyOrder(workerSystems);
+        assertThat(control.getModel().getWorkerSystems()).containsExactlyInAnyOrder(workerSystems);
+
+        assertThatMessageIsCompleted(event);
+    }
+
     public void testSubscribeToEvents()
     {
         val control = control();
 
         control.preStart();
 
-        val responsibilitiesCreatedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
-        assertThat(responsibilitiesCreatedSubscription.getReceiver().path().root()).isEqualTo(localProcessor.getRootPath());
-        assertThat(responsibilitiesCreatedSubscription.getEventType()).isEqualTo(NodeCreationEvents.ResponsibilitiesCreatedEvent.class);
-    }
-
-    private void sendResponsibilities(GraphPartitionReceiverControl control,
-                                      PartialFunction<Object, BoxedUnit> messageInterface,
-                                      int numberOfIntersectionSegments,
-                                      long numberOfSubSequences,
-                                      TestProbe... participants)
-    {
-        val subSequenceResponsibilities = new HashMap<ActorRef, Int64Range>();
-        val subSequencesPerParticipant = Math.ceil(numberOfSubSequences / (double) participants.length);
-        val segmentResponsibilities = new HashMap<ActorRef, Int32Range>();
-        val segmentsPerParticipant = Math.ceil(numberOfIntersectionSegments / (double) participants.length);
-
-        for (var participantIndex = 0; participantIndex < participants.length; ++participantIndex)
-        {
-            val participant = participants[participantIndex];
-            subSequenceResponsibilities.put(participant.ref(),
-                                            Int64Range.builder()
-                                                      .from((long) (participantIndex * subSequencesPerParticipant))
-                                                      .to((long) Math.min(numberOfSubSequences, ((participantIndex + 1) * subSequencesPerParticipant)))
-                                                      .build());
-            segmentResponsibilities.put(participant.ref(),
-                                        Int32Range.builder()
-                                                  .from((int) (participantIndex * segmentsPerParticipant))
-                                                  .to((int) Math.min(numberOfIntersectionSegments, (participantIndex + 1) * segmentsPerParticipant))
-                                                  .build());
-        }
-
-        val message = NodeCreationEvents.ResponsibilitiesCreatedEvent.builder()
-                                                                     .sender(self.ref())
-                                                                     .receiver(self.ref())
-                                                                     .numberOfIntersectionSegments(numberOfIntersectionSegments)
-                                                                     .subSequenceResponsibilities(subSequenceResponsibilities)
-                                                                     .segmentResponsibilities(segmentResponsibilities)
-                                                                     .build();
-        messageInterface.apply(message);
-
-        val workerSystems = Arrays.stream(participants).map(participant -> participant.ref().path().root()).toArray(RootActorPath[]::new);
-        assertThat(control.getModel().getWorkerSystems()).containsExactlyInAnyOrder(workerSystems);
-        assertThat(control.getModel().getRunningDataTransfers()).containsExactlyInAnyOrder(workerSystems);
-
-        assertThatMessageIsCompleted(message);
+        val responsibilitiesReceivedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
+        assertThat(responsibilitiesReceivedSubscription.getReceiver().path().root()).isEqualTo(localProcessor.getRootPath());
+        assertThat(responsibilitiesReceivedSubscription.getEventType()).isEqualTo(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
     }
 
     public void testSetRunningDataTransfers()
@@ -111,7 +80,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        sendResponsibilities(control, messageInterface, 180, 100L, self);
+        sendResponsibilitiesCreatedEvent(control, messageInterface, 180, 100L, self);
     }
 
     public void testSendReceivedEdgesToGraphMerger()
@@ -119,7 +88,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        sendResponsibilities(control, messageInterface, 180, 100L, self);
+        sendResponsibilitiesCreatedEvent(control, messageInterface, 180, 100L, self);
 
         val operationId = UUID.randomUUID();
 
@@ -157,7 +126,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        sendResponsibilities(control, messageInterface, 180, 100L, self);
+        sendResponsibilitiesCreatedEvent(control, messageInterface, 180, 100L, self);
 
         val operationId = UUID.randomUUID();
 

@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
-import akka.actor.ActorRef;
+import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
 import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
@@ -65,32 +65,32 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         return new EdgeCreationWorkerControl(dummyModel());
     }
 
-    private Map<ActorRef, Int32Range> createIntersectionSegmentResponsibilities(int numberOfIntersectionSegments)
+    private Map<RootActorPath, Int32Range> createIntersectionSegmentResponsibilities(int numberOfIntersectionSegments)
     {
-        val responsibilities = new HashMap<ActorRef, Int32Range>();
-        responsibilities.put(self.ref(), Int32Range.builder()
-                                                   .from(0)
-                                                   .to(numberOfIntersectionSegments / 2)
-                                                   .build());
-        responsibilities.put(remoteActor.ref(), Int32Range.builder()
-                                                          .from(numberOfIntersectionSegments / 2)
-                                                          .to(numberOfIntersectionSegments)
-                                                          .build());
+        val responsibilities = new HashMap<RootActorPath, Int32Range>();
+        responsibilities.put(self.ref().path().root(), Int32Range.builder()
+                                                                 .from(0)
+                                                                 .to(numberOfIntersectionSegments / 2)
+                                                                 .build());
+        responsibilities.put(remoteActor.ref().path().root(), Int32Range.builder()
+                                                                        .from(numberOfIntersectionSegments / 2)
+                                                                        .to(numberOfIntersectionSegments)
+                                                                        .build());
 
         return responsibilities;
     }
 
-    private Map<ActorRef, Int64Range> createSubSequenceResponsibilities(long numberOfSubSequences)
+    private Map<RootActorPath, Int64Range> createSubSequenceResponsibilities(long numberOfSubSequences)
     {
-        val responsibilities = new HashMap<ActorRef, Int64Range>();
-        responsibilities.put(self.ref(), Int64Range.builder()
-                                                   .from(0L)
-                                                   .to(numberOfSubSequences / 2)
-                                                   .build());
-        responsibilities.put(remoteActor.ref(), Int64Range.builder()
-                                                          .from(numberOfSubSequences / 2)
-                                                          .to(numberOfSubSequences)
-                                                          .build());
+        val responsibilities = new HashMap<RootActorPath, Int64Range>();
+        responsibilities.put(self.ref().path().root(), Int64Range.builder()
+                                                                 .from(0L)
+                                                                 .to(numberOfSubSequences / 2)
+                                                                 .build());
+        responsibilities.put(remoteActor.ref().path().root(), Int64Range.builder()
+                                                                        .from(numberOfSubSequences / 2)
+                                                                        .to(numberOfSubSequences)
+                                                                        .build());
 
         return responsibilities;
     }
@@ -290,8 +290,8 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         val responsibilitiesMessage = NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                       .sender(self.ref())
                                                                                       .receiver(self.ref())
-                                                                                      .segmentResponsibilities(segmentResponsibilities.get(self.ref()))
-                                                                                      .subSequenceResponsibilities(sequenceResponsibilities.get(self.ref()))
+                                                                                      .segmentResponsibilities(segmentResponsibilities)
+                                                                                      .subSequenceResponsibilities(sequenceResponsibilities)
                                                                                       .numberOfIntersectionSegments(numberOfIntersectionSegments)
                                                                                       .build();
         messageInterface.apply(responsibilitiesMessage);
@@ -299,7 +299,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         assertThat(control.getModel().getIntersectionsToMatch()).isNull();
         assertThatMessageIsCompleted(responsibilitiesMessage);
 
-        val intersections = createIntersectionCollections(numberOfIntersectionSegments, sequenceResponsibilities.get(self.ref()));
+        val intersections = createIntersectionCollections(numberOfIntersectionSegments, sequenceResponsibilities.get(self.ref().path().root()));
         val totalNumberOfIntersections = Arrays.stream(intersections).mapToLong(collection -> collection.getIntersections().size()).sum();
 
         val lastIntersectionsCreatedEvent = sendIntersections(control, messageInterface, intersections, false);
@@ -320,7 +320,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         val segmentResponsibilities = createIntersectionSegmentResponsibilities(numberOfIntersectionSegments);
         val sequenceResponsibilities = createSubSequenceResponsibilities(numberOfSubSequences);
 
-        val intersections = createIntersectionCollections(numberOfIntersectionSegments, sequenceResponsibilities.get(self.ref()));
+        val intersections = createIntersectionCollections(numberOfIntersectionSegments, sequenceResponsibilities.get(self.ref().path().root()));
         val totalNumberOfIntersections = Arrays.stream(intersections).mapToLong(collection -> collection.getIntersections().size()).sum();
 
         sendIntersections(control, messageInterface, intersections, true);
@@ -328,8 +328,8 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         val responsibilitiesMessage = NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                       .sender(self.ref())
                                                                                       .receiver(self.ref())
-                                                                                      .segmentResponsibilities(segmentResponsibilities.get(self.ref()))
-                                                                                      .subSequenceResponsibilities(sequenceResponsibilities.get(self.ref()))
+                                                                                      .segmentResponsibilities(segmentResponsibilities)
+                                                                                      .subSequenceResponsibilities(sequenceResponsibilities)
                                                                                       .numberOfIntersectionSegments(numberOfIntersectionSegments)
                                                                                       .build();
         messageInterface.apply(responsibilitiesMessage);
@@ -385,15 +385,15 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
                                                                   createIntersection(12L, 3.0f),
                                                                   createIntersection(13L, 2.0f));
 
-        val localIntersectionCollections = extractLocalIntersectionCollections(intersectionCollections, sequenceResponsibilities.get(self.ref()));
+        val localIntersectionCollections = extractLocalIntersectionCollections(intersectionCollections, sequenceResponsibilities.get(self.ref().path().root()));
         val totalNumberOfLocalIntersections = Arrays.stream(localIntersectionCollections).mapToLong(collection -> collection.getIntersections().size()).sum();
         sendIntersections(control, messageInterface, localIntersectionCollections, true);
 
         val responsibilitiesMessage = NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                       .sender(self.ref())
                                                                                       .receiver(self.ref())
-                                                                                      .segmentResponsibilities(segmentResponsibilities.get(self.ref()))
-                                                                                      .subSequenceResponsibilities(sequenceResponsibilities.get(self.ref()))
+                                                                                      .segmentResponsibilities(segmentResponsibilities)
+                                                                                      .subSequenceResponsibilities(sequenceResponsibilities)
                                                                                       .numberOfIntersectionSegments(numberOfIntersectionSegments)
                                                                                       .build();
         messageInterface.apply(responsibilitiesMessage);
@@ -402,19 +402,19 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         assertThatMessageIsCompleted(responsibilitiesMessage);
 
         sendNodes(control, messageInterface, nodeCollections[0], true);
-        assertThat(control.getModel().getEdges()).isEmpty();
+        assertThat(control.getModel().getGraph().getEdges()).isEmpty();
 
         sendNodes(control, messageInterface, nodeCollections[1], true);
-        assertThat(control.getModel().getEdges()).isEmpty();
+        assertThat(control.getModel().getGraph().getEdges()).isEmpty();
 
         sendNodes(control, messageInterface, nodeCollections[2], true);
-        assertThat(control.getModel().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
+        assertThat(control.getModel().getGraph().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
                 .containsExactlyInAnyOrder("{2_0} -[1]-> {1_0}",
                                            "{1_0} -[2]-> {1_1}",
                                            "{1_1} -[1]-> {1_0}");
 
         val nodesMessage = sendNodes(control, messageInterface, nodeCollections[3], false);
-        assertThat(control.getModel().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
+        assertThat(control.getModel().getGraph().getEdges().values().stream().map(GraphEdge::toString).collect(Collectors.toList()))
                 .containsExactlyInAnyOrder("{2_0} -[1]-> {1_0}",
                                            "{1_0} -[2]-> {1_1}",
                                            "{1_1} -[1]-> {1_0}",
@@ -424,8 +424,8 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         assertThat(control.getModel().getIntersectionsToMatch()).isEmpty();
 
         val partitionCreatedEvent = expectEvent(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
-        assertThat(partitionCreatedEvent.getEdges()).containsExactlyInAnyOrder(control.getModel().getEdges().values().toArray(new GraphEdge[0]));
-        assertThat(partitionCreatedEvent.getEdgeCreationOrder().length).isEqualTo(control.getModel().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum());
+        assertThat(partitionCreatedEvent.getGraphPartition().getEdges().values()).containsExactlyInAnyOrder(control.getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]));
+        assertThat(partitionCreatedEvent.getGraphPartition().getCreatedEdgesBySubSequenceIndex().size()).isEqualTo(control.getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum());
 
         assertThatMessageIsCompleted(nodesMessage);
     }

@@ -38,6 +38,15 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
         getModel().setProjectionInitializer(new MatrixInitializer(getModel().getSubSequenceLength() - getModel().getConvolutionSize()));
 
+        trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.builder()
+                                                                                                                                                  .sender(getModel().getSelf())
+                                                                                                                                                  .receiver(eventDispatcher)
+                                                                                                                                                  .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
+                                                                                                                                                  .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
+                                                                                                                                                  .convolutionSize(getModel().getConvolutionSize())
+                                                                                                                                                  .subSequenceLength(getModel().getSubSequenceLength())
+                                                                                                                                                  .build());
+
         getModel().getDataTransferManager().accept(message,
                                                    dataReceiver -> dataReceiver.whenDataPartReceived(this::onSlicePart)
                                                                                .whenFinished(this::whenFinished)

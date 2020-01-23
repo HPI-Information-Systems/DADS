@@ -20,6 +20,8 @@ public class BinarySequenceWriter implements SequenceWriter
             throw new NullPointerException("File must not be null!");
         }
 
+        file.delete();
+
         if (!file.exists())
         {
             if (!file.getParentFile().exists() && !file.getParentFile().mkdirs())

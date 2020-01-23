@@ -19,6 +19,7 @@ import org.assertj.core.data.Offset;
 import org.ojalgo.function.aggregator.Aggregator;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -128,8 +129,8 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         messageInterface.apply(initializeNodeCreation);
 
         val responsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
-        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.get(self.ref()));
-        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.get(self.ref()));
+        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
+        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
         assertThat(responsibilitiesReceivedEvent.getNumberOfIntersectionSegments()).isEqualTo(numberOfIntersectionSegments);
 
         for (var i = 0; i < numberOfIntersectionSegments; ++i)
@@ -254,8 +255,8 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         messageInterface.apply(initializeMessage);
 
         val responsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
-        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(segmentResponsibilities.get(self.ref()));
-        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.get(self.ref()));
+        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(segmentResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
+        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
 
         val reducedSubSequenceMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.ReducedSubSequenceMessage.class);
         assertThat(reducedSubSequenceMessage.getReceiver()).isEqualTo(remoteActor.ref());

@@ -67,7 +67,13 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThat(control.getModel().getConvolutionSize()).isEqualTo(3);
         assertThat(control.getModel().getProjectionInitializer()).isNotNull();
 
-        var request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+        val parametersReceivedEvent = expectEvent(SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.class);
+        assertThat(parametersReceivedEvent.getSubSequenceLength()).isEqualTo(control.getModel().getSubSequenceLength());
+        assertThat(parametersReceivedEvent.getConvolutionSize()).isEqualTo(control.getModel().getConvolutionSize());
+        assertThat(parametersReceivedEvent.getFirstSubSequenceIndex()).isEqualTo(control.getModel().getFirstSubSequenceIndex());
+        assertThat(parametersReceivedEvent.isLastSubSequenceChunk()).isEqualTo(control.getModel().isLastSubSequenceChunk());
+
+        val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
         assertThat(request.getReceiver()).isEqualTo(localSliceDistributor.ref());
 
         assertThatMessageIsCompleted(message);
@@ -195,6 +201,12 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
                                                                                                  .operationId(OPERATION_ID)
                                                                                                  .build();
         messageInterface.apply(initialize);
+
+        val parametersReceivedEvent = expectEvent(SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.class);
+        assertThat(parametersReceivedEvent.getSubSequenceLength()).isEqualTo(control.getModel().getSubSequenceLength());
+        assertThat(parametersReceivedEvent.getConvolutionSize()).isEqualTo(control.getModel().getConvolutionSize());
+        assertThat(parametersReceivedEvent.getFirstSubSequenceIndex()).isEqualTo(control.getModel().getFirstSubSequenceIndex());
+        assertThat(parametersReceivedEvent.isLastSubSequenceChunk()).isEqualTo(control.getModel().isLastSubSequenceChunk());
 
         val request = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
         assertThat(request.getOperationId()).isEqualTo(OPERATION_ID);
