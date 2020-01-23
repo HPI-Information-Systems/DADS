@@ -118,4 +118,50 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         assertThat(overlappingEdgeCreationOrder.getOverlappingEdgeCreationOrder().size()).isEqualTo(49);
         assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
     }
+
+    public void testInitializePathScoresTransfer()
+    {
+        val control = control();
+        val messageInterface = createMessageInterface(control);
+
+        assertThat(control.getModel().isResponsibilitiesReceived()).isFalse();
+        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, self, remoteActor);
+        messageInterface.apply(responsibilitiesReceivedEvent);
+        assertThatMessageIsCompleted(responsibilitiesReceivedEvent);
+
+        val queryLengthMessage = ScoringMessages.QueryPathLengthMessage.builder()
+                                                                       .sender(self.ref())
+                                                                       .receiver(self.ref())
+                                                                       .queryPathLength(50)
+                                                                       .build();
+        messageInterface.apply(queryLengthMessage);
+        assertThat(control.getModel().getQueryPathLength()).isEqualTo(50);
+        assertThatMessageIsCompleted(queryLengthMessage);
+
+        val localGraphPartition = createGraph(360, 180);
+        val sortedEdgeCreationOrder = localGraphPartition.getCreatedEdgesBySubSequenceIndex().entrySet().stream()
+                                                         .sorted((a, b) -> (int) (a.getKey() - b.getKey()))
+                                                         .map(Map.Entry::getValue)
+                                                         .collect(Collectors.toList());
+        val localGraphPartitionCreatedEvent = EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
+                                                                                                .sender(self.ref())
+                                                                                                .receiver(self.ref())
+                                                                                                .graphPartition(localGraphPartition)
+                                                                                                .build();
+        messageInterface.apply(localGraphPartitionCreatedEvent);
+        assertThat(control.getModel().getEdgeCreationOrder()).isEqualTo(sortedEdgeCreationOrder);
+        assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
+
+        val graphReceivedEvent = GraphMergingEvents.GraphReceivedEvent.builder()
+                                                                      .sender(self.ref())
+                                                                      .receiver(self.ref())
+                                                                      .graph(localGraphPartition.getEdges())
+                                                                      .build();
+        messageInterface.apply(graphReceivedEvent);
+
+        val initializePathScoresTransfer = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.InitializePathScoresTransferMessage.class);
+        assertThat(initializePathScoresTransfer.getReceiver()).isEqualTo(localProcessor.getProtocolRootActor(ProtocolType.Scoring).ref());
+
+        assertThatMessageIsCompleted(graphReceivedEvent);
+    }
 }

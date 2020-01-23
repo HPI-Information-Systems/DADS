@@ -2,7 +2,6 @@ package de.hpi.msc.jschneider.math;
 
 import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
-import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
@@ -391,10 +390,12 @@ public class Calculate
     {
         val incomingEdges = new HashMap<Integer, Counter>();
         val outgoingEdges = new HashMap<Integer, Counter>();
-        val nodes = edges.stream().flatMap(edge -> Arrays.stream(new GraphNode[]{edge.getFrom(), edge.getTo()})).collect(Collectors.toSet());
-        for (var node : nodes)
+        val nodeHashes = edges.stream()
+                              .flatMap(edge -> Arrays.stream(new Integer[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
+                              .collect(Collectors.toSet());
+        for (var nodeHash : nodeHashes)
         {
-            val hash = node.hashCode();
+            val hash = nodeHash.hashCode();
             incomingEdges.put(hash, new Counter(0L));
             outgoingEdges.put(hash, new Counter(0L));
         }
@@ -406,11 +407,10 @@ public class Calculate
 
             outgoingEdges.get(nodeFromHash).increment();
             incomingEdges.get(nodeToHash).increment();
-            ;
         }
 
-        return nodes.stream().collect(Collectors.toMap(GraphNode::hashCode,
-                                                       node -> incomingEdges.get(node.hashCode()).get() + outgoingEdges.get(node.hashCode()).get()));
+        return nodeHashes.stream().collect(Collectors.toMap(hash -> hash,
+                                                            hash -> incomingEdges.get(hash).get() + outgoingEdges.get(hash).get()));
     }
 
     public static double log2(double value)
