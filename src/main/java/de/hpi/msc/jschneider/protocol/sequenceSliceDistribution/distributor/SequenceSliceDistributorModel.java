@@ -1,8 +1,8 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 public class SequenceSliceDistributorModel extends AbstractProtocolParticipantModel
 {
     @NonNull @Getter
-    private RootActorPath sliceReceiverActorSystem;
+    private ProcessorId sliceReceiverActorSystem;
     @NonNull @Getter
     private SequenceReader sequenceReader;
     @Getter

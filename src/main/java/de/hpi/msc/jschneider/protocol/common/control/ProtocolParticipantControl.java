@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 
 import java.util.Optional;
@@ -29,6 +30,10 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
     Optional<Protocol> getMasterProtocol(ProtocolType protocolType);
 
     Optional<Protocol> getProtocol(RootActorPath actorSystem, ProtocolType protocolType);
+
+    Optional<Protocol> getProtocol(ActorRef actorRef, ProtocolType protocolType);
+
+    Optional<Protocol> getProtocol(ProcessorId processorId, ProtocolType protocolType);
 
     boolean tryWatch(ActorRef subject);
 

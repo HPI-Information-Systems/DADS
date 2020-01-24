@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
@@ -49,7 +50,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
             getModel().setProcessorIndices(message.getProcessorIndices());
             for (val keyValuePair : message.getProcessorIndices().entrySet())
             {
-                if (keyValuePair.getValue().equals(getModel().getSelf().path().root()))
+                if (keyValuePair.getValue().equals(ProcessorId.of(getModel().getSelf())))
                 {
                     getModel().setMyProcessorIndex(keyValuePair.getKey());
                     break;
@@ -116,8 +117,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
         if (getModel().getMyProcessorIndex() == 0)
         {
-            getModel().getTransposedColumnMeans().put(getModel().getSelf().path().root(), columnMeans);
-            getModel().getNumberOfRows().put(getModel().getSelf().path().root(), numberOfRows);
+            getModel().getTransposedColumnMeans().put(ProcessorId.of(getModel().getSelf()), columnMeans);
+            getModel().getNumberOfRows().put(ProcessorId.of(getModel().getSelf()), numberOfRows);
             return;
         }
 
@@ -306,7 +307,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     {
         assert getModel().getMyProcessorIndex() == 0 : String.format("%1$s trying to send column means, although we are not processor#0!", message.getSender().path());
 
-        getModel().getNumberOfRows().put(message.getSender().path().root(), message.getNumberOfRows());
+        getModel().getNumberOfRows().put(ProcessorId.of(message.getSender()), message.getNumberOfRows());
         getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), message.getMinimumRecord()));
         getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), message.getMaximumRecord()));
 
@@ -314,12 +315,12 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         {
             val sink = new PrimitiveMatrixSink();
             dataReceiver.addSink(sink);
-            dataReceiver.whenFinished(receiver -> columnMeansTransferFinished(message.getSender().path().root(), sink));
+            dataReceiver.whenFinished(receiver -> columnMeansTransferFinished(ProcessorId.of(message.getSender()), sink));
             return dataReceiver;
         });
     }
 
-    private void columnMeansTransferFinished(RootActorPath sender, PrimitiveMatrixSink sink)
+    private void columnMeansTransferFinished(ProcessorId sender, PrimitiveMatrixSink sink)
     {
         getLog().info(String.format("Received column means from %1$s.", sender));
         getModel().getTransposedColumnMeans().put(sender, sink.getMatrix(getModel().getProjection().countColumns()));

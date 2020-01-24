@@ -1,8 +1,8 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.rootActor;
 
 import akka.actor.ActorRef;
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
@@ -14,7 +14,7 @@ import java.util.Map;
 public class DimensionReductionRootActorModel extends AbstractProtocolParticipantModel
 {
     @Getter
-    private final Map<RootActorPath, ActorRef> distributors = new HashMap<>();
+    private final Map<ProcessorId, ActorRef> distributors = new HashMap<>();
     @Getter @Setter
     private ActorRef receiver;
 }

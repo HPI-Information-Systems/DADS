@@ -2,10 +2,10 @@ package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
-import akka.actor.RootActorPath;
 import akka.actor.Scheduler;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -33,7 +33,7 @@ public class ProcessorRegistryModel extends AbstractProtocolParticipantModel
     @Getter @Setter @Builder.Default
     private Duration resendRegistrationInterval = Duration.ofSeconds(5);
     @NonNull @Getter
-    private final Map<RootActorPath, Processor> clusterProcessors = new HashMap<>();
+    private final Map<ProcessorId, Processor> clusterProcessors = new HashMap<>();
 
     public final Scheduler getScheduler()
     {

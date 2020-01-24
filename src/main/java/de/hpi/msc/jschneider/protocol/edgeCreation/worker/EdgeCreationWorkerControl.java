@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
@@ -45,8 +46,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             assert getModel().getLocalSegments() == null : "Already received intersection segment responsibilities!";
 
-            getModel().setLocalSegments(message.getSegmentResponsibilities().get(getModel().getSelf().path().root()));
-            getModel().setLocalSubSequences(message.getSubSequenceResponsibilities().get(getModel().getSelf().path().root()));
+            getModel().setLocalSegments(message.getSegmentResponsibilities().get(ProcessorId.of(getModel().getSelf())));
+            getModel().setLocalSubSequences(message.getSubSequenceResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
             getModel().setNextSubSequenceIndex(new Counter(getModel().getLocalSubSequences().getFrom()));
             enqueueIntersections();

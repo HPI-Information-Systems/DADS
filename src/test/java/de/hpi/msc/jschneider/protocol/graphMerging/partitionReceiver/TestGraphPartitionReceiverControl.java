@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
@@ -57,7 +58,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
         val event = createResponsibilitiesReceivedEvent(self, self, numberOfIntersectionSegments, numberOfSubSequences, participants);
         messageInterface.apply(event);
 
-        val workerSystems = Arrays.stream(participants).map(participant -> participant.ref().path().root()).toArray(RootActorPath[]::new);
+        val workerSystems = Arrays.stream(participants).map(participant -> ProcessorId.of(participant.ref())).toArray(ProcessorId[]::new);
         assertThat(control.getModel().getRunningDataTransfers()).containsExactlyInAnyOrder(workerSystems);
         assertThat(control.getModel().getWorkerSystems()).containsExactlyInAnyOrder(workerSystems);
 
@@ -71,7 +72,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
         control.preStart();
 
         val responsibilitiesReceivedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
-        assertThat(responsibilitiesReceivedSubscription.getReceiver().path().root()).isEqualTo(localProcessor.getRootPath());
+        assertThat(ProcessorId.of(responsibilitiesReceivedSubscription.getReceiver())).isEqualTo(localProcessor.getId());
         assertThat(responsibilitiesReceivedSubscription.getEventType()).isEqualTo(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
     }
 
@@ -90,7 +91,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
 
         sendResponsibilitiesCreatedEvent(control, messageInterface, 180, 100L, self);
 
-        val operationId = UUID.randomUUID();
+        val operationId = UUID.randomUUID().toString();
 
         val initializeTransferMessage = GraphMergingMessages.InitializeEdgePartitionTransferMessage.builder()
                                                                                                    .sender(self.ref())
@@ -128,7 +129,7 @@ public class TestGraphPartitionReceiverControl extends ProtocolTestCase
 
         sendResponsibilitiesCreatedEvent(control, messageInterface, 180, 100L, self);
 
-        val operationId = UUID.randomUUID();
+        val operationId = UUID.randomUUID().toString();
 
         val initializeTransferMessage = GraphMergingMessages.InitializeEdgePartitionTransferMessage.builder()
                                                                                                    .sender(self.ref())

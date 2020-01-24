@@ -33,9 +33,10 @@ public class ActorSystemInitializer
         val processorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, masterCommand.getHost(), masterCommand.getPort());
         val actorSystem = initializeActorSystem(processorId.toString(), masterCommand);
 
+        val masterSystemAddress = new Address("akka", processorId.toString(), masterCommand.getHost(), masterCommand.getPort());
         val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, true);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
-                                                                                                               .masterAddress(actorSystem.provider().getDefaultAddress())
+                                                                                                               .masterAddress(masterSystemAddress)
                                                                                                                .build(), ActorRef.noSender());
         awaitTermination(actorSystem);
     }
@@ -46,11 +47,7 @@ public class ActorSystemInitializer
         val actorSystem = initializeActorSystem(processorId.toString(), slaveCommand);
 
         val masterProcessorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
-        val masterSystemAddress = new Address("akka",
-                                              masterProcessorId.toString(),
-                                              slaveCommand.getMasterHost(),
-                                              slaveCommand.getMasterPort());
-
+        val masterSystemAddress = new Address("akka", masterProcessorId.toString(), slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
         val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, false);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                                                                .masterAddress(masterSystemAddress)

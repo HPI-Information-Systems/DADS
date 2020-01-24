@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,7 +38,7 @@ public class GraphMergingMessages
     public static class AllEdgesReceivedMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = -7352521533354529747L;
-        private RootActorPath[] workerSystems;
+        private ProcessorId[] workerSystems;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter

@@ -70,7 +70,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     public void testChooseSameMessageProxyForBothDirections()
     {
         val control = control(remoteProcessor);
-        control.getModel().getMessageProxies().put(remoteProcessor.getRootPath(), localToRemoteMessageProxy.ref());
+        control.getModel().getMessageProxies().put(remoteProcessor.getId(), localToRemoteMessageProxy.ref());
         val messageInterface = createMessageInterface(control);
 
         val localToRemoteMessage = TestMessage.builder()

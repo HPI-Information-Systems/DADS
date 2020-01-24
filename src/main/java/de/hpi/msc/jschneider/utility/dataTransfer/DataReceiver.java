@@ -16,7 +16,7 @@ import java.util.UUID;
 public class DataReceiver
 {
     @Getter
-    private final UUID operationId;
+    private final String operationId;
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     @Getter
     private final Set<DataSink> dataSinks = new HashSet<>();
@@ -27,7 +27,7 @@ public class DataReceiver
     private final EventImpl<DataReceiver> onFinished = new EventImpl<>();
     private final EventImpl<DataTransferMessages.DataPartMessage> onDataPartReceived = new EventImpl<>();
 
-    public DataReceiver(UUID operationId, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
+    public DataReceiver(String operationId, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.operationId = operationId;
         this.control = control;

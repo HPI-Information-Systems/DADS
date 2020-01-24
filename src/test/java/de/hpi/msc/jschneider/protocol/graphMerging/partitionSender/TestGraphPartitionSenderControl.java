@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.val;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +37,7 @@ public class TestGraphPartitionSenderControl extends ProtocolTestCase
 
         val localGraphPartitionCreatedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
         assertThat(localGraphPartitionCreatedSubscription.getEventType()).isEqualTo(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
-        assertThat(localGraphPartitionCreatedSubscription.getReceiver().path().root()).isEqualTo(localProcessor.getRootPath());
+        assertThat(ProcessorId.of(localGraphPartitionCreatedSubscription.getReceiver())).isEqualTo(localProcessor.getId());
     }
 
     public void testInitializeEdgePartitionTransfer()

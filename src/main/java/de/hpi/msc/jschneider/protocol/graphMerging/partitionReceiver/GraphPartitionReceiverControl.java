@@ -6,6 +6,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
@@ -46,7 +47,7 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
             assert getModel().getRunningDataTransfers() == null : "Responsibilities were received already!";
 
             getModel().setRunningDataTransfers(message.getSubSequenceResponsibilities().keySet());
-            getModel().setWorkerSystems(getModel().getRunningDataTransfers().toArray(new RootActorPath[0]));
+            getModel().setWorkerSystems(getModel().getRunningDataTransfers().toArray(new ProcessorId[0]));
         }
         finally
         {
@@ -60,7 +61,7 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            dataReceiver.setState(message.getSender().path().root());
+            dataReceiver.setState(ProcessorId.of(message.getSender()));
 
             return dataReceiver.whenDataPartReceived(this::onEdgePartitionPartReceived)
                                .whenFinished(this::onEdgePartitionTransferFinished);
@@ -91,10 +92,9 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
 
     private void onEdgePartitionTransferFinished(DataReceiver dataReceiver)
     {
-        assert dataReceiver.getState() instanceof RootActorPath : "DataReceiver state should be a root actor path!";
+        assert dataReceiver.getState() instanceof ProcessorId : "DataReceiver state should be a ProcessorId!";
 
-        //noinspection SuspiciousMethodCalls
-        getModel().getRunningDataTransfers().remove(dataReceiver.getState());
+        getModel().getRunningDataTransfers().remove((ProcessorId) dataReceiver.getState());
 
         if (!getModel().getRunningDataTransfers().isEmpty())
         {

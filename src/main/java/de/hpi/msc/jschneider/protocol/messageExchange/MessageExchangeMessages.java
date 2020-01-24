@@ -19,7 +19,7 @@ public class MessageExchangeMessages
     {
         private static final long serialVersionUID = -5714914705070819888L;
         @NotNull @Builder.Default
-        private UUID id = UUID.randomUUID();
+        private String id = UUID.randomUUID().toString();
         @NonNull
         private ActorRef sender;
         @NonNull
@@ -45,6 +45,6 @@ public class MessageExchangeMessages
     {
         private static final long serialVersionUID = -7753147974709076497L;
         @NonNull
-        private UUID completedMessageId;
+        private String completedMessageId;
     }
 }

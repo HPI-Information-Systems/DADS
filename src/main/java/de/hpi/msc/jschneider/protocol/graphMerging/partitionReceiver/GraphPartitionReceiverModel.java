@@ -1,8 +1,8 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
 import akka.actor.ActorRef;
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
@@ -15,7 +15,7 @@ public class GraphPartitionReceiverModel extends AbstractProtocolParticipantMode
     @Getter
     private ActorRef graphMerger;
     @Setter @Getter
-    private Set<RootActorPath> runningDataTransfers;
+    private Set<ProcessorId> runningDataTransfers;
     @Setter @Getter
-    private RootActorPath[] workerSystems;
+    private ProcessorId[] workerSystems;
 }

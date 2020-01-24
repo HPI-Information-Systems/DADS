@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import lombok.val;
 
@@ -61,7 +62,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
 
         assertThat(control.getModel().getNextParticipantIndex().get()).isEqualTo(1);
         assertThat(control.getModel().getParticipantIndices().size()).isEqualTo(1);
-        assertThat(control.getModel().getParticipantIndices()).containsValue(localProcessor.getRootPath());
+        assertThat(control.getModel().getParticipantIndices()).containsValue(localProcessor.getId());
 
         assertThatMessageIsCompleted(processorJoinedEvent);
     }
@@ -85,7 +86,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
 
         assertThat(initializationMessages.stream().filter(message -> message.getReceiver().equals(localProcessor.getProtocolRootActor(ProtocolType.PrincipalComponentAnalysis).ref())).count()).isEqualTo(1L);
         assertThat(initializationMessages.stream().filter(message -> message.getReceiver().equals(remoteProcessor.getProtocolRootActor(ProtocolType.PrincipalComponentAnalysis).ref())).count()).isEqualTo(1L);
-        assertThat(initializationMessages.get(0).getProcessorIndices()).containsExactly(new AbstractMap.SimpleEntry<>(0L, localProcessor.getRootPath()), new AbstractMap.SimpleEntry<>(1L, remoteProcessor.getRootPath()));
+        assertThat(initializationMessages.get(0).getProcessorIndices()).containsExactly(new AbstractMap.SimpleEntry<>(0L, localProcessor.getId()), new AbstractMap.SimpleEntry<>(1L, remoteProcessor.getId()));
 
 
         assertThatMessageIsCompleted(remoteProcessorJoinedEvent);
@@ -96,7 +97,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        val observerProcessor = createProcessor("observer", false, ProtocolType.MessageExchange, ProtocolType.ProcessorRegistration);
+        val observerProcessor = createSlave(ProtocolType.MessageExchange, ProtocolType.ProcessorRegistration);
         val processorJoined = processorJoined(observerProcessor);
         messageInterface.apply(processorJoined);
 

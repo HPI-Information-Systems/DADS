@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.protocol.common.model;
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
 import lombok.Getter;
 import lombok.NonNull;
@@ -96,25 +97,29 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     }
 
     @Override
+    public final Optional<Processor> getProcessor(ActorRef actorRef)
+    {
+        return getProcessor(ProcessorId.of(actorRef));
+    }
+
+    @Override
     public final Optional<Processor> getProcessor(RootActorPath actorSystem)
     {
-        try
-        {
-            for (val processor : processorProvider.call())
-            {
-                if (processor.getRootPath().equals(actorSystem))
-                {
-                    return Optional.of(processor);
-                }
-            }
+        return getProcessor(ProcessorId.of(actorSystem));
+    }
 
-            return Optional.empty();
-        }
-        catch (Exception exception)
+    @Override
+    public final Optional<Processor> getProcessor(ProcessorId processorId)
+    {
+        for (val processor : getProcessors())
         {
-            getLog().error("Unable to retrieve (remote) processor!", exception);
-            return Optional.empty();
+            if (processor.getId().equals(processorId))
+            {
+                return Optional.of(processor);
+            }
         }
+
+        return Optional.empty();
     }
 
     @Override

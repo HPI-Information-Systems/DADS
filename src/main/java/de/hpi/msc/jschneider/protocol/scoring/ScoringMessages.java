@@ -33,7 +33,7 @@ public class ScoringMessages
     {
         private static final long serialVersionUID = -5955687701293096759L;
         @NotNull
-        private List<List<Integer>> overlappingEdgeCreationOrder;
+        private int[][] overlappingEdgeCreationOrder;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)

@@ -16,10 +16,12 @@ public class ScoringWorkerModel extends AbstractProtocolParticipantModel
 {
     @Setter @Getter @Builder.Default
     private boolean responsibilitiesReceived = false;
+    @Setter @Getter @Builder.Default
+    private boolean waitForRemoteEdgeCreationOrder = true;
     @Setter @Getter
     private List<List<Integer>> edgeCreationOrder;
     @Setter @Getter
-    private List<List<Integer>> remoteEdgeCreationOrder;
+    private int[][] remoteEdgeCreationOrder;
     @Setter @Getter
     private ActorRef processorResponsibleForPreviousSubSequences;
     @Setter @Getter

@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.processorRegistration;
 
+import akka.actor.ActorRef;
 import akka.actor.Address;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,8 @@ public class ProcessorRegistrationMessages
         private static final long serialVersionUID = -8915923440656902337L;
         @NonNull
         private Processor processor;
+        @NonNull
+        private ActorRef sender;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter

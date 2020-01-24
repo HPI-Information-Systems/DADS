@@ -78,14 +78,14 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
     {
         for (val processor : getModel().getProcessors())
         {
-            val protocol = getProtocol(processor.getRootPath(), ProtocolType.DimensionReduction);
+            val protocol = getProtocol(processor.getId(), ProtocolType.DimensionReduction);
             if (!protocol.isPresent())
             {
                 continue;
             }
 
             val distributor = createDistributor(protocol.get(), principalComponents, rotation);
-            getModel().getDistributors().put(processor.getRootPath(), distributor);
+            getModel().getDistributors().put(processor.getId(), distributor);
         }
     }
 

@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.val;
 
 import java.util.Arrays;
@@ -76,7 +77,7 @@ public class TestGraphMergerControl extends ProtocolTestCase
         val allEdgesReceivedMessage = GraphMergingMessages.AllEdgesReceivedMessage.builder()
                                                                                   .sender(self.ref())
                                                                                   .receiver(self.ref())
-                                                                                  .workerSystems(new RootActorPath[]{localProcessor.getRootPath()})
+                                                                                  .workerSystems(new ProcessorId[]{localProcessor.getId()})
                                                                                   .build();
         messageInterface.apply(allEdgesReceivedMessage);
 

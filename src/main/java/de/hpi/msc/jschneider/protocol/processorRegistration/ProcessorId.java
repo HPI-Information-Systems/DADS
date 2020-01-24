@@ -42,7 +42,7 @@ public class ProcessorId
 
     public static ProcessorId of(ActorRef actorRef)
     {
-        return of(actorRef.path().root());
+        return of(actorRef.path().root().toString());
     }
 
     public static ProcessorId of(RootActorPath rootActorPath)

@@ -115,7 +115,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
 
         val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrder.class);
         assertThat(overlappingEdgeCreationOrder.getReceiver()).isEqualTo(remoteProcessor.getProtocolRootActor(ProtocolType.Scoring).ref());
-        assertThat(overlappingEdgeCreationOrder.getOverlappingEdgeCreationOrder().size()).isEqualTo(49);
+        assertThat(overlappingEdgeCreationOrder.getOverlappingEdgeCreationOrder().length).isEqualTo(49);
         assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
     }
 
@@ -125,7 +125,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         val messageInterface = createMessageInterface(control);
 
         assertThat(control.getModel().isResponsibilitiesReceived()).isFalse();
-        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, self, remoteActor);
+        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, remoteActor, self);
         messageInterface.apply(responsibilitiesReceivedEvent);
         assertThatMessageIsCompleted(responsibilitiesReceivedEvent);
 
@@ -150,6 +150,9 @@ public class TestScoringWorkerControl extends ProtocolTestCase
                                                                                                 .build();
         messageInterface.apply(localGraphPartitionCreatedEvent);
         assertThat(control.getModel().getEdgeCreationOrder()).isEqualTo(sortedEdgeCreationOrder);
+
+        val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrder.class);
+        assertThat(overlappingEdgeCreationOrder.getReceiver().path().root()).isEqualTo(remoteActor.ref().path().root());
         assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
 
         val graphReceivedEvent = GraphMergingEvents.GraphReceivedEvent.builder()

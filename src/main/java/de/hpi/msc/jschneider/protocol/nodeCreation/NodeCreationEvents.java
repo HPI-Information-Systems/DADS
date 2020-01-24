@@ -1,9 +1,9 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation;
 
 import akka.actor.ActorRef;
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.Getter;
@@ -18,8 +18,8 @@ public class NodeCreationEvents
     public static class ResponsibilitiesReceivedEvent extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 8873046118928619016L;
-        private Map<RootActorPath, Int32Range> segmentResponsibilities;
-        private Map<RootActorPath, Int64Range> subSequenceResponsibilities;
+        private Map<ProcessorId, Int32Range> segmentResponsibilities;
+        private Map<ProcessorId, Int64Range> subSequenceResponsibilities;
         private int numberOfIntersectionSegments;
 
         @Override

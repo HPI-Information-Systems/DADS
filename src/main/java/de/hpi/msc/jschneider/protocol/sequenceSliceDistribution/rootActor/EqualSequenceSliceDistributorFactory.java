@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor.SequenceSliceDistributorControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor.SequenceSliceDistributorModel;
@@ -30,7 +31,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
     private Logger log;
     private final int expectedNumberOfProcessors;
     private final SequenceReader sequenceReaderTemplate;
-    private final Map<RootActorPath, SequenceReader> sequenceReaders = new HashMap<>();
+    private final Map<ProcessorId, SequenceReader> sequenceReaders = new HashMap<>();
     private long nextSequenceReaderStartIndex = 0L;
     private long nextSubSequenceStartIndex = 0L;
     private final int subSequenceLength;
@@ -63,24 +64,24 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
     public Collection<Props> createDistributorsFromNewProcessor(Processor newProcessor)
     {
         val props = new ArrayList<Props>();
-        var sequenceReader = sequenceReaders.get(newProcessor.getRootPath());
+        var sequenceReader = sequenceReaders.get(newProcessor.getId());
         if (sequenceReader != null)
         {
             getLog().error(String.format("Unable to create new SequenceSliceDistributor for processor at %1$s which joined the cluster earlier!",
-                                         newProcessor.getRootPath()));
+                                         newProcessor.getId()));
         }
         else if (sequenceReaders.size() < expectedNumberOfProcessors)
         {
             sequenceReader = createNextSequenceReader();
-            sequenceReaders.put(newProcessor.getRootPath(), sequenceReader);
-            props.add(createProps(newProcessor.getRootPath(), sequenceReader, sequenceReaders.size() == expectedNumberOfProcessors));
+            sequenceReaders.put(newProcessor.getId(), sequenceReader);
+            props.add(createProps(newProcessor.getId(), sequenceReader, sequenceReaders.size() == expectedNumberOfProcessors));
         }
 
 
         return props;
     }
 
-    private Props createProps(RootActorPath sliceReceiverActorSystem, SequenceReader reader, boolean isLastSubSequenceChunk)
+    private Props createProps(ProcessorId sliceReceiverActorSystem, SequenceReader reader, boolean isLastSubSequenceChunk)
     {
         val currentSubSequenceStartIndex = nextSubSequenceStartIndex;
         nextSubSequenceStartIndex += Math.max(1, reader.getSize() - (subSequenceLength - 1));

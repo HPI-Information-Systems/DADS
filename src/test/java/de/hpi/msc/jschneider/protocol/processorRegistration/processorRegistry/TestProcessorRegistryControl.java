@@ -82,6 +82,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
 
         val message = ProcessorRegistrationMessages.ProcessorRegistrationMessage.builder()
                                                                                 .processor(localProcessor)
+                                                                                .sender(self.ref())
                                                                                 .build();
         messageInterface.apply(message);
 

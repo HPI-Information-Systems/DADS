@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
@@ -47,11 +48,11 @@ public class TestPCACalculatorControl extends ProtocolTestCase
 
     private PCAMessages.InitializePCACalculationMessage initializeCalculation(PCACalculatorControl control, PartialFunction<Object, BoxedUnit> messageInterface, TestProcessor... processors)
     {
-        val processorIndices = new HashMap<Long, RootActorPath>();
+        val processorIndices = new HashMap<Long, ProcessorId>();
         var myProcessorIndex = 0L;
         for (var i = 0L; i < (long) processors.length; ++i)
         {
-            processorIndices.put(i, processors[(int) i].getRootPath());
+            processorIndices.put(i, processors[(int) i].getId());
 
             if (processors[(int) i] == localProcessor)
             {
@@ -107,9 +108,9 @@ public class TestPCACalculatorControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        val processorIndices = new HashMap<Long, RootActorPath>();
-        processorIndices.put(0L, remoteProcessor.getRootPath());
-        processorIndices.put(1L, localProcessor.getRootPath());
+        val processorIndices = new HashMap<Long, ProcessorId>();
+        processorIndices.put(0L, remoteProcessor.getId());
+        processorIndices.put(1L, localProcessor.getId());
 
         val message = PCAMessages.InitializePCACalculationMessage.builder()
                                                                  .sender(remoteProcessor.getProtocolRootActor(ProtocolType.PrincipalComponentAnalysis).ref())

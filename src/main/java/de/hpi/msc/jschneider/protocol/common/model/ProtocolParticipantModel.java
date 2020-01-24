@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.protocol.common.model;
 import akka.actor.ActorRef;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
 
 import java.util.Optional;
@@ -28,7 +29,11 @@ public interface ProtocolParticipantModel
 
     Optional<Processor> getMasterProcessor();
 
+    Optional<Processor> getProcessor(ActorRef actorRef);
+
     Optional<Processor> getProcessor(RootActorPath actorSystem);
+
+    Optional<Processor> getProcessor(ProcessorId processorId);
 
     int getNumberOfProcessors();
 

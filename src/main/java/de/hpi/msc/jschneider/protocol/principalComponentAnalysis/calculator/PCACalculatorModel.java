@@ -1,7 +1,7 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +19,7 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     @NonNull @Getter
     private final Counter currentCalculationStep = new Counter(0);
     @Getter @Setter
-    private Map<Long, RootActorPath> processorIndices;
+    private Map<Long, ProcessorId> processorIndices;
     @Getter @Setter
     private long myProcessorIndex;
     @Getter @Setter
@@ -29,9 +29,9 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     @Builder.Default @Getter @Setter
     private float maximumRecord = Float.MIN_VALUE;
     @NonNull @Getter
-    private final Map<RootActorPath, Long> numberOfRows = new HashMap<>();
+    private final Map<ProcessorId, Long> numberOfRows = new HashMap<>();
     @NonNull @Getter
-    private final Map<RootActorPath, MatrixStore<Double>> transposedColumnMeans = new HashMap<>();
+    private final Map<ProcessorId, MatrixStore<Double>> transposedColumnMeans = new HashMap<>();
     @Getter @Setter
     private MatrixStore<Double> localR;
     @NonNull @Getter

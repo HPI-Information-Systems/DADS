@@ -37,7 +37,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         val message = DimensionReductionMessages.InitializePrincipalComponentsTransferMessage.builder()
                                                                                              .sender(self.ref())
                                                                                              .receiver(self.ref())
-                                                                                             .operationId(UUID.randomUUID())
+                                                                                             .operationId(UUID.randomUUID().toString())
                                                                                              .build();
         messageInterface.apply(message);
 
@@ -55,7 +55,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         val message = DimensionReductionMessages.InitializeRotationTransferMessage.builder()
                                                                                   .sender(self.ref())
                                                                                   .receiver(self.ref())
-                                                                                  .operationId(UUID.randomUUID())
+                                                                                  .operationId(UUID.randomUUID().toString())
                                                                                   .build();
         messageInterface.apply(message);
 
@@ -78,7 +78,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         val initializePrincipalComponentsTransfer = DimensionReductionMessages.InitializePrincipalComponentsTransferMessage.builder()
                                                                                                                            .sender(self.ref())
                                                                                                                            .receiver(self.ref())
-                                                                                                                           .operationId(UUID.randomUUID())
+                                                                                                                           .operationId(UUID.randomUUID().toString())
                                                                                                                            .build();
         transfer(principalComponents, self, messageInterface, initializePrincipalComponentsTransfer, true);
         assertThat(control.getModel().getPrincipalComponents().equals(principalComponents, MATRIX_COMPARISON_CONTEXT)).isTrue();
@@ -86,7 +86,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         val initializeRotationTransfer = DimensionReductionMessages.InitializeRotationTransferMessage.builder()
                                                                                                      .sender(self.ref())
                                                                                                      .receiver(self.ref())
-                                                                                                     .operationId(UUID.randomUUID())
+                                                                                                     .operationId(UUID.randomUUID().toString())
                                                                                                      .build();
         transfer(rotation, self, messageInterface, initializeRotationTransfer, false);
         assertThat(control.getModel().getRotation().equals(rotation, MATRIX_COMPARISON_CONTEXT)).isTrue();

@@ -33,9 +33,9 @@ public class TestGraphReceiverControl extends ProtocolTestCase
         return new GraphReceiverControl(dummyModel());
     }
 
-    private UUID initializeGraphTransfer(PartialFunction<Object, BoxedUnit> messageInterface)
+    private String initializeGraphTransfer(PartialFunction<Object, BoxedUnit> messageInterface)
     {
-        val operationId = UUID.randomUUID();
+        val operationId = UUID.randomUUID().toString();
         val initializeGraphTransfer = GraphMergingMessages.InitializeGraphTransferMessage.builder()
                                                                                          .sender(self.ref())
                                                                                          .receiver(self.ref())

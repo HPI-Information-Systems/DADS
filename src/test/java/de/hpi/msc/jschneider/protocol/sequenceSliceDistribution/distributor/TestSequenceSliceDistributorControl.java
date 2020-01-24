@@ -20,7 +20,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     private final int SEQUENCE_LENGTH = 100;
     private final int CONVOLUTION_SIZE = 33;
     private final int SUB_SEQUENCE_LENGTH = 10;
-    private final UUID OPERATION_ID = UUID.randomUUID();
+    private final String OPERATION_ID = UUID.randomUUID().toString();
 
     private TestProbe localSliceReceiver;
 
@@ -40,7 +40,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     private SequenceSliceDistributorModel dummyModel()
     {
         return finalizeModel(SequenceSliceDistributorModel.builder()
-                                                          .sliceReceiverActorSystem(localProcessor.getRootPath())
+                                                          .sliceReceiverActorSystem(localProcessor.getId())
                                                           .sequenceReader(new MockSequenceReader(SEQUENCE_LENGTH))
                                                           .maximumMessageSizeProvider(() -> (long) (SEQUENCE_LENGTH / 2))
                                                           .firstSubSequenceIndex(0L)

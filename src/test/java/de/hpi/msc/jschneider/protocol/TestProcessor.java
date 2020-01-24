@@ -6,6 +6,7 @@ import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
@@ -40,9 +41,9 @@ public class TestProcessor implements Processor
     }
 
     @Override
-    public RootActorPath getRootPath()
+    public ProcessorId getId()
     {
-        return new RootActorPath(actorSystem.provider().getDefaultAddress(), "/");
+        return ProcessorId.of(actorSystem);
     }
 
     public Protocol getProtocol(ProtocolType type)
