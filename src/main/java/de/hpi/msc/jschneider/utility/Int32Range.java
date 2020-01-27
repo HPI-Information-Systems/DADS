@@ -1,10 +1,12 @@
 package de.hpi.msc.jschneider.utility;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Builder @Getter @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@NoArgsConstructor @AllArgsConstructor @Builder @Getter @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Int32Range
 {
     @EqualsAndHashCode.Include

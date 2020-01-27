@@ -22,9 +22,9 @@ public class DataTransferManager
     private static final Logger Log = LogManager.getLogger(DataTransferManager.class);
 
     @Getter
-    private final Map<UUID, DataDistributor> dataDistributors = new HashMap<>();
+    private final Map<String, DataDistributor> dataDistributors = new HashMap<>();
     @Getter
-    private final Map<UUID, DataReceiver> dataReceivers = new HashMap<>();
+    private final Map<String, DataReceiver> dataReceivers = new HashMap<>();
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     private final EventImpl<DataTransferManager> onAllTransfersFinished = new EventImpl<>();
 

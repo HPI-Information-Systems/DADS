@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.scoring.rootActor;
 
 import akka.actor.ActorRef;
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
@@ -9,6 +8,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.scoring.receiver.ScoringReceiverControl;
 import de.hpi.msc.jschneider.protocol.scoring.receiver.ScoringReceiverModel;
@@ -32,6 +32,7 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         return super.complementReceiveBuilder(builder)
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
+                    .match(ScoringMessages.OverlappingEdgeCreationOrder.class, message -> forward(message, getModel().getWorker()))
                     .match(ScoringMessages.QueryPathLengthMessage.class, message -> forward(message, getModel().getWorker()))
                     .match(ScoringMessages.InitializePathScoresTransferMessage.class, message -> forward(message, getModel().getReceiver()));
     }
@@ -95,7 +96,7 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         }
     }
 
-    private void publishQueryPathLength(Collection<RootActorPath> workerSystems)
+    private void publishQueryPathLength(Collection<ProcessorId> workerSystems)
     {
         assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master may publish the query path length!";
 

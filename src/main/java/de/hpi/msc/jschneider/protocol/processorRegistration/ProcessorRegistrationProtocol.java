@@ -40,7 +40,7 @@ public class ProcessorRegistrationProtocol
     {
         val localProcessor = BaseProcessor.builder()
                                           .isMaster(isMaster)
-                                          .rootPath(RootActorPath.apply(actorSystem.provider().getDefaultAddress(), "/"))
+                                          .id(ProcessorId.of(actorSystem))
                                           .protocols(initializeProtocols(actorSystem, role))
                                           .build();
 
@@ -106,7 +106,7 @@ public class ProcessorRegistrationProtocol
                                                .schedulerProvider(actorSystem::scheduler)
                                                .dispatcherProvider(actorSystem::dispatcher)
                                                .build();
-        rootActorModel.getClusterProcessors().put(localProcessor.getRootPath(), localProcessor);
+        rootActorModel.getClusterProcessors().put(localProcessor.getId(), localProcessor);
         val control = new ProcessorRegistryControl(rootActorModel);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);

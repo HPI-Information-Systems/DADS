@@ -59,7 +59,7 @@ public class PCARootActorControl extends AbstractProtocolParticipantControl<PCAR
         }
 
         val command = (MasterCommand) SystemParameters.getCommand();
-        val numberOfParticipants = Math.max(command.getMinimumNumberOfSlaves(), getModel().getNumberOfProcessors());
+        val numberOfParticipants = command.getMinimumNumberOfSlaves() + 1; // add one, because the master is always also a worker
 
         val model = PCACoordinatorModel.builder()
                                        .numberOfParticipants(numberOfParticipants)

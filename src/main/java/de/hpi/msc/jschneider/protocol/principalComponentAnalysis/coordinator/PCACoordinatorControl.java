@@ -37,7 +37,7 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
     {
         try
         {
-            val protocol = getProtocol(message.getProcessor().getRootPath(), ProtocolType.PrincipalComponentAnalysis);
+            val protocol = getProtocol(message.getProcessor().getId(), ProtocolType.PrincipalComponentAnalysis);
             if (!protocol.isPresent())
             {
                 return;
@@ -48,14 +48,14 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
                 return;
             }
 
-            if (getModel().getParticipantIndices().containsValue(message.getProcessor().getRootPath()))
+            if (getModel().getParticipantIndices().containsValue(message.getProcessor().getId()))
             {
                 // processor re-joined?!
                 return;
             }
 
             val processorIndex = getModel().getNextParticipantIndex().getAndIncrement();
-            getModel().getParticipantIndices().put(processorIndex, message.getProcessor().getRootPath());
+            getModel().getParticipantIndices().put(processorIndex, message.getProcessor().getId());
 
             if (getModel().getParticipantIndices().size() != getModel().getNumberOfParticipants())
             {
@@ -75,14 +75,15 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
     {
         for (val participantRootPath : getModel().getParticipantIndices().values())
         {
-            getProtocol(participantRootPath, ProtocolType.PrincipalComponentAnalysis).ifPresent(protocol ->
-                                                                                                {
-                                                                                                    send(PCAMessages.InitializePCACalculationMessage.builder()
-                                                                                                                                                    .sender(getModel().getSelf())
-                                                                                                                                                    .receiver(protocol.getRootActor())
-                                                                                                                                                    .processorIndices(getModel().getParticipantIndices())
-                                                                                                                                                    .build());
-                                                                                                });
+            getProtocol(participantRootPath, ProtocolType.PrincipalComponentAnalysis)
+                    .ifPresent(protocol ->
+                               {
+                                   send(PCAMessages.InitializePCACalculationMessage.builder()
+                                                                                   .sender(getModel().getSelf())
+                                                                                   .receiver(protocol.getRootActor())
+                                                                                   .processorIndices(getModel().getParticipantIndices())
+                                                                                   .build());
+                               });
         }
     }
 }

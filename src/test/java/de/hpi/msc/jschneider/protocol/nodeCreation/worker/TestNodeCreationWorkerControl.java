@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMess
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.val;
@@ -129,8 +130,8 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         messageInterface.apply(initializeNodeCreation);
 
         val responsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
-        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
-        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
+        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(intersectionSegmentResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue)));
+        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue)));
         assertThat(responsibilitiesReceivedEvent.getNumberOfIntersectionSegments()).isEqualTo(numberOfIntersectionSegments);
 
         for (var i = 0; i < numberOfIntersectionSegments; ++i)
@@ -255,8 +256,8 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         messageInterface.apply(initializeMessage);
 
         val responsibilitiesReceivedEvent = expectEvent(NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
-        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(segmentResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
-        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue)));
+        assertThat(responsibilitiesReceivedEvent.getSegmentResponsibilities()).isEqualTo(segmentResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue)));
+        assertThat(responsibilitiesReceivedEvent.getSubSequenceResponsibilities()).isEqualTo(subSequenceResponsibilities.entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue)));
 
         val reducedSubSequenceMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.ReducedSubSequenceMessage.class);
         assertThat(reducedSubSequenceMessage.getReceiver()).isEqualTo(remoteActor.ref());

@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.BaseTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator.PCACalculatorControl;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator.PCACalculatorModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
@@ -69,9 +70,9 @@ public class PCAIntegrationTest extends BaseTestCase
         // initialize processors
         val master = createMaster();
         val slave = createSlave();
-        val processorIndices = new HashMap<Long, RootActorPath>();
-        processorIndices.put(0L, master.getRootPath());
-        processorIndices.put(1L, slave.getRootPath());
+        val processorIndices = new HashMap<Long, ProcessorId>();
+        processorIndices.put(0L, master.getId());
+        processorIndices.put(1L, slave.getId());
 
         // initialize master actor
         val masterSelf = master.createActor("self");
@@ -143,7 +144,7 @@ public class PCAIntegrationTest extends BaseTestCase
         val self = master.createActor("self");
         val model = finalizeModel(PCACalculatorModel.builder().build(), self);
         model.setProcessorIndices(new HashMap<>());
-        model.getProcessorIndices().put(0L, master.getRootPath());
+        model.getProcessorIndices().put(0L, master.getId());
         model.setMyProcessorIndex(0L);
         val control = new PCACalculatorControl(model);
         val messageInterface = createMessageInterface(control);

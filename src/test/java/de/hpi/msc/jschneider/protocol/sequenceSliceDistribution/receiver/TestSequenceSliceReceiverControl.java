@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSequenceSliceReceiverControl extends ProtocolTestCase
 {
-    private static final UUID OPERATION_ID = UUID.randomUUID();
+    private static final String OPERATION_ID = UUID.randomUUID().toString();
 
     private TestProbe localSliceDistributor;
 

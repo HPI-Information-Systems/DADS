@@ -13,6 +13,7 @@ import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
@@ -70,7 +71,8 @@ public abstract class BaseTestCase extends TestCase
     protected TestProcessor createMaster(ProtocolType... protocolTypes)
     {
         val numberOfMasters = processors.stream().filter(TestProcessor::isMaster).count();
-        return createProcessor(String.format("Master-%1$d", numberOfMasters), true, protocolTypes);
+        val processorId = new ProcessorId(String.format("Master%1$d", numberOfMasters), "127.0.0.1", 7788);
+        return createProcessor(processorId.toString(), true, protocolTypes);
     }
 
     protected TestProcessor createSlave()
@@ -81,7 +83,8 @@ public abstract class BaseTestCase extends TestCase
     protected TestProcessor createSlave(ProtocolType... protocolTypes)
     {
         val numberOfSlaves = processors.stream().filter(processor -> !processor.isMaster()).count();
-        return createProcessor(String.format("Slave-%1$d", numberOfSlaves), false, protocolTypes);
+        val processorId = new ProcessorId(String.format("Master%1$d", numberOfSlaves), "127.0.0.1", 7799);
+        return createProcessor(processorId.toString(), false, protocolTypes);
     }
 
     protected TestProcessor createProcessor(String name, boolean isMaster)
@@ -179,10 +182,10 @@ public abstract class BaseTestCase extends TestCase
                                                       DataTransferMessages.InitializeDataTransferMessage initializeDataTransferMessage,
                                                       boolean expectFinalMessageCompletion)
     {
-        val receiverProcessor = processors.stream().filter(processor -> processor.getRootPath().equals(dataReceiver.ref().path().root())).findFirst();
+        val receiverProcessor = processors.stream().filter(processor -> processor.getId().equals(ProcessorId.of(dataReceiver.ref()))).findFirst();
         assert receiverProcessor.isPresent() : "Unable to find receiverProcessor!";
 
-        val senderProcessor = processors.stream().filter(processor -> processor.getRootPath().equals(dataSender.ref().path().root())).findFirst();
+        val senderProcessor = processors.stream().filter(processor -> processor.getId().equals(ProcessorId.of(dataSender.ref()))).findFirst();
         assert senderProcessor.isPresent() : "Unable to find senderProcessor!";
 
         val sink = new PrimitiveMatrixSink();
@@ -227,7 +230,7 @@ public abstract class BaseTestCase extends TestCase
                             DataTransferMessages.InitializeDataTransferMessage initializeDataTransferMessage,
                             boolean expectFinalMessageCompletion)
     {
-        val receiverProcessor = processors.stream().filter(processor -> processor.getRootPath().equals(dataReceiver.ref().path().root())).findFirst();
+        val receiverProcessor = processors.stream().filter(processor -> processor.getId().equals(ProcessorId.of(dataReceiver.ref()))).findFirst();
         assert receiverProcessor.isPresent() : "Unable to find receiverProcessor!";
 
         val operationId = initializeDataTransferMessage.getOperationId();
@@ -328,14 +331,14 @@ public abstract class BaseTestCase extends TestCase
                                                                .build();
     }
 
-    protected Map<RootActorPath, Int64Range> createSubSequenceResponsibilities(long numberOfSubSequences, TestProbe... participants)
+    protected Map<ProcessorId, Int64Range> createSubSequenceResponsibilities(long numberOfSubSequences, TestProbe... participants)
     {
-        val responsibilities = new HashMap<RootActorPath, Int64Range>();
+        val responsibilities = new HashMap<ProcessorId, Int64Range>();
         val subSequencesPerParticipant = Math.ceil(numberOfSubSequences / (double) participants.length);
         for (var participantsIndex = 0; participantsIndex < participants.length; ++participantsIndex)
         {
             val participant = participants[participantsIndex];
-            responsibilities.put(participant.ref().path().root(),
+            responsibilities.put(ProcessorId.of(participant.ref()),
                                  Int64Range.builder()
                                            .from((long) (participantsIndex * subSequencesPerParticipant))
                                            .to((long) Math.min(numberOfSubSequences, (participantsIndex + 1) * subSequencesPerParticipant))
@@ -345,14 +348,14 @@ public abstract class BaseTestCase extends TestCase
         return responsibilities;
     }
 
-    protected Map<RootActorPath, Int32Range> createIntersectionSegmentResponsibilities(int numberOfIntersectionSegments, TestProbe... participants)
+    protected Map<ProcessorId, Int32Range> createIntersectionSegmentResponsibilities(int numberOfIntersectionSegments, TestProbe... participants)
     {
-        val responsibilities = new HashMap<RootActorPath, Int32Range>();
+        val responsibilities = new HashMap<ProcessorId, Int32Range>();
         val segmentsPerParticipant = Math.ceil(numberOfIntersectionSegments / (double) participants.length);
         for (var participantsIndex = 0; participantsIndex < participants.length; ++participantsIndex)
         {
             val participant = participants[participantsIndex];
-            responsibilities.put(participant.ref().path().root(),
+            responsibilities.put(ProcessorId.of(participant.ref()),
                                  Int32Range.builder()
                                            .from((int) (participantsIndex * segmentsPerParticipant))
                                            .to((int) Math.min(numberOfIntersectionSegments, (participantsIndex + 1) * segmentsPerParticipant))

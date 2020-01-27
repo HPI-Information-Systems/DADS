@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
@@ -66,7 +67,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
         }
     }
 
-    private void publishGraph(RootActorPath[] workerSystems)
+    private void publishGraph(ProcessorId[] workerSystems)
     {
         for (val workerSystem : workerSystems)
         {

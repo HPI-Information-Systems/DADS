@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
 import akka.actor.ActorSelection;
+import akka.actor.Address;
 import akka.actor.Cancellable;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -40,13 +41,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     private void onRegisterAtMaster(ProcessorRegistrationMessages.RegisterAtMasterMessage message)
     {
         cancelRegistrationSchedule();
-        val nodeRegistry = trySelectActors(String.format("%1$s/user/%2$s", message.getMasterAddress(), ProcessorRegistrationProtocol.ROOT_ACTOR_NAME));
-        if (nodeRegistry == null)
-        {
-            return;
-        }
-
-        getModel().setRegistrationSchedule(createRegistrationSchedule(nodeRegistry));
+        getModel().setRegistrationSchedule(createRegistrationSchedule(message.getMasterAddress()));
     }
 
     private void cancelRegistrationSchedule()
@@ -73,7 +68,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
         }
     }
 
-    private Cancellable createRegistrationSchedule(ActorSelection masterProcessorRegistry)
+    private Cancellable createRegistrationSchedule(Address masterAddress)
     {
         val scheduler = getModel().getScheduler();
         val dispatcher = getModel().getDispatcher();
@@ -85,11 +80,20 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
 
         val message = ProcessorRegistrationMessages.ProcessorRegistrationMessage.builder()
                                                                                 .processor(getModel().getLocalProcessor())
+                                                                                .sender(getModel().getSelf())
                                                                                 .build();
 
         return scheduler.scheduleAtFixedRate(Duration.ZERO,
                                              getModel().getResendRegistrationInterval(),
-                                             () -> masterProcessorRegistry.tell(message, getModel().getSelf()),
+                                             () ->
+                                             {
+                                                 val masterNodeRegistry = trySelectActors(String.format("%1$s/user/%2$s", masterAddress, ProcessorRegistrationProtocol.ROOT_ACTOR_NAME));
+                                                 if (masterNodeRegistry == null)
+                                                 {
+                                                     return;
+                                                 }
+                                                 masterNodeRegistry.tell(message, getModel().getSelf());
+                                             },
                                              dispatcher);
     }
 
@@ -100,7 +104,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
 
         for (val processor : message.getExistingProcessors())
         {
-            getModel().getClusterProcessors().put(processor.getRootPath(), processor);
+            getModel().getClusterProcessors().put(processor.getId(), processor);
         }
 
         subscribeToMasterEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.ProcessorJoinedEvent.class);
@@ -114,8 +118,17 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     {
         try
         {
-            getModel().getClusterProcessors().put(message.getProcessor().getRootPath(), message.getProcessor());
-            getLog().info(String.format("%1$s just joined.", message.getProcessor().getRootPath()));
+            getModel().getClusterProcessors().put(message.getProcessor().getId(), message.getProcessor());
+            getLog().info(String.format("%1$s just joined.", message.getProcessor().getId()));
+
+            if (!getModel().getLocalProcessor().isMaster())
+            {
+                trySendEvent(ProtocolType.ProcessorRegistration, eventDispatcher -> ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
+                                                                                                                                    .sender(getModel().getSelf())
+                                                                                                                                    .receiver(eventDispatcher)
+                                                                                                                                    .processor(message.getProcessor())
+                                                                                                                                    .build());
+            }
         }
         finally
         {
@@ -125,15 +138,14 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
 
     private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
     {
-        val rootPath = message.getProcessor().getRootPath();
-
-        getModel().getClusterProcessors().put(rootPath, message.getProcessor());
+        val processorId = message.getProcessor().getId();
+        getModel().getClusterProcessors().put(processorId, message.getProcessor());
         val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
 
-        getModel().getSender().tell(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
-                                                                                                .existingProcessors(existingProcessors)
-                                                                                                .build(), getModel().getSelf());
+        message.getSender().tell(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
+                                                                                             .existingProcessors(existingProcessors)
+                                                                                             .build(), getModel().getSelf());
 
         trySendEvent(ProtocolType.ProcessorRegistration, eventDispatcher -> ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
                                                                                                                             .sender(getModel().getSelf())

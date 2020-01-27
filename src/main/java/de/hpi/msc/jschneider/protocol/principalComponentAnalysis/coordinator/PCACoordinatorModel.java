@@ -1,12 +1,11 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.coordinator;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
-import org.agrona.collections.MutableInteger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +18,6 @@ public class PCACoordinatorModel extends AbstractProtocolParticipantModel
     @NonNull @Getter
     private final Counter nextParticipantIndex = new Counter(0);
     @NonNull @Getter
-    private final Map<Long, RootActorPath> participantIndices = new HashMap<>();
+    private final Map<Long, ProcessorId> participantIndices = new HashMap<>();
 
 }

@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.scoring.receiver;
 
-import akka.actor.RootActorPath;
 import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
@@ -8,6 +7,7 @@ import de.hpi.msc.jschneider.fileHandling.writing.BinarySequenceWriter;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
@@ -18,6 +18,7 @@ import lombok.val;
 import lombok.var;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ScoringReceiverControl extends AbstractProtocolParticipantControl<ScoringReceiverModel>
@@ -67,8 +68,8 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
             assert !getModel().isResponsibilitiesReceived() : "Responsibilities received already!";
 
             getModel().setResponsibilitiesReceived(true);
-            getModel().setRunningDataTransfers(message.getSubSequenceResponsibilities().keySet());
-            getModel().setSubSequenceResponsibilities(message.getSubSequenceResponsibilities());
+            getModel().getRunningDataTransfers().addAll(message.getSubSequenceResponsibilities().keySet());
+            getModel().setSubSequenceResponsibilities(new HashMap<>(message.getSubSequenceResponsibilities()));
         }
         finally
         {
@@ -83,7 +84,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
             val sink = new FloatsSink();
-            dataReceiver.setState(message.getSender().path().root());
+            dataReceiver.setState(ProcessorId.of(message.getSender()));
             return dataReceiver.addSink(sink)
                                .whenFinished(this::onPathScoresTransferFinished);
         });
@@ -91,8 +92,8 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
     private void onPathScoresTransferFinished(DataReceiver dataReceiver)
     {
-        assert dataReceiver.getState() instanceof RootActorPath : "The data receiver state should be a RootActorPath!";
-        val workerSystem = (RootActorPath) dataReceiver.getState();
+        assert dataReceiver.getState() instanceof ProcessorId : "The data receiver state should be a ProcessorId!";
+        val workerSystem = (ProcessorId) dataReceiver.getState();
 
         val floatsSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof FloatsSink).findFirst();
         assert floatsSink.isPresent() : "The data receiver should have a FloatsSink!";
@@ -151,9 +152,9 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
     private boolean isReadyToCalculateRunningMean()
     {
-        return getModel().getSubSequenceLength() > 0 &&
-               getModel().isResponsibilitiesReceived() &&
-               getModel().getRunningDataTransfers().isEmpty();
+        return getModel().getSubSequenceLength() > 0
+               && getModel().isResponsibilitiesReceived()
+               && getModel().getRunningDataTransfers().isEmpty();
     }
 
     private void storeResults(float[] normalityScores)

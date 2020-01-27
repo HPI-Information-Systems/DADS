@@ -13,6 +13,7 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
@@ -97,8 +98,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setMaximumValue(message.getMaximumValue());
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
 
-            val transformedSubSequenceResponsibilities = message.getSubSequenceResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue));
-            val transformedSegmentResponsibilities = message.getIntersectionSegmentResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> e.getKey().path().root(), Map.Entry::getValue));
+            val transformedSubSequenceResponsibilities = message.getSubSequenceResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
+            val transformedSegmentResponsibilities = message.getIntersectionSegmentResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
 
             trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                                                        .sender(getModel().getSelf())

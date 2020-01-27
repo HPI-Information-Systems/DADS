@@ -1,13 +1,14 @@
 package de.hpi.msc.jschneider.protocol.scoring.worker;
 
-import akka.actor.RootActorPath;
 import com.google.common.primitives.Floats;
+import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
@@ -16,6 +17,7 @@ import lombok.val;
 import lombok.var;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -65,10 +67,12 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
     }
 
-    private void setProcessorResponsibleForPreviousSubSequences(Map<RootActorPath, Int64Range> subSequenceResponsibilities)
+    private void setProcessorResponsibleForPreviousSubSequences(Map<ProcessorId, Int64Range> subSequenceResponsibilities)
     {
-        val myResponsibilities = subSequenceResponsibilities.get(getModel().getSelf().path().root());
+        val myResponsibilities = subSequenceResponsibilities.get(ProcessorId.of(getModel().getSelf()));
         assert myResponsibilities != null : "We are not responsible for any sub sequences!";
+
+        getModel().setWaitForRemoteEdgeCreationOrder(subSequenceResponsibilities.values().stream().anyMatch(entry -> entry.getFrom() == myResponsibilities.getTo()));
 
         val previousProcessor = subSequenceResponsibilities.entrySet().stream().filter(entry -> entry.getValue().getTo() == myResponsibilities.getFrom()).map(Map.Entry::getKey).findFirst();
         if (!previousProcessor.isPresent())
@@ -126,7 +130,12 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             return;
         }
 
-        val overlappingEdgeCreationOrder = getModel().getEdgeCreationOrder().subList(0, getModel().getQueryPathLength() - 1);
+        val overlappingEdgeCreationOrder = new int[getModel().getQueryPathLength() - 1][];
+        for (var edgeCreationOrderIndex = 0; edgeCreationOrderIndex < overlappingEdgeCreationOrder.length; ++edgeCreationOrderIndex)
+        {
+            overlappingEdgeCreationOrder[edgeCreationOrderIndex] = Ints.toArray(getModel().getEdgeCreationOrder().get(edgeCreationOrderIndex));
+        }
+
         send(ScoringMessages.OverlappingEdgeCreationOrder.builder()
                                                          .sender(getModel().getSelf())
                                                          .receiver(getModel().getProcessorResponsibleForPreviousSubSequences())
@@ -136,17 +145,17 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
     private boolean isReadyToSendEdgeCreationOrderToPreviousResponsibleProcessor()
     {
-        return getModel().getProcessorResponsibleForPreviousSubSequences() != null &&
-               getModel().getEdgeCreationOrder() != null &&
-               !getModel().getEdgeCreationOrder().isEmpty() &&
-               getModel().getQueryPathLength() > 0;
+        return getModel().getProcessorResponsibleForPreviousSubSequences() != null
+               && getModel().getEdgeCreationOrder() != null
+               && !getModel().getEdgeCreationOrder().isEmpty()
+               && getModel().getQueryPathLength() > 0;
     }
 
     private void onOverlappingEdgeCreationOrder(ScoringMessages.OverlappingEdgeCreationOrder message)
     {
         try
         {
-            assert getModel().getRemoteEdgeCreationOrder().isEmpty() : "Overlapping edge creation order already received!";
+            assert getModel().getRemoteEdgeCreationOrder() == null : "Overlapping edge creation order already received!";
 
             getModel().setRemoteEdgeCreationOrder(message.getOverlappingEdgeCreationOrder());
             scoreSubSequences();
@@ -183,7 +192,10 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
         if (getModel().getRemoteEdgeCreationOrder() != null)
         {
-            combinedEdgeCreationOrder.addAll(getModel().getRemoteEdgeCreationOrder());
+            for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
+            {
+                combinedEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
+            }
         }
 
         val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
@@ -234,14 +246,32 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
     private boolean isReadyToScoreSubSequences()
     {
-        return getModel().isResponsibilitiesReceived() &&
-               (getModel().getProcessorResponsibleForPreviousSubSequences() == null ||
-                getModel().getRemoteEdgeCreationOrder() != null &&
-                !getModel().getRemoteEdgeCreationOrder().isEmpty()) &&
-               getModel().getQueryPathLength() > 0 &&
-               getModel().getEdgeCreationOrder() != null &&
-               !getModel().getEdgeCreationOrder().isEmpty() &&
-               getModel().getEdges() != null;
+        if (!getModel().isResponsibilitiesReceived())
+        {
+            return false;
+        }
+
+        if (getModel().getQueryPathLength() < 1)
+        {
+            return false;
+        }
+
+        if (getModel().getEdges() == null)
+        {
+            return false;
+        }
+
+        if (getModel().getEdgeCreationOrder() == null || getModel().getEdgeCreationOrder().isEmpty())
+        {
+            return false;
+        }
+
+        if (getModel().isWaitForRemoteEdgeCreationOrder() && getModel().getRemoteEdgeCreationOrder() == null)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private void publishPathScores(float[] pathScores)

@@ -21,7 +21,7 @@ public class DataDistributor
     private static final Logger Log = LogManager.getLogger(DataDistributor.class);
 
     @Getter
-    private final UUID operationId = UUID.randomUUID();
+    private final String operationId = UUID.randomUUID().toString();
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     private final DataSource dataSource;
     @Getter

@@ -160,8 +160,8 @@ public class BinarySequenceReader implements SequenceReader
     @Override
     public float[] read(long start, long length)
     {
-        val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
-        var end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
+        val begin = Math.max(minimumPosition, Math.min(maximumPosition, start));
+        var end = Math.max(minimumPosition, Math.min(maximumPosition, begin + length - 1));
         return tryRead(begin, end);
     }
 
