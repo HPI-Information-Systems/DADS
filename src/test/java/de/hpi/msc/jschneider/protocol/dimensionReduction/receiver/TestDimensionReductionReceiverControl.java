@@ -65,11 +65,31 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         assertThatMessageIsCompleted(message);
     }
 
+    public void testAcceptColumnMeansTransfer()
+    {
+        val control = control();
+        val messageInterface = createMessageInterface(control);
+
+        val message = DimensionReductionMessages.InitializeColumnMeansTransferMessage.builder()
+                                                                                     .sender(self.ref())
+                                                                                     .receiver(self.ref())
+                                                                                     .operationId(UUID.randomUUID().toString())
+                                                                                     .numberOfColumns(5)
+                                                                                     .build();
+        messageInterface.apply(message);
+
+        val requestNextPart = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.RequestNextDataPartMessage.class);
+        assertThat(requestNextPart.getOperationId()).isEqualTo(message.getOperationId());
+
+        assertThatMessageIsCompleted(message);
+    }
+
     public void testWaitForBothTransfersBeforePerformingDimensionReduction()
     {
         val principalComponents = createMatrix(5, 3);
         val rotation = createMatrix(3, 3);
         val projection = createMatrix(100, 5);
+        val columnMeans = createMatrix(1, 5);
 
         val control = control();
         control.getModel().setProjection(projection);
@@ -88,10 +108,18 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
                                                                                                      .receiver(self.ref())
                                                                                                      .operationId(UUID.randomUUID().toString())
                                                                                                      .build();
-        transfer(rotation, self, messageInterface, initializeRotationTransfer, false);
+        transfer(rotation, self, messageInterface, initializeRotationTransfer, true);
         assertThat(control.getModel().getRotation().equals(rotation, MATRIX_COMPARISON_CONTEXT)).isTrue();
 
-        val projection2d = rotation.multiply(projection.multiply(principalComponents).transpose()).logical().row(0, 1).get();
+        val initializeColumnMeansTransfer = DimensionReductionMessages.InitializeColumnMeansTransferMessage.builder()
+                                                                                                           .sender(self.ref())
+                                                                                                           .receiver(self.ref())
+                                                                                                           .operationId(UUID.randomUUID().toString())
+                                                                                                           .numberOfColumns(columnMeans.countColumns())
+                                                                                                           .build();
+        transfer(columnMeans, self, messageInterface, initializeColumnMeansTransfer, false);
+
+        val projection2d = rotation.multiply(projection.subtract(columnMeans).multiply(principalComponents).transpose()).logical().row(0, 1).get();
         val reducedProjectionCreatedEvent = expectEvent(DimensionReductionEvents.ReducedProjectionCreatedEvent.class);
 
         assertThat(projection2d.equals(reducedProjectionCreatedEvent.getReducedProjection(), MATRIX_COMPARISON_CONTEXT)).isTrue();

@@ -6,6 +6,7 @@ import de.hpi.msc.jschneider.protocol.TestMessage;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import lombok.val;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
@@ -54,8 +55,11 @@ public class TestMessageProxyControl extends ProtocolTestCase
                                  .build();
         messageInterface.apply(message);
 
-        assertThat(control.getModel().getMessageQueues().get(receiver.ref().path()).size()).isEqualTo(expectedMessageQueueSize);
-        assertThat(control.getModel().getMessageQueues().get(receiver.ref().path()).numberOfUncompletedMessages()).isEqualTo(expectedUncompletedMessages);
+        if (ProcessorId.of(receiver.ref()).equals(ProcessorId.of(localActor.ref())))
+        {
+            assertThat(control.getModel().getMessageQueues().get(receiver.ref().path()).size()).isEqualTo(expectedMessageQueueSize);
+            assertThat(control.getModel().getMessageQueues().get(receiver.ref().path()).numberOfUncompletedMessages()).isEqualTo(expectedUncompletedMessages);
+        }
 
         return message;
     }
@@ -108,33 +112,17 @@ public class TestMessageProxyControl extends ProtocolTestCase
         assertThat(remoteProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(TestMessage.class)).isEqualTo(message);
     }
 
-    public void testLocalSenderIsBackPressuredWhenReceiverQueueIsFull()
+    public void testSenderIsBackPressuredWhenReceiverQueueIsFull()
     {
         val control = control(remoteProcessor);
         control.getModel().setSingleQueueBackPressureThreshold(0);
         val messageInterface = createMessageInterface(control);
 
-        val message = enqueueMessage(control, messageInterface, localActor, remoteActor, 1, 1);
+        val firstMessage = enqueueMessage(control, messageInterface, remoteActor, localActor, 1, 1);
+        assertThat(localActor.expectMsgClass(TestMessage.class)).isEqualTo(firstMessage);
 
-        assertThat(remoteProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(TestMessage.class)).isEqualTo(message);
-        localActor.expectMsgClass(MessageExchangeMessages.BackPressureMessage.class);
-    }
-
-    public void testBackPressureMessageIsQueued()
-    {
-        val control = control(remoteProcessor);
-        control.getModel().setSingleQueueBackPressureThreshold(0);
-        val messageInterface = createMessageInterface(control);
-
-        val remoteToLocalMessage = enqueueMessage(control, messageInterface, remoteActor, localActor, 1, 1);
-        assertThat(localActor.expectMsgClass(TestMessage.class)).isSameAs(remoteToLocalMessage);
-
-        val localToRemoteMessage = enqueueMessage(control, messageInterface, localActor, remoteActor, 1, 1);
-        assertThat(remoteProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(TestMessage.class)).isEqualTo(localToRemoteMessage);
-        localActor.expectNoMessage(); // back pressure is queued
-
-        completeMessage(control, messageInterface, remoteToLocalMessage, 1, 1);
-        localActor.expectMsgClass(MessageExchangeMessages.BackPressureMessage.class);
+        val secondMessage = enqueueMessage(control, messageInterface, remoteActor, localActor, 2, 1);
+        remoteProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(MessageExchangeMessages.BackPressureMessage.class);
     }
 
     public void testDoNotBackPressureRemoteActors()

@@ -4,6 +4,7 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
@@ -24,10 +25,19 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void onMessageCompleted(MessageExchangeMessages.MessageCompletedMessage message)
     {
+        if (!ProcessorId.of(message.getReceiver()).equals(ProcessorId.of(getModel().getSelf())))
+        {
+            // completion message is not for a local actor
+            // this means, that the remote proxy is responsible for the handling
+            getModel().getMessageDispatcher().tell(message, message.getSender());
+            return;
+        }
+
         val senderQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (senderQueue == null)
         {
             getLog().error(String.format("Unable to get %1$s in order to complete earlier message!", ActorMessageQueue.class.getName()));
+            return;
         }
         else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {
@@ -36,17 +46,18 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
                                          message.getReceiver().path()));
         }
 
-        getModel().getTotalNumberOfEnqueuedMessages().decrement();
         dequeueAndSend(senderQueue);
-
-        if (message.getReceiver().path().root() != getModel().getSelf().path().root())
-        {
-            forward(message);
-        }
     }
 
     private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
+        if (!ProcessorId.of(message.getReceiver()).equals(ProcessorId.of(getModel().getSelf())))
+        {
+            // message is sent to remote processor
+            getModel().getMessageDispatcher().tell(message, message.getSender());
+            return;
+        }
+
         val receiverQueue = getOrCreateMessageQueue(message.getReceiver().path());
         val receiverQueueSize = receiverQueue.enqueueBack(message);
         val totalQueueSize = getModel().getTotalNumberOfEnqueuedMessages().incrementAndGet();
@@ -54,6 +65,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         if (receiverQueueSize == 1)
         {
             dequeueAndSend(receiverQueue);
+            return;
         }
 
         if (receiverQueueSize < getModel().getSingleQueueBackPressureThreshold() &&
@@ -96,35 +108,26 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void forward(MessageExchangeMessages.MessageExchangeMessage message)
     {
-        if (message.getReceiver().path().root() == getModel().getSelf().path().root())
-        {
-            message.getReceiver().tell(message, message.getSender());
-        }
-        else
-        {
-            getModel().getMessageDispatcher().tell(message, message.getSender());
-        }
+        assert ProcessorId.of(message.getReceiver()).equals(ProcessorId.of(getModel().getSelf())) : "Only local messages should take this path!";
+
+        message.getReceiver().tell(message, message.getSender());
+
+//        if (message.getReceiver().path().root() == getModel().getSelf().path().root())
+//        {
+//            message.getReceiver().tell(message, message.getSender());
+//        }
+//        else
+//        {
+//            getModel().getMessageDispatcher().tell(message, message.getSender());
+//        }
     }
 
     private void applyBackPressure(ActorRef receiver)
     {
-        if (receiver.path().root() != getModel().getSelf().path().root())
-        {
-            // apply back pressure only to local actors
-            return;
-        }
-
-        val queue = getOrCreateMessageQueue(receiver.path());
-        val message = MessageExchangeMessages.BackPressureMessage.builder()
-                                                                 .sender(getModel().getSelf())
-                                                                 .receiver(receiver)
-                                                                 .build();
-        val queueSize = queue.enqueueFront(message);
-        getModel().getTotalNumberOfEnqueuedMessages().increment();
-
-        if (queueSize == 1)
-        {
-            dequeueAndSend(queue);
-        }
+        getModel().getMessageDispatcher().tell(MessageExchangeMessages.BackPressureMessage.builder()
+                                                                                          .sender(getModel().getSelf())
+                                                                                          .receiver(receiver)
+                                                                                          .build(),
+                                               getModel().getSelf());
     }
 }

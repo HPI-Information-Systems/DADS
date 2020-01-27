@@ -107,8 +107,8 @@ public class Calculate
         val vec1 = toColumnVector(referenceVector).multiply(1.0d / Math.sqrt(referenceVector.aggregateAll(Aggregator.SUM2)));
         val vec2 = toColumnVector(unitVector).multiply(1.0d / Math.sqrt(unitVector.aggregateAll(Aggregator.SUM2)));
 
-        assert vec1.countColumns() == 3 : "The rotation can only be performed on a 3d vector!";
-        assert vec2.countColumns() == 3 : "The rotation can only be performed on a 3d vector!";
+        assert vec1.countRows() == 3 : "The rotation can only be performed on a 3d vector!";
+        assert vec2.countRows() == 3 : "The rotation can only be performed on a 3d vector!";
 
         val cross = cross(vec1, vec2);
         val crossLength = 1.0d / Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
