@@ -102,6 +102,36 @@ public class Calculate
                         .create());
     }
 
+    public static MatrixStore<Double> rotation(MatrixStore<Double> referenceVector, MatrixStore<Double> unitVector)
+    {
+        val vec1 = toColumnVector(referenceVector).multiply(1.0d / Math.sqrt(referenceVector.aggregateAll(Aggregator.SUM2)));
+        val vec2 = toColumnVector(unitVector).multiply(1.0d / Math.sqrt(unitVector.aggregateAll(Aggregator.SUM2)));
+
+        assert vec1.countColumns() == 3 : "The rotation can only be performed on a 3d vector!";
+        assert vec2.countColumns() == 3 : "The rotation can only be performed on a 3d vector!";
+
+        val cross = cross(vec1, vec2);
+        val crossLength = 1.0d / Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
+        val dot = vec1.dot(vec2);
+        val identity = MatrixStore.PRIMITIVE.makeIdentity(3).get();
+        val k = (new MatrixInitializer(3))
+                .appendRow(new float[]{0.0f, -cross.get(2).floatValue(), cross.get(1).floatValue()})
+                .appendRow(new float[]{cross.get(2).floatValue(), 0.0f, -cross.get(0).floatValue()})
+                .appendRow(new float[]{-cross.get(1).floatValue(), cross.get(0).floatValue(), 0.0f})
+                .create();
+
+        return identity.add(k).add(k.multiply(k.multiply((1 - dot) / (crossLength * crossLength))));
+    }
+
+    private static MatrixStore<Double> cross(MatrixStore<Double> a, MatrixStore<Double> b)
+    {
+        return (new MatrixInitializer(1))
+                .appendRow(new float[]{(float) (a.get(1) * b.get(2) - a.get(2) * b.get(1))})
+                .appendRow(new float[]{(float) (a.get(2) * b.get(0) - a.get(0) * b.get(2))})
+                .appendRow(new float[]{(float) (a.get(0) * b.get(1) - a.get(1) * b.get(0))})
+                .create();
+    }
+
     public static MatrixStore<Double> transposedColumnMeans(MatrixStore<Double> input)
     {
         val numberOfRows = input.countRows();

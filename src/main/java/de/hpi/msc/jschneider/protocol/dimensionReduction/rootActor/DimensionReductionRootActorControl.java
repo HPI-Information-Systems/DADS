@@ -30,7 +30,8 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(PCAEvents.PrincipalComponentsCreatedEvent.class, this::onPrincipalComponentsCreated)
                     .match(DimensionReductionMessages.InitializePrincipalComponentsTransferMessage.class, message -> forward(message, getModel().getReceiver()))
-                    .match(DimensionReductionMessages.InitializeRotationTransferMessage.class, message -> forward(message, getModel().getReceiver()));
+                    .match(DimensionReductionMessages.InitializeRotationTransferMessage.class, message -> forward(message, getModel().getReceiver()))
+                    .match(DimensionReductionMessages.InitializeColumnMeansTransferMessage.class, message -> forward(message, getModel().getReceiver()));
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)
@@ -50,7 +51,7 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
         try
         {
             assert getModel().getLocalProcessor().isMaster() : "Local processor must be master in order to distribute principal components!";
-            createDistributors(message.getPrincipalComponents(), message.getRotation());
+            createDistributors(message.getPrincipalComponents(), message.getRotation(), message.getColumnMeans());
         }
         finally
         {
@@ -74,7 +75,7 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
         getModel().setReceiver(receiver.get());
     }
 
-    private void createDistributors(MatrixStore<Double> principalComponents, MatrixStore<Double> rotation)
+    private void createDistributors(MatrixStore<Double> principalComponents, MatrixStore<Double> rotation, MatrixStore<Double> columnMeans)
     {
         for (val processor : getModel().getProcessors())
         {
@@ -84,17 +85,18 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
                 continue;
             }
 
-            val distributor = createDistributor(protocol.get(), principalComponents, rotation);
+            val distributor = createDistributor(protocol.get(), principalComponents, rotation, columnMeans);
             getModel().getDistributors().put(processor.getId(), distributor);
         }
     }
 
-    private ActorRef createDistributor(Protocol receiverProtocol, MatrixStore<Double> principalComponents, MatrixStore<Double> rotation)
+    private ActorRef createDistributor(Protocol receiverProtocol, MatrixStore<Double> principalComponents, MatrixStore<Double> rotation, MatrixStore<Double> columnMeans)
     {
         val model = DimensionReductionDistributorModel.builder()
                                                       .receiverProtocol(receiverProtocol)
                                                       .principalComponents(principalComponents)
                                                       .rotation(rotation)
+                                                      .columnMeans(columnMeans)
                                                       .build();
         val control = new DimensionReductionDistributorControl(model);
         val distributor = trySpawnChild(ProtocolParticipant.props(control), "DimensionReductionDistributor");

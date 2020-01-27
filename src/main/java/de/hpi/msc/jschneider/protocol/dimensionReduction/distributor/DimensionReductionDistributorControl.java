@@ -20,6 +20,7 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
 
         distributeRotation();
         distributePrincipalComponents();
+        distributeColumnMeans();
     }
 
     private void distributePrincipalComponents()
@@ -40,6 +41,17 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
                                                                             .receiver(getModel().getReceiverProtocol().getRootActor())
                                                                             .operationId(dataDistributor.getOperationId())
                                                                             .build());
+    }
+
+    private void distributeColumnMeans()
+    {
+        getModel().getDataTransferManager().transfer(getModel().getColumnMeans(), dataDistributor ->
+                DimensionReductionMessages.InitializeColumnMeansTransferMessage.builder()
+                                                                               .sender(getModel().getSelf())
+                                                                               .receiver(getModel().getReceiverProtocol().getRootActor())
+                                                                               .operationId(dataDistributor.getOperationId())
+                                                                               .numberOfColumns(getModel().getColumnMeans().countColumns())
+                                                                               .build());
     }
 
     private void onAllTransfersFinished(DataTransferManager dataTransferManager)

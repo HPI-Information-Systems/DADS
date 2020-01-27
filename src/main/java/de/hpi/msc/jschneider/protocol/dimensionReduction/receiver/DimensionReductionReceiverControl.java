@@ -30,7 +30,8 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
         return super.complementReceiveBuilder(builder)
                     .match(SequenceSliceDistributionEvents.ProjectionCreatedEvent.class, this::onProjectionCreated)
                     .match(DimensionReductionMessages.InitializePrincipalComponentsTransferMessage.class, this::onInitializePrincipalComponentsTransfer)
-                    .match(DimensionReductionMessages.InitializeRotationTransferMessage.class, this::onInitializeRotationTransfer);
+                    .match(DimensionReductionMessages.InitializeRotationTransferMessage.class, this::onInitializeRotationTransfer)
+                    .match(DimensionReductionMessages.InitializeColumnMeansTransferMessage.class, this::onInitializeColumnMeansTransfer);
     }
 
     private void onProjectionCreated(SequenceSliceDistributionEvents.ProjectionCreatedEvent message)
@@ -61,6 +62,15 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                             .whenFinished(this::onRotationTransferFinished));
     }
 
+    private void onInitializeColumnMeansTransfer(DimensionReductionMessages.InitializeColumnMeansTransferMessage message)
+    {
+        getModel().setNumberOfColumns(message.getNumberOfColumns());
+
+        getModel().getDataTransferManager().accept(message, dataReceiver ->
+                dataReceiver.addSink(getModel().getColumnMeansSink())
+                            .whenFinished(this::onColumnMeansTransferFinished));
+    }
+
     private void onPrincipalComponentTransferFinished(DataReceiver dataReceiver)
     {
         getModel().setPrincipalComponents(getModel().getPrincipalComponentsSink().getMatrix(3L));
@@ -70,6 +80,12 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
     private void onRotationTransferFinished(DataReceiver dataReceiver)
     {
         getModel().setRotation(getModel().getRotationSink().getMatrix(3L));
+        performDimensionReduction();
+    }
+
+    private void onColumnMeansTransferFinished(DataReceiver dataReceiver)
+    {
+        getModel().setColumnMeans(getModel().getColumnMeansSink().getMatrix(getModel().getNumberOfColumns()));
         performDimensionReduction();
     }
 
@@ -85,7 +101,12 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
             return;
         }
 
-        val reducedProjection = getModel().getProjection().multiply(getModel().getPrincipalComponents());
+        if (getModel().getColumnMeans() == null)
+        {
+            return;
+        }
+
+        val reducedProjection = getModel().getProjection().subtract(getModel().getColumnMeans()).multiply(getModel().getPrincipalComponents());
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
         val projection2d = rotatedProjection.logical().row(0, 1).get();
 

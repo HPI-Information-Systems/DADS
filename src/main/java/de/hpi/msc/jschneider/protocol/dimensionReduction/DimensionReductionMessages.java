@@ -38,4 +38,21 @@ public class DimensionReductionMessages
                             .build();
         }
     }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class InitializeColumnMeansTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
+    {
+        private static final long serialVersionUID = -3976698389798580325L;
+        private long numberOfColumns;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .operationId(getOperationId())
+                            .numberOfColumns(getNumberOfColumns())
+                            .build();
+        }
+    }
 }

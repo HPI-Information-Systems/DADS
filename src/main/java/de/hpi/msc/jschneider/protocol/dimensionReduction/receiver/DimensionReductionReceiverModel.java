@@ -24,4 +24,10 @@ public class DimensionReductionReceiverModel extends AbstractProtocolParticipant
     private final PrimitiveMatrixSink rotationSink = new PrimitiveMatrixSink();
     @Setter @Getter
     private MatrixStore<Double> rotation;
+    @Setter @Getter
+    private long numberOfColumns;
+    @Getter
+    private final PrimitiveMatrixSink columnMeansSink = new PrimitiveMatrixSink();
+    @Setter @Getter
+    private MatrixStore<Double> columnMeans;
 }
