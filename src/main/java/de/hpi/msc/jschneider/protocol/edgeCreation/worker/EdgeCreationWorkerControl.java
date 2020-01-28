@@ -35,12 +35,12 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
-                    .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onSegmentResponsibilitiesReceived)
+                    .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(NodeCreationEvents.IntersectionsCalculatedEvent.class, this::onIntersectionsCalculated)
                     .match(NodeCreationMessages.NodesMessage.class, this::onNodes);
     }
 
-    private void onSegmentResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
+    private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
     {
         try
         {
