@@ -331,25 +331,25 @@ public class Calculate
         val intersectionX = determinant(determinants, diffX) / div;
         val intersectionY = determinant(determinants, diffY) / div;
 
-        if (isMore(intersectionX, line1MaxX) || isLess(intersectionX, line1MinX) || isMore(intersectionX, line2MaxX) || isLess(intersectionX, line2MinX))
-        {
-            return Optional.empty();
-        }
-
-        if (isMore(intersectionY, line1MaxY) || isLess(intersectionY, line1MinY) || isMore(intersectionY, line2MaxY) || isLess(intersectionY, line2MinY))
-        {
-            return Optional.empty();
-        }
-
-//        if (intersectionX > line1MaxX || intersectionX < line1MinX || intersectionX > line2MaxX || intersectionX < line2MinX)
+//        if (isMore(intersectionX, line1MaxX) || isLess(intersectionX, line1MinX) || isMore(intersectionX, line2MaxX) || isLess(intersectionX, line2MinX))
 //        {
 //            return Optional.empty();
 //        }
 //
-//        if (intersectionY > line1MaxY || intersectionY < line1MinY || intersectionY > line2MaxY || intersectionY < line2MinY)
+//        if (isMore(intersectionY, line1MaxY) || isLess(intersectionY, line1MinY) || isMore(intersectionY, line2MaxY) || isLess(intersectionY, line2MinY))
 //        {
 //            return Optional.empty();
 //        }
+
+        if (intersectionX > line1MaxX || intersectionX < line1MinX || intersectionX > line2MaxX || intersectionX < line2MinX)
+        {
+            return Optional.empty();
+        }
+
+        if (intersectionY > line1MaxY || intersectionY < line1MinY || intersectionY > line2MaxY || intersectionY < line2MinY)
+        {
+            return Optional.empty();
+        }
 
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()

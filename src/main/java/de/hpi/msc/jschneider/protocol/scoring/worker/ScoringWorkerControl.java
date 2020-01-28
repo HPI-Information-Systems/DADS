@@ -235,7 +235,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         for (val edgeHash : edgeCreationOrder)
         {
             val edge = getModel().getEdges().get(edgeHash);
-            val nodeDegree = getModel().getNodeDegrees().get(edge.getTo().hashCode()) - 1L;
+            val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
             val summand = (edge.getWeight() * nodeDegree) / (double) getModel().getQueryPathLength();
             newPathSum += summand;
             pathSummands.add(summand);

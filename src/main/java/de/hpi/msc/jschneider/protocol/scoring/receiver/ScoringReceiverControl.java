@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.protocol.scoring.receiver;
 import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
-import de.hpi.msc.jschneider.fileHandling.writing.BinarySequenceWriter;
+import de.hpi.msc.jschneider.fileHandling.writing.ClearSequenceWriter;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -111,8 +111,8 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
             return;
         }
 
-        val maximumPathScore = getModel().getPathScores().values().stream().map(Floats::max).findFirst().get() * -1.0f;
-        val minimumPathScore = getModel().getPathScores().values().stream().map(Floats::min).findFirst().get() * -1.0f;
+        val minimumPathScore = getModel().getPathScores().values().stream().map(Floats::max).findFirst().get() * -1.0f;
+        val maximumPathScore = getModel().getPathScores().values().stream().map(Floats::min).findFirst().get() * -1.0f;
         val sortedScores = Floats.concat(getModel().getPathScores().entrySet()
                                                    .stream()
                                                    .sorted((a, b) -> (int) (getModel().getSubSequenceResponsibilities().get(a.getKey()).getFrom()
@@ -168,7 +168,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 
-        val writer = BinarySequenceWriter.fromFile(filePath.toFile());
+        val writer = ClearSequenceWriter.fromFile(filePath.toFile());
         writer.write(normalityScores);
         writer.close();
 
