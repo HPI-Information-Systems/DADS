@@ -15,15 +15,11 @@ public interface ProtocolParticipantModel
 {
     void setSelfProvider(Callable<ActorRef> provider);
 
-    void setSenderProvider(Callable<ActorRef> provider);
-
     void setProcessorProvider(Callable<Processor[]> provider);
 
     void setMaximumMessageSizeProvider(Callable<Long> provider);
 
     ActorRef getSelf();
-
-    ActorRef getSender();
 
     Processor getLocalProcessor();
 

@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.protocol.scoring.worker;
 
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -202,7 +202,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         var pathSum = 0.0d;
         var first = true;
 
-        val pathScores = new ArrayList<Float>();
+        val pathScores = new ArrayList<Double>();
         for (var pathStartIndex = 0; pathStartIndex <= combinedEdgeCreationOrder.size() - getModel().getQueryPathLength(); ++pathStartIndex)
         {
             if (first)
@@ -223,10 +223,10 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                 pathSum = addSummands(pathSummands, combinedEdgeCreationOrder.get(pathStartIndex + getModel().getQueryPathLength() - 1), pathSum);
             }
 
-            pathScores.add((float) pathSum);
+            pathScores.add(pathSum);
         }
 
-        publishPathScores(Floats.toArray(pathScores));
+        publishPathScores(Doubles.toArray(pathScores));
     }
 
     private double addSummands(List<Double> pathSummands, List<Integer> edgeCreationOrder, double currentPathSum)
@@ -274,7 +274,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         return true;
     }
 
-    private void publishPathScores(float[] pathScores)
+    private void publishPathScores(double[] pathScores)
     {
         val protocol = getMasterProtocol(ProtocolType.Scoring);
         assert protocol.isPresent() : "The master processor must implement the Scoring protocol!";

@@ -79,12 +79,12 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThatMessageIsCompleted(message);
     }
 
-    private float[] range(int start, int length)
+    private double[] range(int start, int length)
     {
-        val values = new float[length];
+        val values = new double[length];
         for (var i = 0; i < length; ++i)
         {
-            values[i] = (float) i + start;
+            values[i] = (double) i + start;
         }
 
         return values;
@@ -159,7 +159,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         val writer = new MockSequenceWriter();
         val control = control(writer);
         val messageInterface = createMessageInterface(control);
-        val slicePart = new float[0];
+        val slicePart = new double[0];
 
         initialize(control, messageInterface);
 
@@ -227,12 +227,12 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThat(projectionCreated.getProjection().countRows()).isEqualTo(slicePart.length - (subSequenceLength - 1));
 
         val expectedProjection = (new MatrixInitializer(2L)
-                                          .appendRow(new float[]{0.0f + 1.0f + 2.0f, 1.0f + 2.0f + 3.0f})
-                                          .appendRow(new float[]{1.0f + 2.0f + 3.0f, 2.0f + 3.0f + 4.0f})
-                                          .appendRow(new float[]{2.0f + 3.0f + 4.0f, 3.0f + 4.0f + 5.0f})
-                                          .appendRow(new float[]{3.0f + 4.0f + 5.0f, 4.0f + 5.0f + 6.0f})
-                                          .appendRow(new float[]{4.0f + 5.0f + 6.0f, 5.0f + 6.0f + 7.0f})
-                                          .appendRow(new float[]{5.0f + 6.0f + 7.0f, 6.0f + 7.0f + 8.0f})
+                                          .appendRow(new double[]{0.0d + 1.0d + 2.0d, 1.0d + 2.0d + 3.0d})
+                                          .appendRow(new double[]{1.0d + 2.0d + 3.0d, 2.0d + 3.0d + 4.0d})
+                                          .appendRow(new double[]{2.0d + 3.0d + 4.0d, 3.0d + 4.0d + 5.0d})
+                                          .appendRow(new double[]{3.0d + 4.0d + 5.0d, 4.0d + 5.0d + 6.0d})
+                                          .appendRow(new double[]{4.0d + 5.0d + 6.0d, 5.0d + 6.0d + 7.0d})
+                                          .appendRow(new double[]{5.0d + 6.0d + 7.0d, 6.0d + 7.0d + 8.0d})
                                           .create());
 
         assertThat(projectionCreated.getProjection().equals(expectedProjection, MATRIX_COMPARISON_CONTEXT)).isTrue();

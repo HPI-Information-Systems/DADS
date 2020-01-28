@@ -332,13 +332,11 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
             return;
         }
 
-        getLocalProtocol(ProtocolType.MessageExchange).ifPresent(protocol ->
-                                                                 {
-                                                                     send(MessageExchangeMessages.MessageCompletedMessage.builder()
-                                                                                                                         .sender(message.getReceiver())
-                                                                                                                         .receiver(message.getSender())
-                                                                                                                         .completedMessageId(message.getId())
-                                                                                                                         .build());
-                                                                 });
+        getLocalProtocol(ProtocolType.MessageExchange)
+                .ifPresent(protocol -> send(MessageExchangeMessages.MessageCompletedMessage.builder()
+                                                                                           .sender(message.getReceiver())
+                                                                                           .receiver(message.getSender())
+                                                                                           .completedMessageId(message.getId())
+                                                                                           .build()));
     }
 }

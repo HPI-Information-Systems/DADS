@@ -31,7 +31,7 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Getter
     private final Map<Integer, List<LocalIntersection>> intersectionsInSegment = new HashMap<>();
     @Getter
-    private final Map<Integer, float[]> nodesInSegment = new HashMap<>();
+    private final Map<Integer, double[]> nodesInSegment = new HashMap<>();
     @Setter @Getter
     private Queue<LocalIntersection> intersectionsToMatch;
     @Setter @Getter

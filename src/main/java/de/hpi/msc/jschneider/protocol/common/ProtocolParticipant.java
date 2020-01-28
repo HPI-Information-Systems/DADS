@@ -57,7 +57,6 @@ public class ProtocolParticipant<TModel extends ProtocolParticipantModel, TContr
     protected void initializeModel(TModel model)
     {
         model.setSelfProvider(this::self);
-        model.setSenderProvider(this::self);
         model.setProcessorProvider(ProcessorRegistrationProtocol::getProcessors);
         model.setMaximumMessageSizeProvider(SystemParameters::getMaximumMessageSize);
         model.setWatchActorCallback(context()::watch);

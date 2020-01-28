@@ -71,7 +71,7 @@ public class ClearSequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(float[] records)
+    public void write(double[] records)
     {
         if (!isOpen)
         {
@@ -95,7 +95,7 @@ public class ClearSequenceWriter implements SequenceWriter
     @Override
     public void write(byte[] part)
     {
-        write(Serialize.toFloats(part));
+        write(Serialize.toDoubles(part));
     }
 
     @Override

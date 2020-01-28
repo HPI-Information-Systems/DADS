@@ -68,37 +68,37 @@ public class Calculate
 
     public static MatrixStore<Double> makeRotationX(double angle)
     {
-        val cos = (float) Math.cos(angle);
-        val sin = (float) Math.sin(angle);
+        val cos = Math.cos(angle);
+        val sin = Math.sin(angle);
 
         return (new MatrixInitializer(3L)
-                        .appendRow(new float[]{1.0f, 0.0f, 0.0f})
-                        .appendRow(new float[]{0.0f, cos, -sin})
-                        .appendRow(new float[]{0.0f, sin, cos})
+                        .appendRow(new double[]{1.0d, 0.0d, 0.0d})
+                        .appendRow(new double[]{0.0d, cos, -sin})
+                        .appendRow(new double[]{0.0d, sin, cos})
                         .create());
     }
 
     public static MatrixStore<Double> makeRotationY(double angle)
     {
-        val cos = (float) Math.cos(angle);
-        val sin = (float) Math.sin(angle);
+        val cos = Math.cos(angle);
+        val sin = Math.sin(angle);
 
         return (new MatrixInitializer(3L)
-                        .appendRow(new float[]{cos, 0.0f, sin})
-                        .appendRow(new float[]{0.0f, 1.0f, 0.0f})
-                        .appendRow(new float[]{-sin, 0.0f, cos})
+                        .appendRow(new double[]{cos, 0.0d, sin})
+                        .appendRow(new double[]{0.0d, 1.0d, 0.0d})
+                        .appendRow(new double[]{-sin, 0.0d, cos})
                         .create());
     }
 
     public static MatrixStore<Double> makeRotationZ(double angle)
     {
-        val cos = (float) Math.cos(angle);
-        val sin = (float) Math.sin(angle);
+        val cos = Math.cos(angle);
+        val sin = Math.sin(angle);
 
         return (new MatrixInitializer(3L)
-                        .appendRow(new float[]{cos, -sin, 0.0f})
-                        .appendRow(new float[]{sin, cos, 0.0f})
-                        .appendRow(new float[]{0.0f, 0.0f, 1.0f})
+                        .appendRow(new double[]{cos, -sin, 0.0d})
+                        .appendRow(new double[]{sin, cos, 0.0d})
+                        .appendRow(new double[]{0.0d, 0.0d, 1.0d})
                         .create());
     }
 
@@ -115,9 +115,9 @@ public class Calculate
         val dot = vec1.dot(vec2);
         val identity = MatrixStore.PRIMITIVE.makeIdentity(3).get();
         val k = (new MatrixInitializer(3))
-                .appendRow(new float[]{0.0f, -cross.get(2).floatValue(), cross.get(1).floatValue()})
-                .appendRow(new float[]{cross.get(2).floatValue(), 0.0f, -cross.get(0).floatValue()})
-                .appendRow(new float[]{-cross.get(1).floatValue(), cross.get(0).floatValue(), 0.0f})
+                .appendRow(new double[]{0.0f, -cross.get(2), cross.get(1)})
+                .appendRow(new double[]{cross.get(2), 0.0f, -cross.get(0)})
+                .appendRow(new double[]{-cross.get(1), cross.get(0), 0.0f})
                 .create();
 
         return identity.add(k).add(k.multiply(k.multiply((1 - dot) / (crossLength * crossLength))));
@@ -126,9 +126,9 @@ public class Calculate
     private static MatrixStore<Double> cross(MatrixStore<Double> a, MatrixStore<Double> b)
     {
         return (new MatrixInitializer(1))
-                .appendRow(new float[]{(float) (a.get(1) * b.get(2) - a.get(2) * b.get(1))})
-                .appendRow(new float[]{(float) (a.get(2) * b.get(0) - a.get(0) * b.get(2))})
-                .appendRow(new float[]{(float) (a.get(0) * b.get(1) - a.get(1) * b.get(0))})
+                .appendRow(new double[]{a.get(1) * b.get(2) - a.get(2) * b.get(1)})
+                .appendRow(new double[]{a.get(2) * b.get(0) - a.get(0) * b.get(2)})
+                .appendRow(new double[]{a.get(0) * b.get(1) - a.get(1) * b.get(0)})
                 .create();
     }
 
@@ -353,7 +353,7 @@ public class Calculate
 
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
-                                       .intersectionDistance((float) distance(origin, intersection))
+                                       .intersectionDistance(distance(origin, intersection))
                                        .subSequenceIndex(subSequenceIndex)
                                        .build());
     }

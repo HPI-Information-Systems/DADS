@@ -1,8 +1,7 @@
 package de.hpi.msc.jschneider.utility;
 
 import lombok.val;
-import lombok.var;
-import org.ojalgo.array.Primitive32Array;
+import org.ojalgo.array.Primitive64Array;
 import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access2D;
@@ -12,7 +11,7 @@ import java.util.List;
 
 public class MatrixInitializer
 {
-    private final List<Primitive32Array> rows = new ArrayList<>();
+    private final List<Primitive64Array> rows = new ArrayList<>();
     private final long columns;
 
     public static MatrixStore<Double> concat(Access2D<Double> first, Access2D<Double> second)
@@ -30,11 +29,11 @@ public class MatrixInitializer
         this.columns = columns;
     }
 
-    public MatrixInitializer appendRow(float[] row)
+    public MatrixInitializer appendRow(double[] row)
     {
         assert row.length == columns : "Row must have the same amount of columns for append!";
 
-        rows.add(Primitive32Array.wrap(row));
+        rows.add(Primitive64Array.wrap(row));
         return this;
     }
 
@@ -44,13 +43,7 @@ public class MatrixInitializer
 
         for (val row : matrix.rows())
         {
-            val floats = new float[(int) row.count()];
-            for (var floatsIndex = 0; floatsIndex < floats.length; ++floatsIndex)
-            {
-                floats[floatsIndex] = row.get(floatsIndex).floatValue();
-            }
-
-            appendRow(floats);
+            appendRow(row.toRawCopy1D());
         }
 
         return this;
@@ -58,7 +51,7 @@ public class MatrixInitializer
 
     public MatrixStore<Double> create()
     {
-        val result = PrimitiveMatrix.FACTORY.rows(rows.toArray(new Primitive32Array[0]));
+        val result = PrimitiveMatrix.FACTORY.rows(rows.toArray(new Primitive64Array[0]));
         rows.clear();
 
         return MatrixStore.PRIMITIVE.makeWrapper(result).get();

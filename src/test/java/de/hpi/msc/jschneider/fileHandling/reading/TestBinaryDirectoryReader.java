@@ -27,17 +27,17 @@ public class TestBinaryDirectoryReader extends TestCase
     {
         val reader = readerFromSequenceDirectory();
 
-        assertThat(reader.read(0, 8)).containsExactly(0.0f, 1.1f, 2.2f, 3.3f, 4.4f, 5.5f, 6.6f, 7.7f);
+        assertThat(reader.read(0, 8)).containsExactly(0.0d, 1.1d, 2.2d, 3.3d, 4.4d, 5.5d, 6.6d, 7.7d);
     }
 
     public void testReadPartly()
     {
         val reader = readerFromSequenceDirectory();
 
-        assertThat(reader.read(0, 2)).containsExactly(0.0f, 1.1f);
-        assertThat(reader.read(2, 3)).containsExactly(2.2f, 3.3f, 4.4f);
-        assertThat(reader.read(5, 2)).containsExactly(5.5f, 6.6f);
-        assertThat(reader.read(7, 1)).containsExactly(7.7f);
+        assertThat(reader.read(0, 2)).containsExactly(0.0d, 1.1d);
+        assertThat(reader.read(2, 3)).containsExactly(2.2d, 3.3d, 4.4d);
+        assertThat(reader.read(5, 2)).containsExactly(5.5d, 6.6d);
+        assertThat(reader.read(7, 1)).containsExactly(7.7d);
     }
 
     public void testSubReader()
@@ -46,10 +46,10 @@ public class TestBinaryDirectoryReader extends TestCase
         val subReader = reader.subReader(2, 4);
 
         assertThat(subReader.getSize()).isEqualTo(4);
-        assertThat(subReader.read(0, 4)).containsExactly(2.2f, 3.3f, 4.4f, 5.5f);
+        assertThat(subReader.read(0, 4)).containsExactly(2.2d, 3.3d, 4.4d, 5.5d);
 
         val subSubReader = subReader.subReader(2, 2);
         assertThat(subSubReader.getSize()).isEqualTo(2);
-        assertThat(subSubReader.read(0, 2)).containsExactly(4.4f, 5.5f);
+        assertThat(subSubReader.read(0, 2)).containsExactly(4.4d, 5.5d);
     }
 }

@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
@@ -144,7 +144,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
             assertThat(intersectionsCalculatedEvent.getIntersectionCollection().getIntersectionSegment()).isEqualTo(i);
             assertThat(intersectionsCalculatedEvent.getIntersectionCollection().getIntersections()).isNotNull();
 
-            assertThat(Floats.toArray(intersectionsCalculatedEvent.getIntersectionCollection().getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList())))
+            assertThat(Doubles.toArray(intersectionsCalculatedEvent.getIntersectionCollection().getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList())))
                     .containsExactly(intersectionsAtAngle.getIntersections());
         }
 
@@ -157,11 +157,11 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         val messageInterface = createMessageInterface(control);
 
         val localProjection = createMatrix(2, 100);
-        val localMax = (float) Math.max(localProjection.aggregateAll(Aggregator.MAXIMUM),
-                                        -localProjection.aggregateAll(Aggregator.MINIMUM));
+        val localMax = Math.max(localProjection.aggregateAll(Aggregator.MAXIMUM),
+                                -localProjection.aggregateAll(Aggregator.MINIMUM));
         val remoteProjection = createMatrix(2, 50);
-        val remoteMax = (float) Math.max(remoteProjection.aggregateAll(Aggregator.MAXIMUM),
-                                         -remoteProjection.aggregateAll(Aggregator.MINIMUM));
+        val remoteMax = Math.max(remoteProjection.aggregateAll(Aggregator.MAXIMUM),
+                                 -remoteProjection.aggregateAll(Aggregator.MINIMUM));
         val totalMax = Math.max(localMax, remoteMax);
         val numberOfIntersectionSegments = 100;
 
@@ -187,7 +187,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
                                                                          .sender(self.ref())
                                                                          .receiver(self.ref())
                                                                          .intersectionSegment(intersectionPointIndex)
-                                                                         .intersections(new float[]{0.0f * localMax, 0.15f * localMax, 0.25f * localMax, 0.33f * localMax, 0.45f * localMax, 0.75f * localMax, 0.99f * localMax})
+                                                                         .intersections(new double[]{0.0d * localMax, 0.15d * localMax, 0.25d * localMax, 0.33d * localMax, 0.45d * localMax, 0.75d * localMax, 0.99d * localMax})
                                                                          .build();
         messageInterface.apply(localIntersection);
 
@@ -200,7 +200,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
                                                                            .sender(remoteActor.ref())
                                                                            .receiver(self.ref())
                                                                            .intersectionSegment(intersectionPointIndex)
-                                                                           .intersections(new float[]{0.01f * remoteMax, 0.22f * remoteMax, 0.43f * remoteMax, 0.78f * remoteMax})
+                                                                           .intersections(new double[]{0.01d * remoteMax, 0.22d * remoteMax, 0.43d * remoteMax, 0.78d * remoteMax})
                                                                            .build();
         messageInterface.apply(remoteIntersections);
 
@@ -214,7 +214,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
 
     public void testSendReducedSubSequence()
     {
-        val tolerance = Offset.offset(0.00001f);
+        val tolerance = Offset.offset(0.00001d);
 
         val control = control();
         val messageInterface = createMessageInterface(control);
@@ -262,7 +262,7 @@ public class TestNodeCreationWorkerControl extends ProtocolTestCase
         val reducedSubSequenceMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(NodeCreationMessages.ReducedSubSequenceMessage.class);
         assertThat(reducedSubSequenceMessage.getReceiver()).isEqualTo(remoteActor.ref());
         assertThat(reducedSubSequenceMessage.getSubSequenceIndex()).isEqualTo(reducedProjection.countColumns());
-        assertThat(reducedSubSequenceMessage.getSubSequenceX()).isCloseTo(reducedProjection.get(0L, reducedProjection.countColumns() - 1).floatValue(), tolerance);
-        assertThat(reducedSubSequenceMessage.getSubSequenceY()).isCloseTo(reducedProjection.get(1L, reducedProjection.countColumns() - 1).floatValue(), tolerance);
+        assertThat(reducedSubSequenceMessage.getSubSequenceX()).isCloseTo(reducedProjection.get(0L, reducedProjection.countColumns() - 1), tolerance);
+        assertThat(reducedSubSequenceMessage.getSubSequenceY()).isCloseTo(reducedProjection.get(1L, reducedProjection.countColumns() - 1), tolerance);
     }
 }

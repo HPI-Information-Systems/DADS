@@ -12,46 +12,46 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSerialize extends TestCase
 {
-    public void testFloatsToBytes()
+    public void testDoublesToBytes()
     {
-        val floats = new float[]{0.0f, -1.0f, 1.0f, Float.MIN_VALUE, Float.MAX_VALUE};
+        val doubles = new double[]{0.0d, -1.0d, 1.0d, Double.MIN_VALUE, Double.MAX_VALUE};
         val expectedBytes = new ArrayList<byte[]>();
 
-        for (val value : floats)
+        for (val value : doubles)
         {
-            expectedBytes.add(ByteBuffer.allocate(Float.BYTES).putFloat(value).array());
+            expectedBytes.add(ByteBuffer.allocate(Double.BYTES).putDouble(value).array());
         }
 
-        assertThat(Serialize.toBytes(floats)).containsExactly(Bytes.concat(expectedBytes.toArray(new byte[0][0])));
+        assertThat(Serialize.toBytes(doubles)).containsExactly(Bytes.concat(expectedBytes.toArray(new byte[0][0])));
     }
 
     public void testAccess1DToBytes()
     {
         val matrix = (new MatrixInitializer(3L)
-                              .appendRow(new float[]{0.0f, 1.0f, 2.0f})
-                              .appendRow(new float[]{3.0f, 4.0f, 5.0f})
-                              .appendRow(new float[]{6.0f, 7.0f, 8.0f})
+                              .appendRow(new double[]{0.0d, 1.0d, 2.0d})
+                              .appendRow(new double[]{3.0d, 4.0d, 5.0d})
+                              .appendRow(new double[]{6.0d, 7.0d, 8.0d})
                               .create());
         val expectedBytes = new ArrayList<byte[]>();
 
         for (var i = 0L; i < matrix.count(); ++i)
         {
-            expectedBytes.add(ByteBuffer.allocate(Float.BYTES).putFloat(matrix.get(i).floatValue()).array());
+            expectedBytes.add(ByteBuffer.allocate(Double.BYTES).putDouble(matrix.get(i)).array());
         }
 
         assertThat(Serialize.toBytes(matrix)).containsExactly(Bytes.concat(expectedBytes.toArray(new byte[0][0])));
     }
 
-    public void testBytesToFloats()
+    public void testBytesToDoubles()
     {
-        val expectedFloats = new float[]{0.0f, -1.0f, 1.0f, Float.MIN_VALUE, Float.MAX_VALUE};
+        val expectedDoubles = new double[]{0.0d, -1.0d, 1.0d, Double.MIN_VALUE, Double.MAX_VALUE};
         val bytes = new ArrayList<byte[]>();
 
-        for (val value : expectedFloats)
+        for (val value : expectedDoubles)
         {
-            bytes.add(ByteBuffer.allocate(Float.BYTES).putFloat(value).array());
+            bytes.add(ByteBuffer.allocate(Double.BYTES).putDouble(value).array());
         }
 
-        assertThat(Serialize.toFloats(Bytes.concat(bytes.toArray(new byte[0][0])))).containsExactly(expectedFloats);
+        assertThat(Serialize.toDoubles(Bytes.concat(bytes.toArray(new byte[0][0])))).containsExactly(expectedDoubles);
     }
 }

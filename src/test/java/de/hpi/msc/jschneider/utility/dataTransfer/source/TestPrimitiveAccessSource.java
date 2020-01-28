@@ -11,21 +11,21 @@ public class TestPrimitiveAccessSource extends TestCase
 {
     public void testRead()
     {
-        val matrix = (new MatrixInitializer(3L).appendRow(new float[]{0.0f, 4.0f, 8.0f})
-                                               .appendRow(new float[]{1.0f, 5.0f, 9.0f})
-                                               .appendRow(new float[]{2.0f, 6.0f, 10.0f})
-                                               .appendRow(new float[]{3.0f, 7.0f, 11.0f})
+        val matrix = (new MatrixInitializer(3L).appendRow(new double[]{0.0d, 4.0d, 8.0d})
+                                               .appendRow(new double[]{1.0d, 5.0d, 9.0d})
+                                               .appendRow(new double[]{2.0d, 6.0d, 10.0d})
+                                               .appendRow(new double[]{3.0d, 7.0d, 11.0d})
                                                .create());
         val source = GenericDataSource.create(matrix);
 
         assertThat(source.isAtEnd()).isFalse();
 
-        assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).containsExactly(0.0f, 1.0f, 2.0f, 3.0f, 4.0f);
-        assertThat(Serialize.toFloats(source.read(5))).containsExactly(5.0f);
-        assertThat(Serialize.toFloats(source.read(4 * Float.BYTES))).containsExactly(6.0f, 7.0f, 8.0f, 9.0f);
-        assertThat(Serialize.toFloats(source.read(1 * Float.BYTES))).containsExactly(10.0f);
-        assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).containsExactly(11.0f);
-        assertThat(Serialize.toFloats(source.read(5 * Float.BYTES))).isEmpty();
+        assertThat(Serialize.toDoubles(source.read(5 * Double.BYTES))).containsExactly(0.0d, 1.0d, 2.0d, 3.0d, 4.0d);
+        assertThat(Serialize.toDoubles(source.read(Double.BYTES + 1))).containsExactly(5.0d);
+        assertThat(Serialize.toDoubles(source.read(4 * Double.BYTES))).containsExactly(6.0d, 7.0d, 8.0d, 9.0d);
+        assertThat(Serialize.toDoubles(source.read(1 * Double.BYTES))).containsExactly(10.0d);
+        assertThat(Serialize.toDoubles(source.read(5 * Double.BYTES))).containsExactly(11.0d);
+        assertThat(Serialize.toDoubles(source.read(5 * Double.BYTES))).isEmpty();
 
         assertThat(source.isAtEnd()).isTrue();
     }

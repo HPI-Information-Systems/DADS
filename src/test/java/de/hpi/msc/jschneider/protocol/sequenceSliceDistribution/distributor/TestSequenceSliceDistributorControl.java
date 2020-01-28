@@ -65,12 +65,12 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         return control;
     }
 
-    private float[] range(int start, int length)
+    private double[] range(int start, int length)
     {
-        val values = new float[length];
+        val values = new double[length];
         for (var i = 0; i < length; ++i)
         {
-            values[i] = (float) i + start;
+            values[i] = (double) i + start;
         }
 
         return values;
@@ -107,7 +107,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val slicePartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(slicePartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(slicePartMessage.isLastPart()).isTrue();
-        assertThat(Serialize.toFloats(slicePartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH));
+        assertThat(Serialize.toDoubles(slicePartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH));
 
         assertThatMessageIsCompleted(request);
     }
@@ -115,7 +115,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     public void testSendSlicePartOnRequest()
     {
         val control = initializedControl();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Float.BYTES);
+        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Double.BYTES);
         val messageInterface = createMessageInterface(control);
 
         val request = DataTransferMessages.RequestNextDataPartMessage.builder()
@@ -128,7 +128,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val firstPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(firstPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(firstPartMessage.isLastPart()).isFalse();
-        assertThat(Serialize.toFloats(firstPartMessage.getPart())).containsExactly(range(0, (int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR)));
+        assertThat(Serialize.toDoubles(firstPartMessage.getPart())).containsExactly(range(0, (int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR)));
         assertThatMessageIsCompleted(request);
 
         messageInterface.apply(request);
@@ -136,7 +136,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val secondPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(secondPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(secondPartMessage.isLastPart()).isTrue();
-        assertThat(Serialize.toFloats(secondPartMessage.getPart())).containsExactly(range((int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR), (int) (SEQUENCE_LENGTH * (1.0f - DataDistributor.MESSAGE_SIZE_FACTOR))));
+        assertThat(Serialize.toDoubles(secondPartMessage.getPart())).containsExactly(range((int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR), (int) (SEQUENCE_LENGTH * (1.0f - DataDistributor.MESSAGE_SIZE_FACTOR))));
         assertThatMessageIsCompleted(request);
     }
 
@@ -156,7 +156,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val slicePartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(slicePartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(slicePartMessage.isLastPart()).isTrue();
-        assertThat(Serialize.toFloats(slicePartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH));
+        assertThat(Serialize.toDoubles(slicePartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH));
 
         assertThatMessageIsCompleted(request);
 

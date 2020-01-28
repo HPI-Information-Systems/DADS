@@ -35,5 +35,5 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private NodeCreationMessages.ReducedSubSequenceMessage reducedSubSequenceMessage;
     @NonNull @Getter
-    private final Map<Integer, List<float[]>> intersections = new HashMap<>();
+    private final Map<Integer, List<double[]>> intersections = new HashMap<>();
 }

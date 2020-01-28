@@ -2,7 +2,6 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Floats;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
@@ -137,8 +136,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             val receiver = entry.getKey();
             val columnIndex = getModel().getReducedProjection().countColumns() - 1;
-            val x = getModel().getReducedProjection().get(0L, columnIndex).floatValue();
-            val y = getModel().getReducedProjection().get(1L, columnIndex).floatValue();
+            val x = getModel().getReducedProjection().get(0L, columnIndex);
+            val y = getModel().getReducedProjection().get(1L, columnIndex);
             send(NodeCreationMessages.ReducedSubSequenceMessage.builder()
                                                                .sender(getModel().getSelf())
                                                                .receiver(receiver)
@@ -179,7 +178,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             projection = (new MatrixInitializer(getModel().getReducedProjection().countRows())
                                   .append(getModel().getReducedProjection().transpose())
-                                  .appendRow(new float[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
+                                  .appendRow(new double[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
                                   .create()
                                   .transpose());
         }
@@ -203,7 +202,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         val responsibleProcessor = responsibleProcessor(intersectionCollection.getIntersectionSegment());
 
-        val intersections = Floats.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
+        val intersections = Doubles.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
         // send intersections directly to the processor which is responsible for the segment
         send(NodeCreationMessages.IntersectionsMessage.builder()
@@ -266,7 +265,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (var i = 0; startIndex < intersections.length; ++i)
         {
             val part = intersectionList.get(i);
-            System.arraycopy(toDoubles(part), 0, intersections, startIndex, part.length);
+            System.arraycopy(part, 0, intersections, startIndex, part.length);
             startIndex += part.length;
         }
 
@@ -288,7 +287,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (val localMaximumIndex : localMaximumIndices)
         {
             nodeCollection.getNodes().add(Node.builder()
-                                              .intersectionLength((float) densitySamples[localMaximumIndex])
+                                              .intersectionLength(densitySamples[localMaximumIndex])
                                               .build());
         }
 
@@ -299,7 +298,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         // TODO: send via DataTransfer
 
-        val nodes = Floats.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
+        val nodes = Doubles.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
         for (val worker : getModel().getIntersectionSegmentResponsibilities().keySet())
         {
             val protocol = getProtocol(worker.path().root(), ProtocolType.EdgeCreation);
@@ -312,16 +311,5 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                   .nodes(nodes)
                                                   .build());
         }
-    }
-
-    private double[] toDoubles(float[] floats)
-    {
-        val result = new double[floats.length];
-        for (var i = 0; i < floats.length; ++i)
-        {
-            result[i] = floats[i];
-        }
-
-        return result;
     }
 }

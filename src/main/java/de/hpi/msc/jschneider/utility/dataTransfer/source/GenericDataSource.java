@@ -30,14 +30,14 @@ public class GenericDataSource<TData> implements DataSource
         this.serializer = serializer;
     }
 
-    public static GenericDataSource<Access1D<Double>> create(Access1D<Double> data)
+    public static GenericDataSource<double[]> create(double[] data)
     {
-        return new GenericDataSource<>(data, Structure1D::count, Float.BYTES, Serialize::toBytes);
+        return new GenericDataSource<>(data, d -> (long) d.length, Double.BYTES, Serialize::toBytes);
     }
 
-    public static GenericDataSource<float[]> create(float[] data)
+    public static GenericDataSource<Access1D<Double>> create(Access1D<Double> data)
     {
-        return new GenericDataSource<>(data, d -> (long) d.length, Float.BYTES, Serialize::toBytes);
+        return new GenericDataSource<>(data, Structure1D::count, Double.BYTES, Serialize::toBytes);
     }
 
     public static GenericDataSource<GraphEdge[]> create(GraphEdge[] data)

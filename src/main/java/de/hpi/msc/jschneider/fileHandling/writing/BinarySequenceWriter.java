@@ -68,7 +68,7 @@ public class BinarySequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(float[] records)
+    public void write(double[] records)
     {
         if (!isOpen)
         {
@@ -77,10 +77,10 @@ public class BinarySequenceWriter implements SequenceWriter
 
         try
         {
-            val bytes = ByteBuffer.allocate(records.length * Float.BYTES);
+            val bytes = ByteBuffer.allocate(records.length * Double.BYTES);
             for (val record : records)
             {
-                bytes.putFloat(record);
+                bytes.putDouble(record);
             }
             outputStream.write(bytes.array());
         }
@@ -94,7 +94,7 @@ public class BinarySequenceWriter implements SequenceWriter
     @Override
     public void write(byte[] part)
     {
-        write(Serialize.toFloats(part));
+        write(Serialize.toDoubles(part));
     }
 
     @Override

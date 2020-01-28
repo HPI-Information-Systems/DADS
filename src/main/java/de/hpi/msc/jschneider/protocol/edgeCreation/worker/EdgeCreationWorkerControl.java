@@ -221,7 +221,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         assert nodes != null : "Nodes must not be null to match an intersection! (That should have been checked earlier)";
 
         var closestIndex = 0;
-        var closestDistance = Float.MAX_VALUE;
+        var closestDistance = Double.MAX_VALUE;
         for (var nodeIndex = 0; nodeIndex < nodes.length; ++nodeIndex)
         {
             val distance = Math.abs(nodes[nodeIndex] - intersection.getIntersectionDistance());

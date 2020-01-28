@@ -14,7 +14,7 @@ public class NullSequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(float[] records)
+    public void write(double[] records)
     {
     }
 

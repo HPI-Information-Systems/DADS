@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.nio.FloatBuffer;
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -123,7 +123,7 @@ public class BinaryDirectoryReader implements SequenceReader
     @Override
     public int elementSizeInBytes()
     {
-        return Float.BYTES;
+        return Double.BYTES;
     }
 
     @Override
@@ -135,18 +135,18 @@ public class BinaryDirectoryReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, long length)
+    public double[] read(long start, long length)
     {
         val begin = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
         val end = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
         var actualLength = end - begin + 1;
         if (actualLength > Integer.MAX_VALUE)
         {
-            Log.error("Unable to allocate more than Integer.MAX_VALUE floats at once!");
+            Log.error("Unable to allocate more than Integer.MAX_VALUE doubles at once!");
             actualLength = Integer.MAX_VALUE;
         }
 
-        val floats = FloatBuffer.allocate((int) actualLength);
+        val doubles = DoubleBuffer.allocate((int) actualLength);
         var first = true;
         for (val wrapper : readers(begin, end))
         {
@@ -157,10 +157,10 @@ public class BinaryDirectoryReader implements SequenceReader
                 first = false;
             }
 
-            floats.put(wrapper.getSequenceReader().read(beginRead, length - floats.position()));
+            doubles.put(wrapper.getSequenceReader().read(beginRead, length - doubles.position()));
         }
 
-        return floats.array();
+        return doubles.array();
     }
 
     private Collection<? extends SequenceReaderWrapper> readers(long begin, long end)

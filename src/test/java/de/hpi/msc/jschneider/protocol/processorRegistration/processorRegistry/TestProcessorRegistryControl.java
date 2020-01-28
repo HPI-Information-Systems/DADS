@@ -77,7 +77,6 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
     public void testOnRegistration()
     {
         val control = control();
-        control.getModel().setSenderProvider(self::ref);
         val messageInterface = createMessageInterface(control);
 
         val message = ProcessorRegistrationMessages.ProcessorRegistrationMessage.builder()

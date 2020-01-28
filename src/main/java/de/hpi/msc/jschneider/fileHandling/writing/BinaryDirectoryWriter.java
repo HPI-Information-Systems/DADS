@@ -45,7 +45,7 @@ public class BinaryDirectoryWriter implements SequenceWriter
     }
 
     @Override
-    public void write(float[] records)
+    public void write(double[] records)
     {
         val file = Paths.get(directory.getAbsolutePath(), String.format("%06d.bin", currentSliceIndex)).toFile();
         val writer = BinarySequenceWriter.fromFile(file);
@@ -64,7 +64,7 @@ public class BinaryDirectoryWriter implements SequenceWriter
     @Override
     public void write(byte[] part)
     {
-        write(Serialize.toFloats(part));
+        write(Serialize.toDoubles(part));
     }
 
     @Override

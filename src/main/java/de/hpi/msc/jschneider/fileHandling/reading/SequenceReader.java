@@ -12,7 +12,7 @@ public interface SequenceReader extends DataSource
 
     boolean isNull();
 
-    float[] read(long start, long length);
+    double[] read(long start, long length);
 
     SequenceReader subReader(long start, long length);
 }

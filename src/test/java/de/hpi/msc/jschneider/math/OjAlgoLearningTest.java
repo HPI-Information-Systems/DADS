@@ -12,10 +12,10 @@ public class OjAlgoLearningTest extends TestCase
     public void testQRDecomposition()
     {
         val input = (new MatrixInitializer(3)
-                             .appendRow(new float[]{0.0f, 1.0f, 2.0f})
-                             .appendRow(new float[]{3.0f, 4.0f, 5.0f})
-                             .appendRow(new float[]{6.0f, 7.0f, 8.0f})
-                             .appendRow(new float[]{9.0f, -1.0f, -2.0f})
+                             .appendRow(new double[]{0.0d, 1.0d, 2.0d})
+                             .appendRow(new double[]{3.0d, 4.0d, 5.0d})
+                             .appendRow(new double[]{6.0d, 7.0d, 8.0d})
+                             .appendRow(new double[]{9.0d, -1.0d, -2.0d})
                              .create());
 
         val qr = QR.PRIMITIVE.make();
@@ -29,9 +29,9 @@ public class OjAlgoLearningTest extends TestCase
     public void testAccessOrder()
     {
         val matrix = (new MatrixInitializer(3)
-                              .appendRow(new float[]{0.0f, 1.0f, 2.0f})
-                              .appendRow(new float[]{3.0f, 4.0f, 5.0f})
-                              .appendRow(new float[]{6.0f, 7.0f, 8.0f})
+                              .appendRow(new double[]{0.0d, 1.0d, 2.0d})
+                              .appendRow(new double[]{3.0d, 4.0d, 5.0d})
+                              .appendRow(new double[]{6.0d, 7.0d, 8.0d})
                               .create());
 
         assertThat(matrix.get(0, 2)).isEqualTo(2.0d);

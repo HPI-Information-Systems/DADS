@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis;
 
-import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.BaseTestCase;
@@ -41,8 +40,8 @@ public class PCAIntegrationTest extends BaseTestCase
                                                                           .receiver(receiver.ref())
                                                                           .sender(receiver.ref())
                                                                           .firstSubSequenceIndex(0L)
-                                                                          .minimumRecord(min.floatValue())
-                                                                          .maximumRecord(max.floatValue())
+                                                                          .minimumRecord(min)
+                                                                          .maximumRecord(max)
                                                                           .projection(projection)
                                                                           .build();
         messageInterface.apply(event);
@@ -98,8 +97,8 @@ public class PCAIntegrationTest extends BaseTestCase
         val projection = (new MatrixInitializer(masterProjection.countColumns()).append(masterProjection)
                                                                                 .append(slaveProjection)
                                                                                 .create());
-        val projectionMin = projection.aggregateAll(Aggregator.MINIMUM).floatValue();
-        val projectionMax = projection.aggregateAll(Aggregator.MAXIMUM).floatValue();
+        val projectionMin = projection.aggregateAll(Aggregator.MINIMUM);
+        val projectionMax = projection.aggregateAll(Aggregator.MAXIMUM);
 
         // calculate expected PCA
         val covariances = DataProcessors.covariances(PrimitiveDenseStore.FACTORY, projection);
@@ -150,8 +149,8 @@ public class PCAIntegrationTest extends BaseTestCase
         val messageInterface = createMessageInterface(control);
 
         val projection = createMatrix(100, 5);
-        val projectionMin = projection.aggregateAll(Aggregator.MINIMUM).floatValue();
-        val projectionMax = projection.aggregateAll(Aggregator.MAXIMUM).floatValue();
+        val projectionMin = projection.aggregateAll(Aggregator.MINIMUM);
+        val projectionMax = projection.aggregateAll(Aggregator.MAXIMUM);
         val covariances = DataProcessors.covariances(PrimitiveDenseStore.FACTORY, projection);
         val evd = Eigenvalue.PRIMITIVE.make(covariances);
         evd.decompose(covariances);

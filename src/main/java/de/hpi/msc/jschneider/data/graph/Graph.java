@@ -20,19 +20,6 @@ public class Graph
     @Getter @NonNull
     private final Map<Long, List<Integer>> createdEdgesBySubSequenceIndex = new HashMap<>();
 
-//    public static Graph construct(GraphEdge[] edges, int[] edgeCreationOrder)
-//    {
-//        val graph = new Graph();
-//        for (val edge : edges)
-//        {
-//            val hash = edge.hashCode();
-//            graph.edges.put(hash, edge);
-//        }
-//        graph.createdEdgesBySubSequenceIndex.addAll(Arrays.stream(edgeCreationOrder).boxed().collect(Collectors.toList()));
-//
-//        return graph;
-//    }
-
     public void addEdge(long subSequenceIndex, GraphNode from, GraphNode to)
     {
         addEdge(subSequenceIndex,

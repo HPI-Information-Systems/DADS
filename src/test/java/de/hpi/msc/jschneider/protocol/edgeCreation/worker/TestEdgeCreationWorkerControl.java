@@ -1,7 +1,7 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
 import akka.testkit.TestProbe;
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
@@ -114,7 +114,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
                 } while (usedSubSequenceIndices.contains(subSequenceIndex));
 
                 usedSubSequenceIndices.add(subSequenceIndex);
-                val intersectionDistance = RANDOM.nextFloat() * 100.0f;
+                val intersectionDistance = RANDOM.nextDouble() * 100.0d;
 
                 collection.getIntersections().add(Intersection.builder()
                                                               .subSequenceIndex(subSequenceIndex)
@@ -190,7 +190,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
                                                        .sender(self.ref())
                                                        .receiver(self.ref())
                                                        .intersectionSegment(nodeCollection.getIntersectionSegment())
-                                                       .nodes(Floats.toArray(nodes))
+                                                       .nodes(Doubles.toArray(nodes))
                                                        .build();
         messageInterface.apply(message);
 
@@ -205,7 +205,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         return message;
     }
 
-    private NodeCollection createNodeCollection(int intersectionSegment, float... nodeIntersectionLengths)
+    private NodeCollection createNodeCollection(int intersectionSegment, double... nodeIntersectionLengths)
     {
         val collection = NodeCollection.builder()
                                        .intersectionSegment(intersectionSegment)
@@ -233,7 +233,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         return collection;
     }
 
-    private Intersection createIntersection(long subSequenceIndex, float intersectionLength)
+    private Intersection createIntersection(long subSequenceIndex, double intersectionLength)
     {
         return Intersection.builder()
                            .subSequenceIndex(subSequenceIndex)
@@ -351,39 +351,39 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         val sequenceResponsibilities = createSubSequenceResponsibilities(numberOfSubSequences);
 
         val nodeCollections = new NodeCollection[numberOfIntersectionSegments];
-        nodeCollections[0] = createNodeCollection(0, 1.5f, 3.5f);
-        nodeCollections[1] = createNodeCollection(1, 3.0f, 4.5f);
-        nodeCollections[2] = createNodeCollection(2, 3.5f);
-        nodeCollections[3] = createNodeCollection(3, 1.0f, 4.0f);
-        nodeCollections[4] = createNodeCollection(4, 5.0f);
-        nodeCollections[5] = createNodeCollection(5, 3.0f);
-        nodeCollections[6] = createNodeCollection(6, 2.5f, 4.5f);
-        nodeCollections[7] = createNodeCollection(7, 2.0f, 3.0f);
+        nodeCollections[0] = createNodeCollection(0, 1.5d, 3.5d);
+        nodeCollections[1] = createNodeCollection(1, 3.0d, 4.5d);
+        nodeCollections[2] = createNodeCollection(2, 3.5d);
+        nodeCollections[3] = createNodeCollection(3, 1.0d, 4.0d);
+        nodeCollections[4] = createNodeCollection(4, 5.0d);
+        nodeCollections[5] = createNodeCollection(5, 3.0d);
+        nodeCollections[6] = createNodeCollection(6, 2.5d, 4.5d);
+        nodeCollections[7] = createNodeCollection(7, 2.0d, 3.0d);
 
         val intersectionCollections = new IntersectionCollection[numberOfIntersectionSegments];
         intersectionCollections[2] = createIntersectionCollection(2,
-                                                                  createIntersection(0L, 3.5f));
+                                                                  createIntersection(0L, 3.5d));
         intersectionCollections[1] = createIntersectionCollection(1,
-                                                                  createIntersection(1L, 3.0f),
-                                                                  createIntersection(2L, 4.5f),
-                                                                  createIntersection(3L, 3.0f),
-                                                                  createIntersection(4L, 4.5f));
+                                                                  createIntersection(1L, 3.0d),
+                                                                  createIntersection(2L, 4.5d),
+                                                                  createIntersection(3L, 3.0d),
+                                                                  createIntersection(4L, 4.5d));
         intersectionCollections[3] = createIntersectionCollection(3,
-                                                                  createIntersection(5L, 4.0f),
-                                                                  createIntersection(7L, 1.0f));
+                                                                  createIntersection(5L, 4.0d),
+                                                                  createIntersection(7L, 1.0d));
         intersectionCollections[4] = createIntersectionCollection(4,
-                                                                  createIntersection(8L, 5.0f));
+                                                                  createIntersection(8L, 5.0d));
         intersectionCollections[5] = createIntersectionCollection(5,
-                                                                  createIntersection(9L, 3.0f));
+                                                                  createIntersection(9L, 3.0d));
         intersectionCollections[0] = createIntersectionCollection(0,
-                                                                  createIntersection(10L, 1.5f),
-                                                                  createIntersection(15L, 3.5f));
+                                                                  createIntersection(10L, 1.5d),
+                                                                  createIntersection(15L, 3.5d));
         intersectionCollections[6] = createIntersectionCollection(6,
-                                                                  createIntersection(11L, 2.5f),
-                                                                  createIntersection(14L, 4.5f));
+                                                                  createIntersection(11L, 2.5d),
+                                                                  createIntersection(14L, 4.5d));
         intersectionCollections[7] = createIntersectionCollection(7,
-                                                                  createIntersection(12L, 3.0f),
-                                                                  createIntersection(13L, 2.0f));
+                                                                  createIntersection(12L, 3.0d),
+                                                                  createIntersection(13L, 2.0d));
 
         val localIntersectionCollections = extractLocalIntersectionCollections(intersectionCollections, sequenceResponsibilities.get(ProcessorId.of(self.ref())));
         val totalNumberOfLocalIntersections = Arrays.stream(localIntersectionCollections).mapToLong(collection -> collection.getIntersections().size()).sum();

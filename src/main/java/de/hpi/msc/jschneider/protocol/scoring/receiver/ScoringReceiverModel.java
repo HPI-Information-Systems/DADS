@@ -24,7 +24,7 @@ public class ScoringReceiverModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private Map<ProcessorId, Int64Range> subSequenceResponsibilities;
     @NonNull @Getter
-    private final Map<ProcessorId, float[]> pathScores = new HashMap<>();
+    private final Map<ProcessorId, double[]> pathScores = new HashMap<>();
     @Setter @Getter @Builder.Default
     private boolean responsibilitiesReceived = false;
 }
