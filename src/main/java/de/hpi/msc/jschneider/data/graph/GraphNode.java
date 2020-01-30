@@ -1,16 +1,19 @@
 package de.hpi.msc.jschneider.data.graph;
 
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-@Builder @Getter @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder @Getter
 public class GraphNode
 {
-    @EqualsAndHashCode.Include
     private int intersectionSegment;
-    @EqualsAndHashCode.Include
     private int index;
+
+    @Override
+    public int hashCode()
+    {
+        return toString().hashCode();
+    }
 
     @Override
     public String toString()

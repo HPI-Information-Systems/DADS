@@ -16,7 +16,7 @@ import java.util.function.Function;
 
 public class DataDistributor
 {
-    public static final double MESSAGE_SIZE_FACTOR = 0.75d;
+    public static final double MESSAGE_SIZE_FACTOR = 0.25d;
 
     private static final Logger Log = LogManager.getLogger(DataDistributor.class);
 

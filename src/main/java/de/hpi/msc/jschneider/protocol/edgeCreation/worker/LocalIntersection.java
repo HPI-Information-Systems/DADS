@@ -23,6 +23,7 @@ public class LocalIntersection extends Intersection
                                                     .intersectionSegment(intersectionCollection.getIntersectionSegment())
                                                     .intersectionDistance(intersection.getIntersectionDistance())
                                                     .subSequenceIndex(intersection.getSubSequenceIndex())
+                                                    .creationIndex(intersection.getCreationIndex())
                                                     .build());
         }
 

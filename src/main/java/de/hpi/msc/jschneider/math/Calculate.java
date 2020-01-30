@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
+import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
+
 public class Calculate
 {
     public static final double FLOATING_POINT_TOLERANCE = 0.00001d;
@@ -111,7 +113,7 @@ public class Calculate
         assert vec2.countRows() == 3 : "The rotation can only be performed on a 3d vector!";
 
         val cross = cross(vec1, vec2);
-        val crossLength = 1.0d / Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
+        val crossLength = Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
         val dot = vec1.dot(vec2);
         val identity = MatrixStore.PRIMITIVE.makeIdentity(3).get();
         val k = (new MatrixInitializer(3))
@@ -184,6 +186,7 @@ public class Calculate
                                                                .build();
         }
 
+        val nextIntersectionCreationIndex = new Counter(0L);
         for (var columnIndex = 0; columnIndex < reducedProjection.countColumns() - 1; ++columnIndex)
         {
             val current = reducedProjection.sliceColumn(columnIndex);
@@ -211,6 +214,7 @@ public class Calculate
             {
                 val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
                                                             firstSubSequenceIndex + columnIndex,
+                                                            nextIntersectionCreationIndex.getAndIncrement(),
                                                             current,
                                                             next);
                 if (!intersection.isPresent())
@@ -287,7 +291,11 @@ public class Calculate
         return intersectionPointIndices;
     }
 
-    private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint, long subSequenceIndex, Access1D<Double> current, Access1D<Double> next)
+    private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint,
+                                                                   long subSequenceIndex,
+                                                                   long intersectionCreationIndex,
+                                                                   Access1D<Double> current,
+                                                                   Access1D<Double> next)
     {
         val origin = makeRowVector(0.0d, 0.0d);
 
@@ -355,6 +363,7 @@ public class Calculate
         return Optional.of(Intersection.builder()
                                        .intersectionDistance(distance(origin, intersection))
                                        .subSequenceIndex(subSequenceIndex)
+                                       .creationIndex(intersectionCreationIndex)
                                        .build());
     }
 
@@ -441,6 +450,14 @@ public class Calculate
 
         return nodeHashes.stream().collect(Collectors.toMap(hash -> hash,
                                                             hash -> incomingEdges.get(hash).get() + outgoingEdges.get(hash).get()));
+    }
+
+    public static MatrixStore<Double> subtractColumnBased(MatrixStore<Double> matrix, MatrixStore<Double> columnSubtrahends)
+    {
+        assert columnSubtrahends.countRows() == 1L
+               && columnSubtrahends.countColumns() == matrix.countColumns() : "ColumnSubtrahends have wrong format";
+
+        return matrix.operateOnColumns(SUBTRACT, columnSubtrahends).get();
     }
 
     public static double log2(double value)

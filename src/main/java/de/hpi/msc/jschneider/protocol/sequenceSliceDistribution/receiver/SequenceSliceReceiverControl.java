@@ -125,6 +125,8 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
 
     private void whenFinished(DataReceiver receiver)
     {
+        val projection = getModel().getProjectionInitializer().create();
+
         trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.ProjectionCreatedEvent.builder()
                                                                                                                                       .sender(getModel().getSelf())
                                                                                                                                       .receiver(eventDispatcher)
@@ -132,7 +134,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                                                                                       .minimumRecord(getModel().getMinimumRecord())
                                                                                                                                       .maximumRecord(getModel().getMaximumRecord())
-                                                                                                                                      .projection(getModel().getProjectionInitializer().create())
+                                                                                                                                      .projection(projection)
                                                                                                                                       .build());
     }
 }

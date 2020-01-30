@@ -9,6 +9,8 @@ import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import lombok.val;
 
+import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
+
 public class DimensionReductionReceiverControl extends AbstractProtocolParticipantControl<DimensionReductionReceiverModel>
 {
     public DimensionReductionReceiverControl(DimensionReductionReceiverModel model)
@@ -106,7 +108,7 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
             return;
         }
 
-        val reducedProjection = getModel().getProjection().subtract(getModel().getColumnMeans()).multiply(getModel().getPrincipalComponents());
+        val reducedProjection = getModel().getProjection().operateOnColumns(SUBTRACT, getModel().getColumnMeans()).get().multiply(getModel().getPrincipalComponents());
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
         val projection2d = rotatedProjection.logical().row(0, 1).get();
 

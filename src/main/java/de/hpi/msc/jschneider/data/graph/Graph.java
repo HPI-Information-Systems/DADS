@@ -38,6 +38,8 @@ public class Graph
         val existingEdge = edges.get(hash);
         if (existingEdge != null)
         {
+            assert existingEdge.getKey().equals(edge.getKey());
+
             existingEdge.incrementWeight();
         }
         else

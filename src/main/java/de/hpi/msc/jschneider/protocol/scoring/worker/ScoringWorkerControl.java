@@ -108,7 +108,9 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             assert getModel().getEdgeCreationOrder() == null : "Edge creation order was received already!";
 
-            val sortedEdgeCreationOrder = message.getGraphPartition().getCreatedEdgesBySubSequenceIndex().entrySet().stream()
+            val sortedEdgeCreationOrder = message.getGraphPartition().getCreatedEdgesBySubSequenceIndex()
+                                                 .entrySet()
+                                                 .stream()
                                                  .sorted((a, b) -> (int) (a.getKey() - b.getKey()))
                                                  .map(Map.Entry::getValue)
                                                  .collect(Collectors.toList());
@@ -223,7 +225,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                 pathSum = addSummands(pathSummands, combinedEdgeCreationOrder.get(pathStartIndex + getModel().getQueryPathLength() - 1), pathSum);
             }
 
-            pathScores.add(pathSum);
+            pathScores.add(pathSum / pathSummands.size());
         }
 
         publishPathScores(Doubles.toArray(pathScores));
@@ -236,7 +238,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             val edge = getModel().getEdges().get(edgeHash);
             val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
-            val summand = (edge.getWeight() * nodeDegree) / (double) getModel().getQueryPathLength();
+            val summand = (double) edge.getWeight() * nodeDegree;
             newPathSum += summand;
             pathSummands.add(summand);
         }

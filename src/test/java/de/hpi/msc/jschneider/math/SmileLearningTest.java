@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.math;
 
 import junit.framework.TestCase;
 import lombok.val;
+import smile.stat.distribution.GaussianDistribution;
 import smile.stat.distribution.KernelDensity;
 
 public class SmileLearningTest extends TestCase
@@ -13,5 +14,8 @@ public class SmileLearningTest extends TestCase
         val kde = new KernelDensity(samples, scottsFactor);
 
         kde.p(0.5d);
+
+        val gauss = new GaussianDistribution(0.0d, scottsFactor);
+        gauss.p(0.5d);
     }
 }

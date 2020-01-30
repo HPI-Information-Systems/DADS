@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.Node;
 import de.hpi.msc.jschneider.math.NodeCollection;
+import de.hpi.msc.jschneider.math.kernelDensity.GaussianKernelDensity;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
@@ -19,7 +20,6 @@ import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
-import smile.stat.distribution.KernelDensity;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -242,6 +242,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().getIntersections().putIfAbsent(message.getIntersectionSegment(), new ArrayList<>());
             getModel().getIntersections().get(message.getIntersectionSegment()).add(message.getIntersections());
 
+            // TODO: use round-robin actor pool for better parallelization
             createNodes(message.getIntersectionSegment());
         }
         finally
@@ -269,16 +270,20 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             startIndex += part.length;
         }
 
-        val h = Calculate.scottsFactor(intersections.length, 1L);
-        val kde = new KernelDensity(intersections, h);
-        val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
-//        val densitySamples = Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES);
-        val densitySamples = Calculate.makeRange(0.0d, Doubles.max(intersections) * DENSITY_SAMPLES_SCALING_FACTOR, NUMBER_OF_DENSITY_SAMPLES);
+        val densitySamples = Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES);
+//        val densitySamples = Calculate.makeRange(0.0d, Doubles.max(intersections) * DENSITY_SAMPLES_SCALING_FACTOR, NUMBER_OF_DENSITY_SAMPLES);
 
-        for (var i = 0; i < densitySamples.length; ++i)
-        {
-            probabilities[i] = kde.p(densitySamples[i]);
-        }
+        val h = Calculate.scottsFactor(intersections.length, 1L);
+//        val kde = new KernelDensity(intersections, h);
+//        val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
+//
+//        for (var i = 0; i < densitySamples.length; ++i)
+//        {
+//            probabilities[i] = kde.p(densitySamples[i]);
+//        }
+
+        val kde = new GaussianKernelDensity(intersections, h);
+        val probabilities = kde.evaluate(densitySamples);
 
         val localMaximumIndices = Calculate.localMaximumIndices(probabilities);
         val nodeCollection = NodeCollection.builder()

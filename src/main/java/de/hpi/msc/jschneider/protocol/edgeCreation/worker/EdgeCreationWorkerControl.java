@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -13,6 +14,7 @@ import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 
 public class EdgeCreationWorkerControl extends AbstractProtocolParticipantControl<EdgeCreationWorkerModel>
@@ -88,16 +90,18 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             allIntersections.addAll(part);
         }
 
-        allIntersections.sort((a, b) ->
-                              {
-                                  val diff = a.getSubSequenceIndex() - b.getSubSequenceIndex();
-                                  if (diff != 0)
-                                  {
-                                      return (int) diff;
-                                  }
+//        allIntersections.sort((a, b) ->
+//                              {
+//                                  val subSequenceDiff = a.getSubSequenceIndex() - b.getSubSequenceIndex();
+//                                  if (subSequenceDiff != 0)
+//                                  {
+//                                      return (int) subSequenceDiff;
+//                                  }
+//
+//                                  return a.getIntersectionSegment() - b.getIntersectionSegment();
+//                              });
 
-                                  return a.getIntersectionSegment() - b.getIntersectionSegment();
-                              });
+        allIntersections.sort(Comparator.comparingLong(LocalIntersection::getCreationIndex));
 
         getModel().setIntersectionsToMatch(allIntersections);
 
@@ -203,6 +207,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                     getModel().getLocalSubSequences().getFrom(),
                                     getModel().getLocalSubSequences().getTo()));
 
+        Debug.print(getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]), "edges.txt");
+
         trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                                      .sender(getModel().getSelf())
                                                                                                                      .receiver(eventDispatcher)
@@ -225,16 +231,21 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (var nodeIndex = 0; nodeIndex < nodes.length; ++nodeIndex)
         {
             val distance = Math.abs(nodes[nodeIndex] - intersection.getIntersectionDistance());
-            if (distance >= closestDistance)
+            if (distance < closestDistance)
             {
-                // since the nodes are already sorted by their distance to the origin,
-                // we can safely assume that once the distance is getting bigger we
-                // have found the best match
-                break;
+                closestIndex = nodeIndex;
+                closestDistance = distance;
             }
-
-            closestIndex = nodeIndex;
-            closestDistance = distance;
+//            if (distance >= closestDistance)
+//            {
+//                // since the nodes are already sorted by their distance to the origin,
+//                // we can safely assume that once the distance is getting bigger we
+//                // have found the best match
+//                break;
+//            }
+//
+//            closestIndex = nodeIndex;
+//            closestDistance = distance;
         }
 
         return GraphNode.builder()

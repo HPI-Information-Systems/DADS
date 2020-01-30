@@ -7,5 +7,6 @@ import lombok.experimental.SuperBuilder;
 public class Intersection
 {
     private double intersectionDistance;
+    private long creationIndex;
     private long subSequenceIndex;
 }
