@@ -129,7 +129,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         var runningMean = 0.0d;
         val runningMeans = new ArrayList<Double>();
         final double windowSizeAsDouble = getModel().getSubSequenceLength();
-        for (var runningMeanStartIndex = 0; runningMeanStartIndex < normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
+        for (var runningMeanStartIndex = 0; runningMeanStartIndex <= normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
         {
             if (runningMeans.isEmpty())
             {
