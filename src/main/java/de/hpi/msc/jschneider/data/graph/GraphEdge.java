@@ -31,7 +31,7 @@ public class GraphEdge
 
     public String getKey()
     {
-        return String.format("%1$s_%2$s", from, to);
+        return String.format("%1$s -> %2$s", from, to);
     }
 
     @Override

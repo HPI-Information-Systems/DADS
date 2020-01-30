@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -51,7 +50,15 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setLocalSegments(message.getSegmentResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setLocalSubSequences(message.getSubSequenceResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
-            getModel().setNextSubSequenceIndex(new Counter(getModel().getLocalSubSequences().getFrom()));
+
+            var nextExpectedSubSequenceIndex = getModel().getLocalSubSequences().getFrom();
+            if (nextExpectedSubSequenceIndex > 0L)
+            {
+                // we must have received a reduced sub sequence from out predecessor processor
+                nextExpectedSubSequenceIndex -= 1L;
+            }
+
+            getModel().setNextSubSequenceIndex(new Counter(nextExpectedSubSequenceIndex));
             enqueueIntersections();
         }
         finally
@@ -105,6 +112,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         getModel().setIntersectionsToMatch(allIntersections);
 
+        getLog().info(String.format("Number of enqueued intersections: %1$d.", allIntersections.size()));
         createEdges();
     }
 
@@ -171,6 +179,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                 val lastNode = getModel().getLastNode();
                 if (lastNode == null)
                 {
+                    getModel().getNumberOfMissingEdges().increment();
                     continue;
                 }
 
@@ -198,6 +207,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
+//        Debug.print(getModel().getGraph(), String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
+//        Debug.print(getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]), "edges.txt");
+
         val summedEdgeWeights = getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum();
 
         getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d, tot. edge weights = %3$d) for sub sequences [%4$d, %5$d).",
@@ -207,12 +219,22 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                     getModel().getLocalSubSequences().getFrom(),
                                     getModel().getLocalSubSequences().getTo()));
 
-        Debug.print(getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]), "edges.txt");
+        val sortedSubSequenceIndices = getModel().getGraph().getCreatedEdgesBySubSequenceIndex().keySet()
+                                                 .stream()
+                                                 .sorted(Comparator.comparingLong(subSequenceIndex -> subSequenceIndex))
+                                                 .toArray(Long[]::new);
+
+        val firstEdgeHash = getModel().getGraph().getCreatedEdgesBySubSequenceIndex().get(sortedSubSequenceIndices[0]).get(0);
+        val lastEdges = getModel().getGraph().getCreatedEdgesBySubSequenceIndex().get(sortedSubSequenceIndices[sortedSubSequenceIndices.length - 1]);
+        val lastEdgeHash = lastEdges.get(lastEdges.size() - 1);
 
         trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                                      .sender(getModel().getSelf())
                                                                                                                      .receiver(eventDispatcher)
                                                                                                                      .graphPartition(getModel().getGraph())
+                                                                                                                     .numberOfMissingEdges(getModel().getNumberOfMissingEdges().get())
+                                                                                                                     .firstEdgeHash(firstEdgeHash)
+                                                                                                                     .lastEdgeHash(lastEdgeHash)
                                                                                                                      .build());
     }
 

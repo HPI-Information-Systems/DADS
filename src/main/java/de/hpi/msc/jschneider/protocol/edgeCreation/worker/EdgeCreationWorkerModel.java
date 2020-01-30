@@ -28,6 +28,8 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     private Int64Range localSubSequences;
     @Setter @Getter
     private Counter nextSubSequenceIndex;
+    @Getter @Builder.Default
+    private final Counter numberOfMissingEdges = new Counter(0L);
     @Getter
     private final Map<Integer, List<LocalIntersection>> intersectionsInSegment = new HashMap<>();
     @Getter

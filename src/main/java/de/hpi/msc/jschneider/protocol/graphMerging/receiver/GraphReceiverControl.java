@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class GraphReceiverControl extends AbstractProtocolParticipantControl<GraphReceiverModel>
 {
@@ -49,7 +50,9 @@ public class GraphReceiverControl extends AbstractProtocolParticipantControl<Gra
                                       .values()
                                       .stream()
                                       .flatMapToInt(edge -> Arrays.stream(new int[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
-                                      .count();
+                                      .boxed()
+                                      .collect(Collectors.toSet())
+                                      .size();
         getLog().info(String.format("Received graph (#edges = %1$d, #nodes = %2$d).", numberOfEdges, numberOfNodes));
         trySendEvent(ProtocolType.GraphMerging, eventDispatcher -> GraphMergingEvents.GraphReceivedEvent.builder()
                                                                                                         .sender(getModel().getSelf())

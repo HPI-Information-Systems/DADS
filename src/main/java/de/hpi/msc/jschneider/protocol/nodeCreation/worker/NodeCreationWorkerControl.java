@@ -22,6 +22,7 @@ import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -156,6 +157,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         try
         {
             assert getModel().getReducedSubSequenceMessage() == null : "Already received a ReducedSubSequence message!";
+            assert getModel().getFirstSubSequenceIndex() == message.getSubSequenceIndex() + 1 : "Unexpected reduced sub sequence index!";
+
             getModel().setReducedSubSequenceMessage(message);
 
             calculateIntersections();
@@ -174,16 +177,18 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
 
         var projection = getModel().getReducedProjection();
+        var firstSubSequenceIndex = getModel().getFirstSubSequenceIndex();
         if (getModel().getFirstSubSequenceIndex() > 0L)
         {
+            firstSubSequenceIndex -= 1;
             projection = (new MatrixInitializer(getModel().getReducedProjection().countRows())
-                                  .append(getModel().getReducedProjection().transpose())
                                   .appendRow(new double[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
+                                  .append(getModel().getReducedProjection().transpose())
                                   .create()
                                   .transpose());
         }
 
-        val intersectionCollections = Calculate.intersections(projection, getModel().getFirstSubSequenceIndex(), getModel().getNumberOfIntersectionSegments());
+        val intersectionCollections = Calculate.intersections(projection, firstSubSequenceIndex, getModel().getNumberOfIntersectionSegments());
         for (val intersectionCollection : intersectionCollections)
         {
             // TODO: send via DataTransfer?!
@@ -202,7 +207,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         val responsibleProcessor = responsibleProcessor(intersectionCollection.getIntersectionSegment());
 
-        val intersections = Doubles.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
+        val intersections = Doubles.toArray(intersectionCollection.getIntersections()
+                                                                  .stream()
+                                                                  .sorted(Comparator.comparingLong(Intersection::getCreationIndex))
+                                                                  .map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
         // send intersections directly to the processor which is responsible for the segment
         send(NodeCreationMessages.IntersectionsMessage.builder()

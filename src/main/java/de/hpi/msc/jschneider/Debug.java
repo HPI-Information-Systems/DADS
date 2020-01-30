@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider;
 
+import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
@@ -95,6 +96,27 @@ public class Debug
             }
             stringBuilder.append("]\n");
             writer.write(stringBuilder.toString());
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
+    public static void print(Graph graph, String fileName)
+    {
+        val writer = createWriter(fileName);
+
+        for (val subSequenceIndex : graph.getCreatedEdgesBySubSequenceIndex().keySet()
+                                         .stream()
+                                         .sorted(Comparator.comparingLong(Long::longValue))
+                                         .collect(Collectors.toList()))
+        {
+            for (val edgeHash : graph.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex))
+            {
+                writer.append(graph.getEdges().get(edgeHash).getKey());
+                writer.append("\n");
+            }
         }
 
         writer.flush();

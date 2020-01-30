@@ -16,6 +16,22 @@ public class GraphNode
     }
 
     @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+
+        if (!(obj instanceof GraphNode))
+        {
+            return false;
+        }
+
+        return hashCode() == obj.hashCode();
+    }
+
+    @Override
     public String toString()
     {
         return String.format("{%1$d_%2$d}", intersectionSegment, index);

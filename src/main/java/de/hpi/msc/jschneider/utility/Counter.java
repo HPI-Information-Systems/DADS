@@ -15,9 +15,10 @@ public class Counter
 
     public Counter(long initialValue, long minValue, long maxValue)
     {
-        value = initialValue;
         minimum = minValue;
         maximum = maxValue;
+
+        set(initialValue);
     }
 
     public long get()
