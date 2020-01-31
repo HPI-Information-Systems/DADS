@@ -21,9 +21,11 @@ public class ScoringWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private List<List<Integer>> edgeCreationOrder;
     @Setter @Getter
+    private long numberOfMissingEdges;
+    @Setter @Getter
     private int[][] remoteEdgeCreationOrder;
     @Setter @Getter
-    private ActorRef processorResponsibleForPreviousSubSequences;
+    private ActorRef processorResponsibleForNextSubSequences;
     @Setter @Getter
     private int queryPathLength;
     @Setter @Getter

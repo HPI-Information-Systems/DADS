@@ -173,6 +173,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                 return;
             }
 
+            assert intersection.getSubSequenceIndex() >= getModel().getNextSubSequenceIndex().get() : "Unexpected sub sequence index!";
+
             while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
             {
                 val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();

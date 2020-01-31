@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Debug
@@ -117,6 +118,43 @@ public class Debug
                 writer.append(graph.getEdges().get(edgeHash).getKey());
                 writer.append("\n");
             }
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
+    public static void print(List<List<Integer>> edgeCreationOrder, String fileName)
+    {
+        val writer = createWriter(fileName);
+
+        for (val collection : edgeCreationOrder)
+        {
+            val stringBuilder = new StringBuilder();
+            stringBuilder.append(collection.size());
+            stringBuilder.append("\t[");
+            for (val value : collection)
+            {
+                stringBuilder.append(value);
+                stringBuilder.append("\t");
+            }
+            stringBuilder.append("]\n");
+            writer.write(stringBuilder.toString());
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
+    public static void print(double[] values, String fileName)
+    {
+        val writer = createWriter(fileName);
+
+        for (val value : values)
+        {
+            writer.write(value + "\n");
         }
 
         writer.flush();

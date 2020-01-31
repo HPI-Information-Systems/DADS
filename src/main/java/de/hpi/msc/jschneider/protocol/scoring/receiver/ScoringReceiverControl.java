@@ -18,6 +18,7 @@ import lombok.val;
 import lombok.var;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -111,14 +112,15 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
             return;
         }
 
-        val minimumPathScore = getModel().getPathScores().values().stream().map(Doubles::max).findFirst().get() * -1.0f;
-        val maximumPathScore = getModel().getPathScores().values().stream().map(Doubles::min).findFirst().get() * -1.0f;
         val sortedScores = Doubles.concat(getModel().getPathScores().entrySet()
                                                     .stream()
-                                                    .sorted((a, b) -> (int) (getModel().getSubSequenceResponsibilities().get(a.getKey()).getFrom()
-                                                                             - getModel().getSubSequenceResponsibilities().get(b.getKey()).getFrom()))
+                                                    .sorted(Comparator.comparingLong(entry -> getModel().getSubSequenceResponsibilities().get(entry.getKey()).getFrom()))
                                                     .map(Map.Entry::getValue)
                                                     .toArray(double[][]::new));
+
+        val minimumPathScore = Doubles.max(sortedScores) * -1.0f;
+        val maximumPathScore = Doubles.min(sortedScores) * -1.0f;
+
         val normalizedScores = new double[sortedScores.length];
         val scoreRange = maximumPathScore - minimumPathScore;
         for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
