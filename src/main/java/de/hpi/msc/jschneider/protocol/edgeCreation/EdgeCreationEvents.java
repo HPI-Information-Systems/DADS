@@ -14,9 +14,6 @@ public class EdgeCreationEvents
     {
         private static final long serialVersionUID = -8606899178152425096L;
         private Graph graphPartition;
-        private long numberOfMissingEdges;
-        private int firstEdgeHash;
-        private int lastEdgeHash;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -24,9 +21,6 @@ public class EdgeCreationEvents
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .graphPartition(getGraphPartition())
-                            .numberOfMissingEdges(getNumberOfMissingEdges())
-                            .firstEdgeHash(getFirstEdgeHash())
-                            .lastEdgeHash(getLastEdgeHash())
                             .build();
         }
     }

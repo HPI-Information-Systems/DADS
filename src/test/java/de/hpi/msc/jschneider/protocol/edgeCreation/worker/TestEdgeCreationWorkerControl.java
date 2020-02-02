@@ -25,8 +25,8 @@ import scala.runtime.BoxedUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -131,13 +131,13 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         return collections;
     }
 
-    private void assertThatQueueIsSorted(Queue<LocalIntersection> queue)
+    private void assertThatQueueIsSorted(List<LocalIntersection> queue)
     {
         var lastSubSequenceIndex = -1L;
         var lastIntersectionSegment = -1;
         while (!queue.isEmpty())
         {
-            val intersection = queue.poll();
+            val intersection = queue.remove(0);
 
             assertThat(intersection).isNotNull();
             assertThat(intersection.getSubSequenceIndex() > lastSubSequenceIndex ||

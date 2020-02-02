@@ -10,17 +10,12 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Map;
-
 public class GraphMergingMessages
 {
     @NoArgsConstructor @SuperBuilder @Getter
     public static class InitializeEdgePartitionTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
     {
         private static final long serialVersionUID = 240768917136336270L;
-        private long numberOfMissingEdges;
-        private int firstEdgeHash;
-        private int lastEdgeHash;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -28,9 +23,6 @@ public class GraphMergingMessages
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .operationId(getOperationId())
-                            .numberOfMissingEdges(getNumberOfMissingEdges())
-                            .firstEdgeHash(getFirstEdgeHash())
-                            .lastEdgeHash(getLastEdgeHash())
                             .build();
         }
     }
@@ -48,12 +40,6 @@ public class GraphMergingMessages
         private static final long serialVersionUID = -7352521533354529747L;
         @NonNull
         private ProcessorId[] workerSystems;
-        @NonNull
-        private Map<ProcessorId, Long> numberOfMissingEdges;
-        @NonNull
-        private Map<ProcessorId, Integer> firstEdgeHashes;
-        @NonNull
-        private Map<ProcessorId, Integer> lastEdgeHashes;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter

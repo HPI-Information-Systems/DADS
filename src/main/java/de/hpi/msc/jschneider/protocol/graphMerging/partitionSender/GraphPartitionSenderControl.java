@@ -60,9 +60,6 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
                                                                                                                                    .sender(getModel().getSelf())
                                                                                                                                    .receiver(receiver)
                                                                                                                                    .operationId(dataDistributor.getOperationId())
-                                                                                                                                   .numberOfMissingEdges(message.getNumberOfMissingEdges())
-                                                                                                                                   .firstEdgeHash(message.getFirstEdgeHash())
-                                                                                                                                   .lastEdgeHash(message.getLastEdgeHash())
                                                                                                                                    .build());
     }
 

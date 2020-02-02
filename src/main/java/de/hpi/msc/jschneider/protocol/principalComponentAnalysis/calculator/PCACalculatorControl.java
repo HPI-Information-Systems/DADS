@@ -1,5 +1,7 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
+import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -325,7 +327,10 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents, MatrixStore<Double> columnMeans)
     {
-        return Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getProjection().countColumns() * getModel().getMinimumRecord())
+        assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master is able to create the reference vector!";
+        val convolutionSize = ((MasterCommand) SystemParameters.getCommand()).getConvolutionSize();
+
+        return Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), convolutionSize * getModel().getMinimumRecord())
                         .subtract(columnMeans)
                         .multiply(principalComponents);
     }

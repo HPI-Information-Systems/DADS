@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationMessages;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.EdgeCreationWorkerControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.EdgeCreationWorkerModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
@@ -22,7 +23,8 @@ public class EdgeCreationRootActorControl extends AbstractProtocolParticipantCon
     {
         return super.complementReceiveBuilder(builder)
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                    .match(NodeCreationMessages.NodesMessage.class, message -> forward(message, getModel().getWorker()));
+                    .match(NodeCreationMessages.NodesMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(EdgeCreationMessages.LastNodeMessage.class, message -> forward(message, getModel().getWorker()));
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)

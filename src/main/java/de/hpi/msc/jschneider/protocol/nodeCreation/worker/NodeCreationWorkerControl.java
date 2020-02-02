@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import com.google.common.primitives.Doubles;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
@@ -189,6 +190,9 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
 
         val intersectionCollections = Calculate.intersections(projection, firstSubSequenceIndex, getModel().getNumberOfIntersectionSegments());
+
+        Debug.print(intersectionCollections, "intersection-collections.txt");
+
         for (val intersectionCollection : intersectionCollections)
         {
             // TODO: send via DataTransfer?!

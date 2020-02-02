@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -121,7 +121,6 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                  .map(Map.Entry::getValue)
                                                  .collect(Collectors.toList());
 
-            getModel().setNumberOfMissingEdges(message.getNumberOfMissingEdges());
             getModel().setEdgeCreationOrder(sortedEdgeCreationOrder);
             sendEdgeCreationOrderToNextResponsibleProcessor();
             scoreSubSequences();
@@ -209,7 +208,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 //        }
 
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
-//        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
+        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
         var pathSum = 0.0d;
@@ -255,34 +254,6 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             remoteEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
         }
-
-        val firstEdge = getModel().getEdges().get(getModel().getEdgeCreationOrder().get(0).get(0));
-        val lastEdges = getModel().getRemoteEdgeCreationOrder()[getModel().getRemoteEdgeCreationOrder().length - 1];
-        val lastEdge = getModel().getEdges().get(lastEdges[lastEdges.length - 1]);
-
-        val cyclicEdge = GraphEdge.builder()
-                                  .from(lastEdge.getTo())
-                                  .to(lastEdge.getTo())
-                                  .build()
-                                  .hashCode();
-        for (var missingEdgeIndex = 0; missingEdgeIndex < (int) getModel().getNumberOfMissingEdges(); ++missingEdgeIndex)
-        {
-            remoteEdgeCreationOrder.remove(0);
-
-            val newList = new ArrayList<Integer>(1);
-            newList.add(cyclicEdge);
-            remoteEdgeCreationOrder.add(newList);
-        }
-
-        val connectingEdge = GraphEdge.builder()
-                                      .from(lastEdge.getTo())
-                                      .to(firstEdge.getFrom())
-                                      .build()
-                                      .hashCode();
-
-        // the connecting edge needs to be inserted in our (existing) edge creation order
-        // because we already had an overlap of 1 subsequence (the predecessor sent her las subsequence already)
-        combinedEdgeCreationOrder.get(0).add(0, connectingEdge);
 
         combinedEdgeCreationOrder.addAll(0, remoteEdgeCreationOrder);
 

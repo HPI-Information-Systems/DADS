@@ -13,8 +13,6 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class GraphPartitionReceiverControl extends AbstractProtocolParticipantControl<GraphPartitionReceiverModel>
 {
@@ -57,9 +55,6 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
     private void onInitializeEdgePartitionTransfer(GraphMergingMessages.InitializeEdgePartitionTransferMessage message)
     {
         assert getModel().getRunningDataTransfers() != null : "Unable to initialize edge partition transfer, because the participating worker systems are unknown!";
-        assert getModel().getInitializationMessages().get(ProcessorId.of(message.getSender())) == null : "Already received an edge partition initialization!";
-
-        getModel().getInitializationMessages().putIfAbsent(ProcessorId.of(message.getSender()), message);
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
@@ -105,25 +100,10 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
             return;
         }
 
-        val numberOfMissingEdges = getModel().getInitializationMessages()
-                                             .entrySet()
-                                             .stream()
-                                             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getNumberOfMissingEdges()));
-        val firstEdgeHashes = getModel().getInitializationMessages().entrySet()
-                                        .stream()
-                                        .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFirstEdgeHash()));
-        val lastEdgeHashes = getModel().getInitializationMessages()
-                                       .entrySet()
-                                       .stream()
-                                       .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getLastEdgeHash()));
-
         send(GraphMergingMessages.AllEdgesReceivedMessage.builder()
                                                          .sender(getModel().getSelf())
                                                          .receiver(getModel().getGraphMerger())
                                                          .workerSystems(getModel().getWorkerSystems())
-                                                         .numberOfMissingEdges(numberOfMissingEdges)
-                                                         .firstEdgeHashes(firstEdgeHashes)
-                                                         .lastEdgeHashes(lastEdgeHashes)
                                                          .build());
 
         // TODO: terminate self?!
