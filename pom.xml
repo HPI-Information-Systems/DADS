@@ -24,8 +24,13 @@
 
                 <configuration>
                     <descriptorRefs>
-                        <descriptorRef>fat</descriptorRef>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>de.hpi.msc.jschneider.Main</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
 
                 <executions>
