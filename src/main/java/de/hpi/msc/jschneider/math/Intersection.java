@@ -6,6 +6,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder @Getter
 public class Intersection
 {
-    private float intersectionDistance;
+    private double intersectionDistance;
+    private long creationIndex;
     private long subSequenceIndex;
 }

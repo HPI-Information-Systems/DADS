@@ -50,7 +50,7 @@ public class BinarySequenceReader implements SequenceReader
 
         this.file = file;
         inputStream = new FileInputStream(file.getAbsolutePath());
-        maximumPosition = tryGetSize() / Float.BYTES - 1;
+        maximumPosition = tryGetSize() / elementSizeInBytes() - 1;
         minimumPosition = 0L;
         currentPosition = minimumPosition;
     }
@@ -102,19 +102,19 @@ public class BinarySequenceReader implements SequenceReader
         }
     }
 
-    private float tryReadNext()
+    private double tryReadNext()
     {
         try
         {
-            val bytes = new byte[Float.BYTES];
+            val bytes = new byte[elementSizeInBytes()];
             inputStream.read(bytes);
-            return ByteBuffer.wrap(bytes).getFloat();
+            return ByteBuffer.wrap(bytes).getDouble();
         }
         catch (IOException ioException)
         {
             ioException.printStackTrace();
             tryClose();
-            return 0.0f;
+            return 0.0d;
         }
     }
 
@@ -145,7 +145,7 @@ public class BinarySequenceReader implements SequenceReader
     @Override
     public int elementSizeInBytes()
     {
-        return Float.BYTES;
+        return Double.BYTES;
     }
 
     @Override
@@ -158,29 +158,29 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, long length)
+    public double[] read(long start, long length)
     {
         val begin = Math.max(minimumPosition, Math.min(maximumPosition, start));
         var end = Math.max(minimumPosition, Math.min(maximumPosition, begin + length - 1));
         return tryRead(begin, end);
     }
 
-    private float[] tryRead(long begin, long end)
+    private double[] tryRead(long begin, long end)
     {
         var length = end - begin + 1;
         if (length > Integer.MAX_VALUE)
         {
-            Log.error("Can not allocate more than Integer.MAX_VALUE floats at once!");
+            Log.error("Can not allocate more than Integer.MAX_VALUE doubles at once!");
             length = Integer.MAX_VALUE;
         }
 
-        val floats = new float[(int) length];
+        val doubles = new double[(int) length];
         try
         {
-            inputStream.getChannel().position(begin * Float.BYTES);
+            inputStream.getChannel().position(begin * elementSizeInBytes());
             for (var i = 0; i < length; ++i)
             {
-                floats[i] = tryReadNext();
+                doubles[i] = tryReadNext();
             }
         }
         catch (IOException ioException)
@@ -189,7 +189,7 @@ public class BinarySequenceReader implements SequenceReader
             tryClose();
         }
 
-        return floats;
+        return doubles;
     }
 
     @Override

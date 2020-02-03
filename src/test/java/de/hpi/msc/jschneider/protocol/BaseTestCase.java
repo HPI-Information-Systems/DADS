@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol;
 
 import akka.actor.ActorRef;
-import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
@@ -110,7 +109,6 @@ public abstract class BaseTestCase extends TestCase
     protected <TModel extends ProtocolParticipantModel> TModel finalizeModel(TModel model, TestProbe self)
     {
         model.setSelfProvider(self::ref);
-        model.setSenderProvider(ActorRef::noSender);
         model.setProcessorProvider(() -> processors.toArray(new Processor[0]));
         model.setMaximumMessageSizeProvider(() -> 1024 * 1024 * 10L); // 10 MiB
         model.setWatchActorCallback(subject ->
@@ -165,11 +163,11 @@ public abstract class BaseTestCase extends TestCase
 
         for (var rowIndex = 0L; rowIndex < rows; ++rowIndex)
         {
-            val row = new float[(int) columns];
+            val row = new double[(int) columns];
             for (var columnIndex = 0; columnIndex < columns; ++columnIndex)
             {
-                val bigDecimal = new BigDecimal(Float.toString(random.nextFloat())).setScale(MATRIX_PRECISION, MATRIX_ROUNDING_MODE);
-                row[columnIndex] = bigDecimal.floatValue();
+                val bigDecimal = new BigDecimal(Double.toString(random.nextDouble())).setScale(MATRIX_PRECISION, MATRIX_ROUNDING_MODE);
+                row[columnIndex] = bigDecimal.doubleValue();
             }
             matrixInitializer.appendRow(row);
         }

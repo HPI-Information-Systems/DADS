@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
@@ -15,13 +16,14 @@ import lombok.experimental.SuperBuilder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 @SuperBuilder
 public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
 {
     @Setter @Getter
     private Int32Range localSegments;
+    @Setter @Getter
+    private ActorRef nextResponsibleProcessor;
     @Setter @Getter
     private int numberOfIntersectionSegments;
     @Setter @Getter
@@ -31,9 +33,9 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Getter
     private final Map<Integer, List<LocalIntersection>> intersectionsInSegment = new HashMap<>();
     @Getter
-    private final Map<Integer, float[]> nodesInSegment = new HashMap<>();
+    private final Map<Integer, double[]> nodesInSegment = new HashMap<>();
     @Setter @Getter
-    private Queue<LocalIntersection> intersectionsToMatch;
+    private List<LocalIntersection> intersectionsToMatch;
     @Setter @Getter
     private GraphNode lastNode;
     @NonNull @Getter @Builder.Default

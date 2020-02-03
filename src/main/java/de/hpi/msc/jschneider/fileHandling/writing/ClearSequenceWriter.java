@@ -6,14 +6,16 @@ import lombok.val;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.PrintWriter;
+import java.io.Writer;
 
-public class BinarySequenceWriter implements SequenceWriter
+public class ClearSequenceWriter implements SequenceWriter
 {
-    private FileOutputStream outputStream;
+    private final FileOutputStream outputStream;
+    private final Writer outputWriter;
     private boolean isOpen = true;
 
-    private BinarySequenceWriter(File file) throws NullPointerException, IllegalArgumentException, Exception
+    private ClearSequenceWriter(File file) throws NullPointerException, IllegalArgumentException, Exception
     {
         if (file == null)
         {
@@ -46,13 +48,14 @@ public class BinarySequenceWriter implements SequenceWriter
         }
 
         outputStream = new FileOutputStream(file.getAbsolutePath(), false);
+        outputWriter = new PrintWriter(outputStream);
     }
 
     public static SequenceWriter fromFile(File file)
     {
         try
         {
-            return new BinarySequenceWriter(file);
+            return new ClearSequenceWriter(file);
         }
         catch (Exception exception)
         {
@@ -77,12 +80,10 @@ public class BinarySequenceWriter implements SequenceWriter
 
         try
         {
-            val bytes = ByteBuffer.allocate(records.length * Double.BYTES);
             for (val record : records)
             {
-                bytes.putDouble(record);
+                outputWriter.write(record + "\n");
             }
-            outputStream.write(bytes.array());
         }
         catch (IOException ioException)
         {
@@ -114,6 +115,7 @@ public class BinarySequenceWriter implements SequenceWriter
 
         try
         {
+            outputWriter.flush();
             outputStream.close();
         }
         catch (IOException ioException)

@@ -16,16 +16,16 @@ public class TestPrimitiveMatrixSink extends TestCase
     public void testClose()
     {
         val expectedMatrix = (new MatrixInitializer(3L)
-                                      .appendRow(new float[]{0.0f, 1.0f, 2.0f})
-                                      .appendRow(new float[]{3.0f, 4.0f, 5.0f})
-                                      .appendRow(new float[]{6.0f, 7.0f, 8.0f})
-                                      .appendRow(new float[]{9.0f, 10.0f, 11.0f})
+                                      .appendRow(new double[]{0.0d, 1.0d, 2.0d})
+                                      .appendRow(new double[]{3.0d, 4.0d, 5.0d})
+                                      .appendRow(new double[]{6.0d, 7.0d, 8.0d})
+                                      .appendRow(new double[]{9.0d, 10.0d, 11.0d})
                                       .create());
 
-        val values = new float[]{
-                0.0f, 3.0f, 6.0f, 9.0f,
-                1.0f, 4.0f, 7.0f, 10.0f,
-                2.0f, 5.0f, 8.0f, 11.0f
+        val values = new double[]{
+                0.0d, 3.0d, 6.0d, 9.0d,
+                1.0d, 4.0d, 7.0d, 10.0d,
+                2.0d, 5.0d, 8.0d, 11.0d
         };
 
         val sink = new PrimitiveMatrixSink();

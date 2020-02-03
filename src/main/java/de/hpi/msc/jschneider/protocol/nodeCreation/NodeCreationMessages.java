@@ -59,8 +59,8 @@ public class NodeCreationMessages
     {
         private static final long serialVersionUID = 7735483469077801832L;
         private long subSequenceIndex;
-        private float subSequenceX;
-        private float subSequenceY;
+        private double subSequenceX;
+        private double subSequenceY;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
@@ -68,7 +68,7 @@ public class NodeCreationMessages
     {
         private static final long serialVersionUID = -8012069364274224581L;
         private int intersectionSegment;
-        private float[] intersections;
+        private double[] intersections;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
@@ -76,7 +76,7 @@ public class NodeCreationMessages
     {
         private static final long serialVersionUID = 2030668695666469041L;
         private int intersectionSegment;
-        private float[] nodes;
+        private double[] nodes;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)

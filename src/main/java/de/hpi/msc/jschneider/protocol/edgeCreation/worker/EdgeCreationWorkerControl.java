@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
+import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
@@ -13,7 +14,10 @@ import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
 
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Optional;
 
 public class EdgeCreationWorkerControl extends AbstractProtocolParticipantControl<EdgeCreationWorkerModel>
 {
@@ -35,12 +39,13 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
-                    .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onSegmentResponsibilitiesReceived)
+                    .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(NodeCreationEvents.IntersectionsCalculatedEvent.class, this::onIntersectionsCalculated)
+                    .match(EdgeCreationMessages.LastNodeMessage.class, this::onLastNode)
                     .match(NodeCreationMessages.NodesMessage.class, this::onNodes);
     }
 
-    private void onSegmentResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
+    private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
     {
         try
         {
@@ -49,13 +54,43 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setLocalSegments(message.getSegmentResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setLocalSubSequences(message.getSubSequenceResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
-            getModel().setNextSubSequenceIndex(new Counter(getModel().getLocalSubSequences().getFrom()));
+
+            setNextResponsibleProcessor(message);
+
+            var nextExpectedSubSequenceIndex = getModel().getLocalSubSequences().getFrom();
+            if (nextExpectedSubSequenceIndex > 0L)
+            {
+                // we must have received a reduced sub sequence from out predecessor processor
+                nextExpectedSubSequenceIndex -= 1L;
+            }
+
+            getModel().setNextSubSequenceIndex(new Counter(nextExpectedSubSequenceIndex));
             enqueueIntersections();
         }
         finally
         {
             complete(message);
         }
+    }
+
+    private void setNextResponsibleProcessor(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
+    {
+        val nextResponsibleProcessorId = message.getSubSequenceResponsibilities()
+                                                .entrySet()
+                                                .stream()
+                                                .filter(entry -> entry.getValue().getFrom() == getModel().getLocalSubSequences().getTo())
+                                                .map(Map.Entry::getKey)
+                                                .findFirst();
+
+        if (!nextResponsibleProcessorId.isPresent())
+        {
+            return;
+        }
+
+        val protocol = getProtocol(nextResponsibleProcessorId.get(), ProtocolType.EdgeCreation);
+        assert protocol.isPresent() : "The next responsible processor must also implement the edge creation protocol!";
+
+        getModel().setNextResponsibleProcessor(protocol.get().getRootActor());
     }
 
     private void onIntersectionsCalculated(NodeCreationEvents.IntersectionsCalculatedEvent message)
@@ -88,19 +123,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             allIntersections.addAll(part);
         }
 
-        allIntersections.sort((a, b) ->
-                              {
-                                  val diff = a.getSubSequenceIndex() - b.getSubSequenceIndex();
-                                  if (diff != 0)
-                                  {
-                                      return (int) diff;
-                                  }
-
-                                  return a.getIntersectionSegment() - b.getIntersectionSegment();
-                              });
+        allIntersections.sort(Comparator.comparingLong(LocalIntersection::getCreationIndex));
 
         getModel().setIntersectionsToMatch(allIntersections);
 
+        getLog().info(String.format("Number of enqueued intersections: %1$d.", allIntersections.size()));
         createEdges();
     }
 
@@ -135,6 +162,61 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                     : "Nodes for this segment have already been created!";
 
             getModel().getNodesInSegment().put(message.getIntersectionSegment(), message.getNodes());
+
+            trySendLastNodeToNextResponsibleProcessor(message.getIntersectionSegment());
+
+            createEdges();
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void trySendLastNodeToNextResponsibleProcessor(int intersectionSegment)
+    {
+        if (getModel().getNextResponsibleProcessor() == null)
+        {
+            return;
+        }
+
+        val lastNode = tryPeekLastNode(intersectionSegment);
+        if (!lastNode.isPresent())
+        {
+            return;
+        }
+
+        send(EdgeCreationMessages.LastNodeMessage.builder()
+                                                 .sender(getModel().getSelf())
+                                                 .receiver(getModel().getNextResponsibleProcessor())
+                                                 .lastNode(lastNode.get())
+                                                 .build());
+    }
+
+    private Optional<GraphNode> tryPeekLastNode(int intersectionSegment)
+    {
+        if (getModel().getIntersectionsToMatch() == null || getModel().getIntersectionsToMatch().isEmpty())
+        {
+            return Optional.empty();
+        }
+
+        val lastIntersection = getModel().getIntersectionsToMatch().get(getModel().getIntersectionsToMatch().size() - 1);
+        if (lastIntersection.getIntersectionSegment() != intersectionSegment)
+        {
+            return Optional.empty();
+        }
+
+
+        return Optional.of(findClosestNode(lastIntersection));
+    }
+
+    private void onLastNode(EdgeCreationMessages.LastNodeMessage message)
+    {
+        try
+        {
+            assert getModel().getLastNode() == null : "Already received last node!";
+
+            getModel().setLastNode(message.getLastNode());
             createEdges();
         }
         finally
@@ -152,7 +234,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         while (!getModel().getIntersectionsToMatch().isEmpty())
         {
-            val intersection = getModel().getIntersectionsToMatch().peek();
+            val intersection = getModel().getIntersectionsToMatch().get(0);
             assert intersection != null : "Queued intersections must not be null!";
 
             if (getModel().getNodesInSegment().get(intersection.getIntersectionSegment()) == null)
@@ -160,6 +242,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                 // we did not receive these nodes yet
                 return;
             }
+
+            assert intersection.getSubSequenceIndex() >= getModel().getNextSubSequenceIndex().get() : "Unexpected sub sequence index!";
 
             while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
             {
@@ -174,7 +258,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             }
 
             val matchedNode = findClosestNode(intersection);
-            getModel().getIntersectionsToMatch().poll();
+            getModel().getIntersectionsToMatch().remove(0);
 
             if (intersection.getSubSequenceIndex() == getModel().getNextSubSequenceIndex().get())
             {
@@ -192,6 +276,14 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         if (!getModel().getIntersectionsToMatch().isEmpty())
         {
             return;
+        }
+
+        getModel().getNextSubSequenceIndex().increment();
+
+        while (getModel().getLocalSubSequences().contains(getModel().getNextSubSequenceIndex().get()))
+        {
+            val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
+            getModel().getGraph().addEdge(subSequenceIndex, getModel().getLastNode(), getModel().getLastNode());
         }
 
         val summedEdgeWeights = getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum();
@@ -212,7 +304,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private boolean isReadyToCreateEdges()
     {
-        return getModel().getIntersectionsToMatch() != null;
+        return getModel().getIntersectionsToMatch() != null
+               && (getModel().getLocalSubSequences().getFrom() == 0L || getModel().getLastNode() != null);
     }
 
     private GraphNode findClosestNode(LocalIntersection intersection)
@@ -221,20 +314,25 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         assert nodes != null : "Nodes must not be null to match an intersection! (That should have been checked earlier)";
 
         var closestIndex = 0;
-        var closestDistance = Float.MAX_VALUE;
+        var closestDistance = Double.MAX_VALUE;
         for (var nodeIndex = 0; nodeIndex < nodes.length; ++nodeIndex)
         {
             val distance = Math.abs(nodes[nodeIndex] - intersection.getIntersectionDistance());
-            if (distance >= closestDistance)
+            if (distance < closestDistance)
             {
-                // since the nodes are already sorted by their distance to the origin,
-                // we can safely assume that once the distance is getting bigger we
-                // have found the best match
-                break;
+                closestIndex = nodeIndex;
+                closestDistance = distance;
             }
-
-            closestIndex = nodeIndex;
-            closestDistance = distance;
+//            if (distance >= closestDistance)
+//            {
+//                // since the nodes are already sorted by their distance to the origin,
+//                // we can safely assume that once the distance is getting bigger we
+//                // have found the best match
+//                break;
+//            }
+//
+//            closestIndex = nodeIndex;
+//            closestDistance = distance;
         }
 
         return GraphNode.builder()

@@ -14,13 +14,13 @@ import java.util.List;
 
 public class PrimitiveMatrixSink implements DataSink
 {
-    private final List<float[]> parts = new ArrayList<>();
+    private final List<double[]> parts = new ArrayList<>();
     private final List<Int64Range> partIndices = new ArrayList<>();
 
     @Override
     public void write(byte[] part)
     {
-        val values = Serialize.toFloats(part);
+        val values = Serialize.toDoubles(part);
 
         var indices = Int64Range.builder()
                                 .from(0L)
@@ -57,7 +57,7 @@ public class PrimitiveMatrixSink implements DataSink
 
         for (var rowIndex = 0L; rowIndex < (long) numberOfRows; ++rowIndex)
         {
-            val row = new float[(int) numberOfColumns];
+            val row = new double[(int) numberOfColumns];
             for (var columnIndex = 0; columnIndex < numberOfColumns; ++columnIndex)
             {
                 row[columnIndex] = getValueAtIndex((long) (rowIndex + columnIndex * numberOfRows));
@@ -70,7 +70,7 @@ public class PrimitiveMatrixSink implements DataSink
     }
 
     @SneakyThrows
-    private float getValueAtIndex(long index)
+    private double getValueAtIndex(long index)
     {
         for (var i = 0; i < partIndices.size(); ++i)
         {

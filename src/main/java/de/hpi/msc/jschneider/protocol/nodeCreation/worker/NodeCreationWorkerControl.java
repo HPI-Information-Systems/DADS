@@ -2,12 +2,13 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Floats;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.Node;
 import de.hpi.msc.jschneider.math.NodeCollection;
+import de.hpi.msc.jschneider.math.kernelDensity.GaussianKernelDensity;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
@@ -20,16 +21,15 @@ import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
-import smile.stat.distribution.KernelDensity;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class NodeCreationWorkerControl extends AbstractProtocolParticipantControl<NodeCreationWorkerModel>
 {
     private static final int NUMBER_OF_DENSITY_SAMPLES = 250;
-    private static final double DENSITY_SAMPLES_SCALING_FACTOR = 1.2d;
 
     public NodeCreationWorkerControl(NodeCreationWorkerModel model)
     {
@@ -97,6 +97,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setSubSequenceResponsibilities(message.getSubSequenceResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
+            getModel().setDensitySamples(Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES));
 
             val transformedSubSequenceResponsibilities = message.getSubSequenceResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
             val transformedSegmentResponsibilities = message.getIntersectionSegmentResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
@@ -137,8 +138,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             val receiver = entry.getKey();
             val columnIndex = getModel().getReducedProjection().countColumns() - 1;
-            val x = getModel().getReducedProjection().get(0L, columnIndex).floatValue();
-            val y = getModel().getReducedProjection().get(1L, columnIndex).floatValue();
+            val x = getModel().getReducedProjection().get(0L, columnIndex);
+            val y = getModel().getReducedProjection().get(1L, columnIndex);
             send(NodeCreationMessages.ReducedSubSequenceMessage.builder()
                                                                .sender(getModel().getSelf())
                                                                .receiver(receiver)
@@ -157,6 +158,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         try
         {
             assert getModel().getReducedSubSequenceMessage() == null : "Already received a ReducedSubSequence message!";
+            assert getModel().getFirstSubSequenceIndex() == message.getSubSequenceIndex() + 1 : "Unexpected reduced sub sequence index!";
+
             getModel().setReducedSubSequenceMessage(message);
 
             calculateIntersections();
@@ -175,16 +178,21 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
 
         var projection = getModel().getReducedProjection();
+        var firstSubSequenceIndex = getModel().getFirstSubSequenceIndex();
         if (getModel().getFirstSubSequenceIndex() > 0L)
         {
+            firstSubSequenceIndex -= 1;
             projection = (new MatrixInitializer(getModel().getReducedProjection().countRows())
+                                  .appendRow(new double[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
                                   .append(getModel().getReducedProjection().transpose())
-                                  .appendRow(new float[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
                                   .create()
                                   .transpose());
         }
 
-        val intersectionCollections = Calculate.intersections(projection, getModel().getFirstSubSequenceIndex(), getModel().getNumberOfIntersectionSegments());
+        val intersectionCollections = Calculate.intersections(projection, firstSubSequenceIndex, getModel().getNumberOfIntersectionSegments());
+
+        Debug.print(intersectionCollections, "intersection-collections.txt");
+
         for (val intersectionCollection : intersectionCollections)
         {
             // TODO: send via DataTransfer?!
@@ -203,7 +211,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         val responsibleProcessor = responsibleProcessor(intersectionCollection.getIntersectionSegment());
 
-        val intersections = Floats.toArray(intersectionCollection.getIntersections().stream().map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
+        val intersections = Doubles.toArray(intersectionCollection.getIntersections()
+                                                                  .stream()
+                                                                  .sorted(Comparator.comparingLong(Intersection::getCreationIndex))
+                                                                  .map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
         // send intersections directly to the processor which is responsible for the segment
         send(NodeCreationMessages.IntersectionsMessage.builder()
@@ -243,6 +254,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().getIntersections().putIfAbsent(message.getIntersectionSegment(), new ArrayList<>());
             getModel().getIntersections().get(message.getIntersectionSegment()).add(message.getIntersections());
 
+            // TODO: use round-robin actor pool for better parallelization
             createNodes(message.getIntersectionSegment());
         }
         finally
@@ -266,20 +278,23 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (var i = 0; startIndex < intersections.length; ++i)
         {
             val part = intersectionList.get(i);
-            System.arraycopy(toDoubles(part), 0, intersections, startIndex, part.length);
+            System.arraycopy(part, 0, intersections, startIndex, part.length);
             startIndex += part.length;
         }
 
-        val h = Calculate.scottsFactor(intersections.length, 1L);
-        val kde = new KernelDensity(intersections, h);
-        val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
-//        val densitySamples = Calculate.makeRange(0.0d, getModel().getMaximumValue(), NUMBER_OF_DENSITY_SAMPLES);
-        val densitySamples = Calculate.makeRange(0.0d, Doubles.max(intersections) * DENSITY_SAMPLES_SCALING_FACTOR, NUMBER_OF_DENSITY_SAMPLES);
+//        val densitySamples = Calculate.makeRange(0.0d, Doubles.max(intersections) * DENSITY_SAMPLES_SCALING_FACTOR, NUMBER_OF_DENSITY_SAMPLES);
 
-        for (var i = 0; i < densitySamples.length; ++i)
-        {
-            probabilities[i] = kde.p(densitySamples[i]);
-        }
+        val h = Calculate.scottsFactor(intersections.length, 1L);
+//        val kde = new KernelDensity(intersections, h);
+//        val probabilities = new double[NUMBER_OF_DENSITY_SAMPLES];
+//
+//        for (var i = 0; i < densitySamples.length; ++i)
+//        {
+//            probabilities[i] = kde.p(densitySamples[i]);
+//        }
+
+        val kde = new GaussianKernelDensity(intersections, h);
+        val probabilities = kde.evaluate(getModel().getDensitySamples());
 
         val localMaximumIndices = Calculate.localMaximumIndices(probabilities);
         val nodeCollection = NodeCollection.builder()
@@ -288,7 +303,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (val localMaximumIndex : localMaximumIndices)
         {
             nodeCollection.getNodes().add(Node.builder()
-                                              .intersectionLength((float) densitySamples[localMaximumIndex])
+                                              .intersectionLength(getModel().getDensitySamples()[localMaximumIndex])
                                               .build());
         }
 
@@ -299,7 +314,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         // TODO: send via DataTransfer
 
-        val nodes = Floats.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
+        val nodes = Doubles.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
         for (val worker : getModel().getIntersectionSegmentResponsibilities().keySet())
         {
             val protocol = getProtocol(worker.path().root(), ProtocolType.EdgeCreation);
@@ -312,16 +327,5 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                   .nodes(nodes)
                                                   .build());
         }
-    }
-
-    private double[] toDoubles(float[] floats)
-    {
-        val result = new double[floats.length];
-        for (var i = 0; i < floats.length; ++i)
-        {
-            result[i] = floats[i];
-        }
-
-        return result;
     }
 }

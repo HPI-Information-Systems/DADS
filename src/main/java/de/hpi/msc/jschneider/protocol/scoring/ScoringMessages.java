@@ -8,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 public class ScoringMessages
 {
     @NoArgsConstructor @SuperBuilder @Getter

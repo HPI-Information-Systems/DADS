@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
-import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -272,18 +273,20 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         qrDecomposition.compute(matrixInitializer.create());
         val svd = SingularValue.PRIMITIVE.make();
         svd.compute(qrDecomposition.getR());
-        val principalComponents = svd.getV().logical().column(0, 1, 2).get();
-        val referenceVector = createReferenceVector(principalComponents);
-        val angleX = Calculate.angleBetween(Calculate.makeRowVector(1.0d, 0.0d, 0.0d), referenceVector);
-        val angleY = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 1.0d, 0.0d), referenceVector);
-        val angleZ = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 0.0d, 1.0d), referenceVector);
-        val rotation = Calculate.makeRotationX(angleX).multiply(Calculate.makeRotationY(angleY)).multiply(Calculate.makeRotationZ(angleZ));
+        val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());
+        val referenceVector = createReferenceVector(principalComponents, totalColumnMeans);
+//        val angleX = Calculate.angleBetween(Calculate.makeRowVector(1.0d, 0.0d, 0.0d), referenceVector);
+//        val angleY = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 1.0d, 0.0d), referenceVector);
+//        val angleZ = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 0.0d, 1.0d), referenceVector);
+//        val rotation = Calculate.makeRotationX(angleX).multiply(Calculate.makeRotationY(angleY)).multiply(Calculate.makeRotationZ(angleZ));
+        val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
                                                                                                                           .sender(getModel().getSelf())
                                                                                                                           .receiver(eventDispatcher)
                                                                                                                           .principalComponents(principalComponents)
                                                                                                                           .rotation(rotation)
+                                                                                                                          .columnMeans(totalColumnMeans)
                                                                                                                           .build());
     }
 
@@ -295,12 +298,41 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         return currentStep == lastStep;
     }
 
-    private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents)
+    private MatrixStore<Double> normalizePrincipalComponents(MatrixStore<Double> principalComponents)
     {
-        val min = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMinimumRecord()).multiply(principalComponents);
-        val max = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMaximumRecord()).multiply(principalComponents);
+        val result = principalComponents.copy();
+        for (var columnIndex = 0L; columnIndex < result.countColumns(); ++columnIndex)
+        {
+            if (result.get(0L, columnIndex) >= 0.0d)
+            {
+                continue;
+            }
 
-        return max.subtract(min);
+            for (var rowIndex = 0L; rowIndex < result.countRows(); ++rowIndex)
+            {
+                result.set(rowIndex, columnIndex, principalComponents.get(rowIndex, columnIndex) * -1.0d);
+            }
+        }
+
+        return result;
+    }
+
+//    private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents)
+//    {
+//        val min = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMinimumRecord()).multiply(principalComponents);
+//        val max = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMaximumRecord()).multiply(principalComponents);
+//
+//        return max.subtract(min);
+//    }
+
+    private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents, MatrixStore<Double> columnMeans)
+    {
+        assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master is able to create the reference vector!";
+        val convolutionSize = ((MasterCommand) SystemParameters.getCommand()).getConvolutionSize();
+
+        return Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), convolutionSize * getModel().getMinimumRecord())
+                        .subtract(columnMeans)
+                        .multiply(principalComponents);
     }
 
     private void onInitializeColumnMeansTransfer(PCAMessages.InitializeColumnMeansTransferMessage message)
@@ -355,17 +387,16 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     private MatrixStore<Double> totalColumnMeans()
     {
         var columnMeans = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), 0.0d);
-        var totalNumberOfRows = 0L;
+        val totalNumberOfRows = getModel().getNumberOfRows().values().stream().mapToLong(numberOfRows -> numberOfRows).sum();
         for (val processor : getModel().getNumberOfRows().keySet())
         {
             val numberOfRows = getModel().getNumberOfRows().get(processor);
             val transposedColumnMeans = getModel().getTransposedColumnMeans().get(processor);
 
-            columnMeans = columnMeans.add(transposedColumnMeans.multiply(numberOfRows));
-            totalNumberOfRows += numberOfRows;
+            columnMeans = columnMeans.add(transposedColumnMeans.multiply(numberOfRows / (double) totalNumberOfRows));
         }
 
-        return columnMeans.multiply(1.0d / totalNumberOfRows);
+        return columnMeans;
     }
 
     private MatrixStore<Double> getTransposedColumnMeans(long processorIndex)

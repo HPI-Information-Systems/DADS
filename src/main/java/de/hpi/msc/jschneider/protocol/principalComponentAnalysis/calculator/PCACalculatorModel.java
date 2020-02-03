@@ -25,9 +25,9 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     @Getter @Setter
     private MatrixStore<Double> projection;
     @Builder.Default @Getter @Setter
-    private float minimumRecord = Float.MAX_VALUE;
+    private double minimumRecord = Double.MAX_VALUE;
     @Builder.Default @Getter @Setter
-    private float maximumRecord = Float.MIN_VALUE;
+    private double maximumRecord = Double.MIN_VALUE;
     @NonNull @Getter
     private final Map<ProcessorId, Long> numberOfRows = new HashMap<>();
     @NonNull @Getter

@@ -47,10 +47,10 @@ public class TestCalculate extends TestCase
     public void testColumnMeans()
     {
         val input = (new MatrixInitializer(3))
-                .appendRow(new float[]{1.0f, 1.0f, 1.0f})
-                .appendRow(new float[]{-1.0f, 0.0f, -1.0f})
-                .appendRow(new float[]{1.0f, 2.0f, 2.0f})
-                .appendRow(new float[]{-1.0f, 5.0f, 2.0f})
+                .appendRow(new double[]{1.0d, 1.0d, 1.0d})
+                .appendRow(new double[]{-1.0d, 0.0d, -1.0d})
+                .appendRow(new double[]{1.0d, 2.0d, 2.0d})
+                .appendRow(new double[]{-1.0d, 5.0d, 2.0d})
                 .create();
 
         val means = Calculate.transposedColumnMeans(input);
@@ -66,10 +66,10 @@ public class TestCalculate extends TestCase
     public void testColumnCenteredDataMatrix()
     {
         val input = (new MatrixInitializer(3))
-                .appendRow(new float[]{1.0f, 1.0f, 1.0f})
-                .appendRow(new float[]{-1.0f, 0.0f, -1.0f})
-                .appendRow(new float[]{1.0f, 2.0f, 2.0f})
-                .appendRow(new float[]{-1.0f, 5.0f, 2.0f})
+                .appendRow(new double[]{1.0d, 1.0d, 1.0d})
+                .appendRow(new double[]{-1.0d, 0.0d, -1.0d})
+                .appendRow(new double[]{1.0d, 2.0d, 2.0d})
+                .appendRow(new double[]{-1.0d, 5.0d, 2.0d})
                 .create();
 
         val dataMatrix = Calculate.columnCenteredDataMatrix(input);
@@ -109,11 +109,11 @@ public class TestCalculate extends TestCase
     public void testIntersections()
     {
         val reducedProjection = (new MatrixInitializer(2L)
-                                         .appendRow(new float[]{1.0f, 0.0f})
-                                         .appendRow(new float[]{0.0f, 1.0f})
-                                         .appendRow(new float[]{-1.0f, 0.0f})
-                                         .appendRow(new float[]{0.0f, -1.0f})
-                                         .appendRow(new float[]{1.0f, 0.0f})
+                                         .appendRow(new double[]{1.0d, 0.0d})
+                                         .appendRow(new double[]{0.0d, 1.0d})
+                                         .appendRow(new double[]{-1.0d, 0.0d})
+                                         .appendRow(new double[]{0.0d, -1.0d})
+                                         .appendRow(new double[]{1.0d, 0.0d})
                                          .create()
                                          .transpose());
         val numberOfSegments = 4;
@@ -140,8 +140,8 @@ public class TestCalculate extends TestCase
     public void testIntersections2()
     {
         val reducedProjection = (new MatrixInitializer(2L)
-                                         .appendRow(new float[]{0.5f, 0.0f})
-                                         .appendRow(new float[]{1.0f, 0.0f})
+                                         .appendRow(new double[]{0.5d, 0.0d})
+                                         .appendRow(new double[]{1.0d, 0.0d})
                                          .create()
                                          .transpose());
         val numberOfSegments = 4;

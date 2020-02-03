@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -14,8 +13,6 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.stream.Collectors;
 
 public class GraphPartitionReceiverControl extends AbstractProtocolParticipantControl<GraphPartitionReceiverModel>
 {
@@ -94,7 +91,9 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
     {
         assert dataReceiver.getState() instanceof ProcessorId : "DataReceiver state should be a ProcessorId!";
 
-        getModel().getRunningDataTransfers().remove((ProcessorId) dataReceiver.getState());
+        val workerSystem = (ProcessorId) dataReceiver.getState();
+
+        getModel().getRunningDataTransfers().remove(workerSystem);
 
         if (!getModel().getRunningDataTransfers().isEmpty())
         {

@@ -37,7 +37,7 @@ public class TestBinaryDirectoryWriter extends TestCase
         }
     }
 
-    private void expectSequences(File directory, float[]... sequences)
+    private void expectSequences(File directory, double[]... sequences)
     {
         val reader = BinaryDirectoryReader.fromDirectory(directory);
         var start = 0;
@@ -53,8 +53,8 @@ public class TestBinaryDirectoryWriter extends TestCase
         val directory = createDirectory();
         val writer = BinaryDirectoryWriter.fromDirectory(directory);
 
-        val firstSequence = new float[]{0.0f, 1.1f, 2.2f, 3.3f};
-        val secondSequence = new float[]{4.4f, 5.5f, 6.6f, 7.7f};
+        val firstSequence = new double[]{0.0d, 1.1d, 2.2d, 3.3d};
+        val secondSequence = new double[]{4.4d, 5.5d, 6.6d, 7.7d};
 
         writer.write(firstSequence);
         writer.write(secondSequence);

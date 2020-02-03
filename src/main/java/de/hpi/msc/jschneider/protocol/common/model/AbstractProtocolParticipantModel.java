@@ -30,8 +30,6 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     @Setter
     private Callable<ActorRef> selfProvider;
     @Setter
-    private Callable<ActorRef> senderProvider;
-    @Setter
     private Callable<Processor[]> processorProvider;
     @Setter
     private Callable<Long> maximumMessageSizeProvider;
@@ -153,20 +151,6 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         {
             getLog().error("Unable to retrieve maximum message size!", exception);
             return 0L;
-        }
-    }
-
-    @Override
-    public final ActorRef getSender()
-    {
-        try
-        {
-            return senderProvider.call();
-        }
-        catch (Exception exception)
-        {
-            getLog().error("Unable to retrieve sender!", exception);
-            return ActorRef.noSender();
         }
     }
 }

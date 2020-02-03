@@ -1,7 +1,8 @@
 package de.hpi.msc.jschneider.protocol.scoring.worker;
 
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -18,6 +19,7 @@ import lombok.var;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,11 +56,11 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
     {
         try
         {
-            assert getModel().getProcessorResponsibleForPreviousSubSequences() == null : "Received responsibilities already!";
+            assert getModel().getProcessorResponsibleForNextSubSequences() == null : "Received responsibilities already!";
 
             getModel().setResponsibilitiesReceived(true);
-            setProcessorResponsibleForPreviousSubSequences(message.getSubSequenceResponsibilities());
-            sendEdgeCreationOrderToPreviousResponsibleProcessor();
+            setProcessorResponsibleForNextSubSequences(message.getSubSequenceResponsibilities());
+            sendEdgeCreationOrderToNextResponsibleProcessor();
             scoreSubSequences();
         }
         finally
@@ -67,23 +69,27 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
     }
 
-    private void setProcessorResponsibleForPreviousSubSequences(Map<ProcessorId, Int64Range> subSequenceResponsibilities)
+    private void setProcessorResponsibleForNextSubSequences(Map<ProcessorId, Int64Range> subSequenceResponsibilities)
     {
         val myResponsibilities = subSequenceResponsibilities.get(ProcessorId.of(getModel().getSelf()));
         assert myResponsibilities != null : "We are not responsible for any sub sequences!";
 
-        getModel().setWaitForRemoteEdgeCreationOrder(subSequenceResponsibilities.values().stream().anyMatch(entry -> entry.getFrom() == myResponsibilities.getTo()));
+        getModel().setWaitForRemoteEdgeCreationOrder(myResponsibilities.getFrom() > 0L);
 
-        val previousProcessor = subSequenceResponsibilities.entrySet().stream().filter(entry -> entry.getValue().getTo() == myResponsibilities.getFrom()).map(Map.Entry::getKey).findFirst();
-        if (!previousProcessor.isPresent())
+        val nextProcessor = subSequenceResponsibilities.entrySet()
+                                                       .stream()
+                                                       .filter(entry -> entry.getValue().getFrom() == myResponsibilities.getTo())
+                                                       .map(Map.Entry::getKey)
+                                                       .findFirst();
+        if (!nextProcessor.isPresent())
         {
             return;
         }
 
-        val protocol = getProtocol(previousProcessor.get(), ProtocolType.Scoring);
+        val protocol = getProtocol(nextProcessor.get(), ProtocolType.Scoring);
         assert protocol.isPresent() : "The previous responsible processor does not implement the Scoring protocol!";
 
-        getModel().setProcessorResponsibleForPreviousSubSequences(protocol.get().getRootActor());
+        getModel().setProcessorResponsibleForNextSubSequences(protocol.get().getRootActor());
     }
 
     private void onQueryPathLength(ScoringMessages.QueryPathLengthMessage message)
@@ -93,7 +99,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             assert getModel().getQueryPathLength() == 0 : "Already received query path length!";
 
             getModel().setQueryPathLength(message.getQueryPathLength());
-            sendEdgeCreationOrderToPreviousResponsibleProcessor();
+            sendEdgeCreationOrderToNextResponsibleProcessor();
             scoreSubSequences();
         }
         finally
@@ -108,13 +114,15 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             assert getModel().getEdgeCreationOrder() == null : "Edge creation order was received already!";
 
-            val sortedEdgeCreationOrder = message.getGraphPartition().getCreatedEdgesBySubSequenceIndex().entrySet().stream()
-                                                 .sorted((a, b) -> (int) (a.getKey() - b.getKey()))
+            val sortedEdgeCreationOrder = message.getGraphPartition().getCreatedEdgesBySubSequenceIndex()
+                                                 .entrySet()
+                                                 .stream()
+                                                 .sorted(Comparator.comparingLong(Map.Entry::getKey))
                                                  .map(Map.Entry::getValue)
                                                  .collect(Collectors.toList());
 
             getModel().setEdgeCreationOrder(sortedEdgeCreationOrder);
-            sendEdgeCreationOrderToPreviousResponsibleProcessor();
+            sendEdgeCreationOrderToNextResponsibleProcessor();
             scoreSubSequences();
         }
         finally
@@ -123,7 +131,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
     }
 
-    private void sendEdgeCreationOrderToPreviousResponsibleProcessor()
+    private void sendEdgeCreationOrderToNextResponsibleProcessor()
     {
         if (!isReadyToSendEdgeCreationOrderToPreviousResponsibleProcessor())
         {
@@ -131,21 +139,22 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
 
         val overlappingEdgeCreationOrder = new int[getModel().getQueryPathLength() - 1][];
+        val edgeCreationOrderOffset = getModel().getEdgeCreationOrder().size() - overlappingEdgeCreationOrder.length;
         for (var edgeCreationOrderIndex = 0; edgeCreationOrderIndex < overlappingEdgeCreationOrder.length; ++edgeCreationOrderIndex)
         {
-            overlappingEdgeCreationOrder[edgeCreationOrderIndex] = Ints.toArray(getModel().getEdgeCreationOrder().get(edgeCreationOrderIndex));
+            overlappingEdgeCreationOrder[edgeCreationOrderIndex] = Ints.toArray(getModel().getEdgeCreationOrder().get(edgeCreationOrderOffset + edgeCreationOrderIndex));
         }
 
         send(ScoringMessages.OverlappingEdgeCreationOrder.builder()
                                                          .sender(getModel().getSelf())
-                                                         .receiver(getModel().getProcessorResponsibleForPreviousSubSequences())
+                                                         .receiver(getModel().getProcessorResponsibleForNextSubSequences())
                                                          .overlappingEdgeCreationOrder(overlappingEdgeCreationOrder)
                                                          .build());
     }
 
     private boolean isReadyToSendEdgeCreationOrderToPreviousResponsibleProcessor()
     {
-        return getModel().getProcessorResponsibleForPreviousSubSequences() != null
+        return getModel().getProcessorResponsibleForNextSubSequences() != null
                && getModel().getEdgeCreationOrder() != null
                && !getModel().getEdgeCreationOrder().isEmpty()
                && getModel().getQueryPathLength() > 0;
@@ -189,20 +198,23 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
 
         getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
-        val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
-        if (getModel().getRemoteEdgeCreationOrder() != null)
-        {
-            for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
-            {
-                combinedEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
-            }
-        }
+//        val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
+//        if (getModel().getRemoteEdgeCreationOrder() != null)
+//        {
+//            for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
+//            {
+//                combinedEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
+//            }
+//        }
+
+        val combinedEdgeCreationOrder = createEdgeCreationOrder();
+        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
         var pathSum = 0.0d;
         var first = true;
 
-        val pathScores = new ArrayList<Float>();
+        val pathScores = new ArrayList<Double>();
         for (var pathStartIndex = 0; pathStartIndex <= combinedEdgeCreationOrder.size() - getModel().getQueryPathLength(); ++pathStartIndex)
         {
             if (first)
@@ -223,10 +235,29 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                 pathSum = addSummands(pathSummands, combinedEdgeCreationOrder.get(pathStartIndex + getModel().getQueryPathLength() - 1), pathSum);
             }
 
-            pathScores.add((float) pathSum);
+            pathScores.add(pathSum / pathSummands.size());
         }
 
-        publishPathScores(Floats.toArray(pathScores));
+        publishPathScores(Doubles.toArray(pathScores));
+    }
+
+    private List<List<Integer>> createEdgeCreationOrder()
+    {
+        if (getModel().getRemoteEdgeCreationOrder() == null)
+        {
+            return getModel().getEdgeCreationOrder();
+        }
+
+        val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
+        val remoteEdgeCreationOrder = new ArrayList<List<Integer>>();
+        for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
+        {
+            remoteEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
+        }
+
+        combinedEdgeCreationOrder.addAll(0, remoteEdgeCreationOrder);
+
+        return combinedEdgeCreationOrder;
     }
 
     private double addSummands(List<Double> pathSummands, List<Integer> edgeCreationOrder, double currentPathSum)
@@ -235,8 +266,8 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         for (val edgeHash : edgeCreationOrder)
         {
             val edge = getModel().getEdges().get(edgeHash);
-            val nodeDegree = getModel().getNodeDegrees().get(edge.getTo().hashCode()) - 1L;
-            val summand = (edge.getWeight() * nodeDegree) / (double) getModel().getQueryPathLength();
+            val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
+            val summand = (double) edge.getWeight() * nodeDegree;
             newPathSum += summand;
             pathSummands.add(summand);
         }
@@ -274,8 +305,10 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         return true;
     }
 
-    private void publishPathScores(float[] pathScores)
+    private void publishPathScores(double[] pathScores)
     {
+//        Debug.print(pathScores, String.format("path-scores-%1$s.txt", ProcessorId.of(getModel().getSelf())));
+
         val protocol = getMasterProtocol(ProtocolType.Scoring);
         assert protocol.isPresent() : "The master processor must implement the Scoring protocol!";
 

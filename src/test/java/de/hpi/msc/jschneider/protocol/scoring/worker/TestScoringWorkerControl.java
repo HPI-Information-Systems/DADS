@@ -77,7 +77,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         messageInterface.apply(event);
 
         assertThat(control.getModel().isResponsibilitiesReceived()).isTrue();
-        assertThat(control.getModel().getProcessorResponsibleForPreviousSubSequences()).isEqualTo(remoteProcessor.getProtocolRootActor(ProtocolType.Scoring).ref());
+        assertThat(control.getModel().getProcessorResponsibleForNextSubSequences()).isEqualTo(remoteProcessor.getProtocolRootActor(ProtocolType.Scoring).ref());
 
         assertThatMessageIsCompleted(event);
     }

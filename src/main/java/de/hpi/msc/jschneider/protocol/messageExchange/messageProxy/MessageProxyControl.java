@@ -27,7 +27,10 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         val senderQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (senderQueue == null)
         {
-            getLog().error(String.format("Unable to get %1$s in order to complete earlier message!", ActorMessageQueue.class.getName()));
+            getLog().debug(String.format("Unable to get %1$s in order to complete earlier message! (Sender = %2$s)",
+                                         ActorMessageQueue.class.getName(),
+                                         message.getSender().path()));
+            return;
         }
         else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {

@@ -12,25 +12,33 @@ public class Serialize
 {
     public static final int GRAPH_EDGE_SIZE = (Integer.BYTES /* node intersection segment */ + Integer.BYTES /* node index */) * 2 + Long.BYTES /* edge weight */;
 
-    public static byte[] toBytes(float[] floats)
+    private static int byteBufferSize(int inputArraySize, long from, long to, int elementSizeInBytes)
     {
-        return toBytes(floats, 0, floats.length);
-    }
-
-    public static byte[] toBytes(float[] floats, long from, long to)
-    {
-        assert from >= 0 : "'From' out of range!";
-        assert to >= from && to <= floats.length : "'To' out of range!";
+        assert from >= 0L && from <= inputArraySize : "\"From\" out of range!";
+        assert to >= from && to <= inputArraySize : "\"To\" out of range!";
 
         val range = to - from;
-        val size = range * Float.BYTES;
+        val size = range * elementSizeInBytes;
 
         assert size <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE bytes at once!";
 
-        val bytes = new byte[(int) size];
-        for (int floatsIndex = (int) from, bytesIndex = 0; floatsIndex < to; ++floatsIndex, bytesIndex += Float.BYTES)
+        return (int) size;
+    }
+
+    public static byte[] toBytes(double[] doubles)
+    {
+        return toBytes(doubles, 0, doubles.length);
+    }
+
+    public static byte[] toBytes(double[] doubles, long from, long to)
+    {
+        val elementSizeInBytes = Double.BYTES;
+        val byteBufferSize = byteBufferSize(doubles.length, from, to, elementSizeInBytes);
+
+        val bytes = new byte[byteBufferSize];
+        for (int doublesIndex = (int) from, bytesIndex = 0; doublesIndex < to; ++doublesIndex, bytesIndex += elementSizeInBytes)
         {
-            insertBytes(bytes, bytesIndex, floats[floatsIndex]);
+            insertBytes(bytes, bytesIndex, doubles[doublesIndex]);
         }
 
         return bytes;
@@ -43,55 +51,60 @@ public class Serialize
 
     public static byte[] toBytes(Access1D<Double> access1D, long from, long to)
     {
-        val range = to - from;
-        val size = range * Float.BYTES;
-        assert size <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE bytes at once!";
+        val elementSizeInBytes = Double.BYTES;
+        val byteBufferSize = byteBufferSize(access1D.size(), from, to, elementSizeInBytes);
 
-        val bytes = new byte[(int) size];
+        val bytes = new byte[byteBufferSize];
         var bytesIndex = 0;
         for (var accessIndex = from; accessIndex < to; ++accessIndex)
         {
-            insertBytes(bytes, bytesIndex, access1D.get(accessIndex).floatValue());
-            bytesIndex += Float.BYTES;
+            insertBytes(bytes, bytesIndex, access1D.get(accessIndex));
+            bytesIndex += elementSizeInBytes;
         }
 
         return bytes;
     }
 
-    private static void insertBytes(byte[] bytes, int bytesIndex, float value)
+    private static void insertBytes(byte[] bytes, int bytesIndex, double value)
     {
-        val convertedValue = ByteBuffer.allocate(Float.BYTES).putFloat(value).array();
+        val convertedValue = ByteBuffer.allocate(Double.BYTES).putDouble(value).array();
         System.arraycopy(convertedValue, 0, bytes, bytesIndex, convertedValue.length);
     }
 
-    public static float[] toFloats(byte[] bytes)
+    private static int resultBufferSize(int byteArraySize, long from, long to, int elementSizeInBytes)
     {
-        return toFloats(bytes, 0, bytes.length);
-    }
-
-    public static float[] toFloats(byte[] bytes, int from, int to)
-    {
-        assert from >= 0 : "'From' out of range!";
-        assert to >= from && to <= bytes.length : "'To' out of range";
+        assert from >= 0L && from <= byteArraySize : "\"From\" out of range!";
+        assert to >= from && to <= byteArraySize : "\"To\" out of range!";
 
         val range = to - from;
-        assert range % Float.BYTES == 0 : "Range % 4 != 0";
+        assert range % elementSizeInBytes == 0 : String.format("Range %% %1$d != 0!", elementSizeInBytes);
 
-        val size = range / Float.BYTES;
-
-        val floats = new float[size];
-        for (int floatsIndex = 0, bytesIndex = from; floatsIndex < floats.length; ++floatsIndex, bytesIndex += Float.BYTES)
-        {
-            insertFloat(floats, floatsIndex, bytes, bytesIndex);
-        }
-
-        return floats;
+        return (int) (range / elementSizeInBytes);
     }
 
-    private static void insertFloat(float[] floats, int floatsIndex, byte[] bytes, int bytesIndex)
+    public static double[] toDoubles(byte[] bytes)
     {
-        val convertedValue = ByteBuffer.wrap(bytes, bytesIndex, Float.BYTES).getFloat();
-        floats[floatsIndex] = convertedValue;
+        return toDoubles(bytes, 0, bytes.length);
+    }
+
+    public static double[] toDoubles(byte[] bytes, long from, long to)
+    {
+        val elementSizeInBytes = Double.BYTES;
+        val doubleBufferSize = resultBufferSize(bytes.length, from, to, elementSizeInBytes);
+
+        val doubles = new double[doubleBufferSize];
+        for (int doublesIndex = 0, bytesIndex = (int) from; doublesIndex < doubles.length; ++doublesIndex, bytesIndex += elementSizeInBytes)
+        {
+            insertDouble(doubles, doublesIndex, bytes, bytesIndex);
+        }
+
+        return doubles;
+    }
+
+    private static void insertDouble(double[] doubles, int doublesIndex, byte[] bytes, int bytesIndex)
+    {
+        val convertedValue = ByteBuffer.wrap(bytes, bytesIndex, Double.BYTES).getDouble();
+        doubles[doublesIndex] = convertedValue;
     }
 
     public static byte[] toBytes(GraphEdge[] edges)
@@ -101,15 +114,11 @@ public class Serialize
 
     public static byte[] toBytes(GraphEdge[] edges, long from, long to)
     {
-        assert from >= 0 : "'From' out of range!";
-        assert to >= from && to <= edges.length : "'To' out of range!";
+        val elementSizeInByte = GRAPH_EDGE_SIZE;
+        val byteBufferSize = byteBufferSize(edges.length, from, to, elementSizeInByte);
 
-        val range = to - from;
-        val size = range * GRAPH_EDGE_SIZE;
-        assert size <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE bytes at once!";
-
-        val bytes = new byte[(int) size];
-        for (int edgesIndex = (int) from, bytesIndex = 0; edgesIndex < to; ++edgesIndex, bytesIndex += GRAPH_EDGE_SIZE)
+        val bytes = new byte[byteBufferSize];
+        for (int edgesIndex = (int) from, bytesIndex = 0; edgesIndex < to; ++edgesIndex, bytesIndex += elementSizeInByte)
         {
             insertBytes(bytes, bytesIndex, edges[edgesIndex]);
         }
@@ -137,16 +146,11 @@ public class Serialize
 
     public static GraphEdge[] toGraphEdges(byte[] bytes, long from, long to)
     {
-        assert from >= 0 : "'From' out of range!";
-        assert to >= from && to <= bytes.length : "'To' out of range!";
+        val elementSizeInBytes = GRAPH_EDGE_SIZE;
+        val edgeBufferSize = resultBufferSize(bytes.length, from, to, elementSizeInBytes);
 
-        val range = to - from;
-        assert range % GRAPH_EDGE_SIZE == 0 : String.format("Range %% %1$d != 0", GRAPH_EDGE_SIZE);
-
-        val size = range / GRAPH_EDGE_SIZE;
-
-        val edges = new GraphEdge[(int) size];
-        for (int edgesIndex = 0, bytesIndex = (int) from; edgesIndex < edges.length; ++edgesIndex, bytesIndex += GRAPH_EDGE_SIZE)
+        val edges = new GraphEdge[edgeBufferSize];
+        for (int edgesIndex = 0, bytesIndex = (int) from; edgesIndex < edges.length; ++edgesIndex, bytesIndex += elementSizeInBytes)
         {
             insertGraphEdge(edges, edgesIndex, bytes, bytesIndex);
         }
@@ -182,15 +186,11 @@ public class Serialize
 
     public static byte[] toBytes(int[] ints, long from, long to)
     {
-        assert from >= 0 : "'From' out of range!";
-        assert to >= from && to <= ints.length : "'To' out of range!";
+        val elementSizeInBytes = Integer.BYTES;
+        val byteBufferSize = byteBufferSize(ints.length, from, to, elementSizeInBytes);
 
-        val range = to - from;
-        val size = range * Integer.BYTES;
-        assert size <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE bytes at once!";
-
-        val bytes = new byte[(int) size];
-        for (int intsIndex = (int) from, bytesIndex = 0; intsIndex < to; ++intsIndex, bytesIndex += Integer.BYTES)
+        val bytes = new byte[byteBufferSize];
+        for (int intsIndex = (int) from, bytesIndex = 0; intsIndex < to; ++intsIndex, bytesIndex += elementSizeInBytes)
         {
             insertBytes(bytes, bytesIndex, ints[intsIndex]);
         }
@@ -211,16 +211,11 @@ public class Serialize
 
     public static int[] toInts(byte[] bytes, long from, long to)
     {
-        assert from >= 0 : "'From' out of range!";
-        assert to >= from && to <= bytes.length : "'To' out of range!";
+        val elementSizeInBytes = Integer.BYTES;
+        val intBufferSize = resultBufferSize(bytes.length, from, to, elementSizeInBytes);
 
-        val range = to - from;
-        assert range % Integer.BYTES == 0 : "Range % 4 != 0";
-
-        val size = range / Integer.BYTES;
-
-        val ints = new int[(int) size];
-        for (int intsIndex = 0, bytesIndex = (int) from; intsIndex < ints.length; ++intsIndex, bytesIndex += Integer.BYTES)
+        val ints = new int[intBufferSize];
+        for (int intsIndex = 0, bytesIndex = (int) from; intsIndex < ints.length; ++intsIndex, bytesIndex += elementSizeInBytes)
         {
             insertInt(ints, intsIndex, bytes, bytesIndex);
         }

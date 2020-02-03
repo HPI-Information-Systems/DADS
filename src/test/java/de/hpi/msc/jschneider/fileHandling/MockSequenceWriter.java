@@ -6,17 +6,17 @@ import lombok.val;
 
 public class MockSequenceWriter implements SequenceWriter
 {
-    private float[] values = new float[0];
+    private double[] values = new double[0];
 
-    public float[] getValues()
+    public double[] getValues()
     {
         return values;
     }
 
     @Override
-    public void write(float[] records)
+    public void write(double[] records)
     {
-        val newValues = new float[values.length + records.length];
+        val newValues = new double[values.length + records.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
         System.arraycopy(records, 0, newValues, values.length, records.length);
 
@@ -32,7 +32,7 @@ public class MockSequenceWriter implements SequenceWriter
     @Override
     public void write(byte[] part)
     {
-        write(Serialize.toFloats(part));
+        write(Serialize.toDoubles(part));
     }
 
     @Override

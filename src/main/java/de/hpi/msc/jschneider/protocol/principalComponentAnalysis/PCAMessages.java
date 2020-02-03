@@ -35,8 +35,8 @@ public class PCAMessages
         private static final long serialVersionUID = -8531945015558247291L;
         private long processorIndex;
         private long numberOfRows;
-        private float minimumRecord;
-        private float maximumRecord;
+        private double minimumRecord;
+        private double maximumRecord;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)

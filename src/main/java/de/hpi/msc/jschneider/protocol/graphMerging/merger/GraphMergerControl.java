@@ -1,14 +1,19 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.merger;
 
-import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
+import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 public class GraphMergerControl extends AbstractProtocolParticipantControl<GraphMergerModel>
 {
@@ -18,11 +23,34 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
     }
 
     @Override
+    public void preStart()
+    {
+        super.preStart();
+
+        subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.ResponsibilitiesReceivedEvent.class);
+    }
+
+    @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
+                    .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(GraphMergingMessages.EdgesReceivedMessage.class, this::onEdgesReceived)
                     .match(GraphMergingMessages.AllEdgesReceivedMessage.class, this::onAllEdgesReceived);
+    }
+
+    private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
+    {
+        try
+        {
+            assert getModel().getSubSequenceResponsibilities() == null : "Responsibilities were received already!";
+
+            getModel().setSubSequenceResponsibilities(new HashMap<>(message.getSubSequenceResponsibilities()));
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 
     private void onEdgesReceived(GraphMergingMessages.EdgesReceivedMessage message)
@@ -59,6 +87,27 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
     {
         try
         {
+            val numberOfEdges = getModel().getEdges().size();
+            val numberOfNodes = getModel().getEdges()
+                                          .values()
+                                          .stream()
+                                          .flatMap(edge -> Arrays.stream(new Integer[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
+                                          .collect(Collectors.toSet())
+                                          .size();
+            val totalEdgeWeights = getModel().getEdges()
+                                             .values()
+                                             .stream()
+                                             .mapToLong(GraphEdge::getWeight)
+                                             .sum();
+
+            getLog().info("================================================================================================");
+            getLog().info("================================================================================================");
+            getLog().info(String.format("Graph merged: %1$d edges (tot. weight: %2$d), %3$d nodes.", numberOfEdges, totalEdgeWeights, numberOfNodes));
+            getLog().info("================================================================================================");
+            getLog().info("================================================================================================");
+
+            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("graph-%1$s.txt", ProcessorId.of(getModel().getSelf())));
+
             publishGraph(message.getWorkerSystems());
         }
         finally

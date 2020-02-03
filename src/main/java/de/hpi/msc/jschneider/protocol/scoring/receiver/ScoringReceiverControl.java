@@ -1,9 +1,9 @@
 package de.hpi.msc.jschneider.protocol.scoring.receiver;
 
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
-import de.hpi.msc.jschneider.fileHandling.writing.BinarySequenceWriter;
+import de.hpi.msc.jschneider.fileHandling.writing.ClearSequenceWriter;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -13,11 +13,12 @@ import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.sink.FloatsSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
 import lombok.val;
 import lombok.var;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            val sink = new FloatsSink();
+            val sink = new DoublesSink();
             dataReceiver.setState(ProcessorId.of(message.getSender()));
             return dataReceiver.addSink(sink)
                                .whenFinished(this::onPathScoresTransferFinished);
@@ -95,10 +96,10 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         assert dataReceiver.getState() instanceof ProcessorId : "The data receiver state should be a ProcessorId!";
         val workerSystem = (ProcessorId) dataReceiver.getState();
 
-        val floatsSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof FloatsSink).findFirst();
-        assert floatsSink.isPresent() : "The data receiver should have a FloatsSink!";
+        val doublesSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof DoublesSink).findFirst();
+        assert doublesSink.isPresent() : "The data receiver should have a DoublesSink!";
 
-        getModel().getPathScores().put(workerSystem, ((FloatsSink) floatsSink.get()).getFloats());
+        getModel().getPathScores().put(workerSystem, ((DoublesSink) doublesSink.get()).getDoubles());
         getModel().getRunningDataTransfers().remove(workerSystem);
 
         calculateRunningMean();
@@ -111,43 +112,44 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
             return;
         }
 
-        val maximumPathScore = getModel().getPathScores().values().stream().map(Floats::max).findFirst().get() * -1.0f;
-        val minimumPathScore = getModel().getPathScores().values().stream().map(Floats::min).findFirst().get() * -1.0f;
-        val sortedScores = Floats.concat(getModel().getPathScores().entrySet()
-                                                   .stream()
-                                                   .sorted((a, b) -> (int) (getModel().getSubSequenceResponsibilities().get(a.getKey()).getFrom()
-                                                                            - getModel().getSubSequenceResponsibilities().get(b.getKey()).getFrom()))
-                                                   .map(Map.Entry::getValue)
-                                                   .toArray(float[][]::new));
-        val normalizedScores = new float[sortedScores.length];
+        val sortedScores = Doubles.concat(getModel().getPathScores().entrySet()
+                                                    .stream()
+                                                    .sorted(Comparator.comparingLong(entry -> getModel().getSubSequenceResponsibilities().get(entry.getKey()).getFrom()))
+                                                    .map(Map.Entry::getValue)
+                                                    .toArray(double[][]::new));
+
+        val minimumPathScore = Doubles.max(sortedScores) * -1.0f;
+        val maximumPathScore = Doubles.min(sortedScores) * -1.0f;
+
+        val normalizedScores = new double[sortedScores.length];
         val scoreRange = maximumPathScore - minimumPathScore;
         for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
         {
             normalizedScores[scoreIndex] = (-sortedScores[scoreIndex] - minimumPathScore) / scoreRange;
         }
 
-        var runningMean = 0.0f;
-        val runningMeans = new ArrayList<Float>();
-        val windowSizeAsFloat = (float) getModel().getSubSequenceLength();
-        for (var runningMeanStartIndex = 0; runningMeanStartIndex < normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
+        var runningMean = 0.0d;
+        val runningMeans = new ArrayList<Double>();
+        final double windowSizeAsDouble = getModel().getSubSequenceLength();
+        for (var runningMeanStartIndex = 0; runningMeanStartIndex <= normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
         {
             if (runningMeans.isEmpty())
             {
                 for (var windowIndex = 0; windowIndex < getModel().getSubSequenceLength(); ++windowIndex)
                 {
-                    runningMean += normalizedScores[runningMeanStartIndex + windowIndex] / windowSizeAsFloat;
+                    runningMean += normalizedScores[runningMeanStartIndex + windowIndex] / windowSizeAsDouble;
                 }
             }
             else
             {
-                runningMean -= normalizedScores[runningMeanStartIndex - 1] / windowSizeAsFloat;
-                runningMean += normalizedScores[runningMeanStartIndex + getModel().getSubSequenceLength() - 1] / windowSizeAsFloat;
+                runningMean -= normalizedScores[runningMeanStartIndex - 1] / windowSizeAsDouble;
+                runningMean += normalizedScores[runningMeanStartIndex + getModel().getSubSequenceLength() - 1] / windowSizeAsDouble;
             }
 
             runningMeans.add(runningMean);
         }
 
-        storeResults(Floats.toArray(runningMeans));
+        storeResults(Doubles.toArray(runningMeans));
     }
 
     private boolean isReadyToCalculateRunningMean()
@@ -157,7 +159,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
                && getModel().getRunningDataTransfers().isEmpty();
     }
 
-    private void storeResults(float[] normalityScores)
+    private void storeResults(double[] normalityScores)
     {
         assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master processor can store the results!";
         val filePath = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath();
@@ -168,7 +170,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 
-        val writer = BinarySequenceWriter.fromFile(filePath.toFile());
+        val writer = ClearSequenceWriter.fromFile(filePath.toFile());
         writer.write(normalityScores);
         writer.close();
 

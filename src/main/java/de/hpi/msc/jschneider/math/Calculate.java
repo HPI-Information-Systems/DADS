@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
+import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
+
 public class Calculate
 {
     public static final double FLOATING_POINT_TOLERANCE = 0.00001d;
@@ -68,38 +70,68 @@ public class Calculate
 
     public static MatrixStore<Double> makeRotationX(double angle)
     {
-        val cos = (float) Math.cos(angle);
-        val sin = (float) Math.sin(angle);
+        val cos = Math.cos(angle);
+        val sin = Math.sin(angle);
 
         return (new MatrixInitializer(3L)
-                        .appendRow(new float[]{1.0f, 0.0f, 0.0f})
-                        .appendRow(new float[]{0.0f, cos, -sin})
-                        .appendRow(new float[]{0.0f, sin, cos})
+                        .appendRow(new double[]{1.0d, 0.0d, 0.0d})
+                        .appendRow(new double[]{0.0d, cos, -sin})
+                        .appendRow(new double[]{0.0d, sin, cos})
                         .create());
     }
 
     public static MatrixStore<Double> makeRotationY(double angle)
     {
-        val cos = (float) Math.cos(angle);
-        val sin = (float) Math.sin(angle);
+        val cos = Math.cos(angle);
+        val sin = Math.sin(angle);
 
         return (new MatrixInitializer(3L)
-                        .appendRow(new float[]{cos, 0.0f, sin})
-                        .appendRow(new float[]{0.0f, 1.0f, 0.0f})
-                        .appendRow(new float[]{-sin, 0.0f, cos})
+                        .appendRow(new double[]{cos, 0.0d, sin})
+                        .appendRow(new double[]{0.0d, 1.0d, 0.0d})
+                        .appendRow(new double[]{-sin, 0.0d, cos})
                         .create());
     }
 
     public static MatrixStore<Double> makeRotationZ(double angle)
     {
-        val cos = (float) Math.cos(angle);
-        val sin = (float) Math.sin(angle);
+        val cos = Math.cos(angle);
+        val sin = Math.sin(angle);
 
         return (new MatrixInitializer(3L)
-                        .appendRow(new float[]{cos, -sin, 0.0f})
-                        .appendRow(new float[]{sin, cos, 0.0f})
-                        .appendRow(new float[]{0.0f, 0.0f, 1.0f})
+                        .appendRow(new double[]{cos, -sin, 0.0d})
+                        .appendRow(new double[]{sin, cos, 0.0d})
+                        .appendRow(new double[]{0.0d, 0.0d, 1.0d})
                         .create());
+    }
+
+    public static MatrixStore<Double> rotation(MatrixStore<Double> referenceVector, MatrixStore<Double> unitVector)
+    {
+        val vec1 = toColumnVector(referenceVector).multiply(1.0d / Math.sqrt(referenceVector.aggregateAll(Aggregator.SUM2)));
+        val vec2 = toColumnVector(unitVector).multiply(1.0d / Math.sqrt(unitVector.aggregateAll(Aggregator.SUM2)));
+
+        assert vec1.countRows() == 3 : "The rotation can only be performed on a 3d vector!";
+        assert vec2.countRows() == 3 : "The rotation can only be performed on a 3d vector!";
+
+        val cross = cross(vec1, vec2);
+        val crossLength = Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
+        val dot = vec1.dot(vec2);
+        val identity = MatrixStore.PRIMITIVE.makeIdentity(3).get();
+        val k = (new MatrixInitializer(3))
+                .appendRow(new double[]{0.0f, -cross.get(2), cross.get(1)})
+                .appendRow(new double[]{cross.get(2), 0.0f, -cross.get(0)})
+                .appendRow(new double[]{-cross.get(1), cross.get(0), 0.0f})
+                .create();
+
+        return identity.add(k).add(k.multiply(k.multiply((1 - dot) / (crossLength * crossLength))));
+    }
+
+    private static MatrixStore<Double> cross(MatrixStore<Double> a, MatrixStore<Double> b)
+    {
+        return (new MatrixInitializer(1))
+                .appendRow(new double[]{a.get(1) * b.get(2) - a.get(2) * b.get(1)})
+                .appendRow(new double[]{a.get(2) * b.get(0) - a.get(0) * b.get(2)})
+                .appendRow(new double[]{a.get(0) * b.get(1) - a.get(1) * b.get(0)})
+                .create();
     }
 
     public static MatrixStore<Double> transposedColumnMeans(MatrixStore<Double> input)
@@ -154,6 +186,7 @@ public class Calculate
                                                                .build();
         }
 
+        val nextIntersectionCreationIndex = new Counter(0L);
         for (var columnIndex = 0; columnIndex < reducedProjection.countColumns() - 1; ++columnIndex)
         {
             val current = reducedProjection.sliceColumn(columnIndex);
@@ -181,6 +214,7 @@ public class Calculate
             {
                 val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
                                                             firstSubSequenceIndex + columnIndex,
+                                                            nextIntersectionCreationIndex.getAndIncrement(),
                                                             current,
                                                             next);
                 if (!intersection.isPresent())
@@ -257,7 +291,11 @@ public class Calculate
         return intersectionPointIndices;
     }
 
-    private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint, long subSequenceIndex, Access1D<Double> current, Access1D<Double> next)
+    private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint,
+                                                                   long subSequenceIndex,
+                                                                   long intersectionCreationIndex,
+                                                                   Access1D<Double> current,
+                                                                   Access1D<Double> next)
     {
         val origin = makeRowVector(0.0d, 0.0d);
 
@@ -301,30 +339,31 @@ public class Calculate
         val intersectionX = determinant(determinants, diffX) / div;
         val intersectionY = determinant(determinants, diffY) / div;
 
-        if (isMore(intersectionX, line1MaxX) || isLess(intersectionX, line1MinX) || isMore(intersectionX, line2MaxX) || isLess(intersectionX, line2MinX))
-        {
-            return Optional.empty();
-        }
-
-        if (isMore(intersectionY, line1MaxY) || isLess(intersectionY, line1MinY) || isMore(intersectionY, line2MaxY) || isLess(intersectionY, line2MinY))
-        {
-            return Optional.empty();
-        }
-
-//        if (intersectionX > line1MaxX || intersectionX < line1MinX || intersectionX > line2MaxX || intersectionX < line2MinX)
+//        if (isMore(intersectionX, line1MaxX) || isLess(intersectionX, line1MinX) || isMore(intersectionX, line2MaxX) || isLess(intersectionX, line2MinX))
 //        {
 //            return Optional.empty();
 //        }
 //
-//        if (intersectionY > line1MaxY || intersectionY < line1MinY || intersectionY > line2MaxY || intersectionY < line2MinY)
+//        if (isMore(intersectionY, line1MaxY) || isLess(intersectionY, line1MinY) || isMore(intersectionY, line2MaxY) || isLess(intersectionY, line2MinY))
 //        {
 //            return Optional.empty();
 //        }
 
+        if (intersectionX > line1MaxX || intersectionX < line1MinX || intersectionX > line2MaxX || intersectionX < line2MinX)
+        {
+            return Optional.empty();
+        }
+
+        if (intersectionY > line1MaxY || intersectionY < line1MinY || intersectionY > line2MaxY || intersectionY < line2MinY)
+        {
+            return Optional.empty();
+        }
+
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
-                                       .intersectionDistance((float) distance(origin, intersection))
+                                       .intersectionDistance(distance(origin, intersection))
                                        .subSequenceIndex(subSequenceIndex)
+                                       .creationIndex(intersectionCreationIndex)
                                        .build());
     }
 
@@ -411,6 +450,14 @@ public class Calculate
 
         return nodeHashes.stream().collect(Collectors.toMap(hash -> hash,
                                                             hash -> incomingEdges.get(hash).get() + outgoingEdges.get(hash).get()));
+    }
+
+    public static MatrixStore<Double> subtractColumnBased(MatrixStore<Double> matrix, MatrixStore<Double> columnSubtrahends)
+    {
+        assert columnSubtrahends.countRows() == 1L
+               && columnSubtrahends.countColumns() == matrix.countColumns() : "ColumnSubtrahends have wrong format";
+
+        return matrix.operateOnColumns(SUBTRACT, columnSubtrahends).get();
     }
 
     public static double log2(double value)

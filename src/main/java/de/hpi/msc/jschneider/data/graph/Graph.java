@@ -20,46 +20,35 @@ public class Graph
     @Getter @NonNull
     private final Map<Long, List<Integer>> createdEdgesBySubSequenceIndex = new HashMap<>();
 
-//    public static Graph construct(GraphEdge[] edges, int[] edgeCreationOrder)
-//    {
-//        val graph = new Graph();
-//        for (val edge : edges)
-//        {
-//            val hash = edge.hashCode();
-//            graph.edges.put(hash, edge);
-//        }
-//        graph.createdEdgesBySubSequenceIndex.addAll(Arrays.stream(edgeCreationOrder).boxed().collect(Collectors.toList()));
-//
-//        return graph;
-//    }
-
-    public void addEdge(long subSequenceIndex, GraphNode from, GraphNode to)
+    public GraphEdge addEdge(long subSequenceIndex, GraphNode from, GraphNode to)
     {
-        addEdge(subSequenceIndex,
-                GraphEdge.builder()
-                         .from(from)
-                         .to(to)
-                         .weight(new Counter(1L))
-                         .build());
+        return addEdge(subSequenceIndex,
+                       GraphEdge.builder()
+                                .from(from)
+                                .to(to)
+                                .weight(new Counter(1L))
+                                .build());
     }
 
-    public void addEdge(long subSequenceIndex, GraphEdge edge)
+    public GraphEdge addEdge(long subSequenceIndex, GraphEdge edge)
     {
         assert edge.getWeight() == 1L : "New edges must always have a weight of 1!";
 
         val hash = edge.hashCode();
+        createdEdgesBySubSequenceIndex.putIfAbsent(subSequenceIndex, new ArrayList<>());
+        createdEdgesBySubSequenceIndex.get(subSequenceIndex).add(hash);
+
         val existingEdge = edges.get(hash);
         if (existingEdge != null)
         {
+            assert existingEdge.getKey().equals(edge.getKey());
+
             existingEdge.incrementWeight();
-        }
-        else
-        {
-            edges.put(hash, edge);
+            return existingEdge;
         }
 
-        createdEdgesBySubSequenceIndex.putIfAbsent(subSequenceIndex, new ArrayList<>());
-        createdEdgesBySubSequenceIndex.get(subSequenceIndex).add(hash);
+        edges.put(hash, edge);
+        return edge;
     }
 
     public Collection<GraphNode> getNodes()

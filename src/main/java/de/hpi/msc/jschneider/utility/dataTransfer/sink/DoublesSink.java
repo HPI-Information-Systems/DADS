@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.sink;
 
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataSink;
 import lombok.val;
@@ -8,17 +8,17 @@ import lombok.val;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FloatsSink implements DataSink
+public class DoublesSink implements DataSink
 {
-    private final List<Float> floats = new ArrayList<>();
+    private final List<Double> doubles = new ArrayList<>();
 
     @Override
     public void write(byte[] part)
     {
-        val newFloats = Serialize.toFloats(part);
-        for (val newFloat : newFloats)
+        val newDoubles = Serialize.toDoubles(part);
+        for (val newDouble : newDoubles)
         {
-            floats.add(newFloat);
+            doubles.add(newDouble);
         }
     }
 
@@ -28,8 +28,8 @@ public class FloatsSink implements DataSink
 
     }
 
-    public float[] getFloats()
+    public double[] getDoubles()
     {
-        return Floats.toArray(floats);
+        return Doubles.toArray(doubles);
     }
 }

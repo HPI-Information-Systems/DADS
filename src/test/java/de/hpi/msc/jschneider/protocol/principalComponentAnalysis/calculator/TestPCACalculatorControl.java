@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -76,9 +75,9 @@ public class TestPCACalculatorControl extends ProtocolTestCase
     private MatrixStore<Double> simpleMatrix()
     {
         return (new MatrixInitializer(3))
-                .appendRow(new float[]{0.0f, 1.0f, 2.0f})
-                .appendRow(new float[]{3.0f, 4.0f, 5.0f})
-                .appendRow(new float[]{6.0f, 7.0f, 8.0f})
+                .appendRow(new double[]{0.0d, 1.0d, 2.0d})
+                .appendRow(new double[]{3.0d, 4.0d, 5.0d})
+                .appendRow(new double[]{6.0d, 7.0d, 8.0d})
                 .create();
     }
 

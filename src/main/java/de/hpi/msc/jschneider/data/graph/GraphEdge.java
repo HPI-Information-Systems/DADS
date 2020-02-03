@@ -2,15 +2,14 @@ package de.hpi.msc.jschneider.data.graph;
 
 import de.hpi.msc.jschneider.utility.Counter;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-@Builder @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder
 public class GraphEdge
 {
-    @Getter @EqualsAndHashCode.Include
+    @Getter
     private GraphNode from;
-    @Getter @EqualsAndHashCode.Include
+    @Getter
     private GraphNode to;
     @Builder.Default
     private Counter weight = new Counter(1L);
@@ -28,6 +27,17 @@ public class GraphEdge
     public void setWeight(long weight)
     {
         this.weight = new Counter(Math.max(1L, weight));
+    }
+
+    public String getKey()
+    {
+        return String.format("%1$s -> %2$s", from, to);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getKey().hashCode();
     }
 
     @Override

@@ -9,19 +9,19 @@ import java.util.Arrays;
 
 public class MockSequenceReader implements SequenceReader
 {
-    private final float[] values;
+    private final double[] values;
     private long currentPosition = 0L;
 
     public MockSequenceReader(int length)
     {
-        values = new float[length];
+        values = new double[length];
         for (var i = 0; i < length; ++i)
         {
-            values[i] = (float) i;
+            values[i] = i;
         }
     }
 
-    public MockSequenceReader(float[] values)
+    public MockSequenceReader(double[] values)
     {
         this.values = values;
     }
@@ -53,7 +53,7 @@ public class MockSequenceReader implements SequenceReader
     @Override
     public int elementSizeInBytes()
     {
-        return Float.BYTES;
+        return Double.BYTES;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class MockSequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, long length)
+    public double[] read(long start, long length)
     {
         var begin = Math.max(0, Math.min(values.length, start));
         var end = Math.max(begin, Math.min(values.length, start + length));

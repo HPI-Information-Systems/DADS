@@ -4,16 +4,15 @@ import junit.framework.TestCase;
 import lombok.val;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.map;
 
 public class TestMatrixInitializer extends TestCase
 {
     public void testInitialize3x3()
     {
         val matrix = (new MatrixInitializer(3))
-                .appendRow(new float[]{1.0f, 2.0f, 3.0f})
-                .appendRow(new float[]{4.0f, 5.0f, 6.0f})
-                .appendRow(new float[]{7.0f, 8.0f, 9.0f})
+                .appendRow(new double[]{1.0d, 2.0d, 3.0d})
+                .appendRow(new double[]{4.0d, 5.0d, 6.0d})
+                .appendRow(new double[]{7.0d, 8.0d, 9.0d})
                 .create();
 
         assertThat(matrix.countRows()).isEqualTo(3);
@@ -23,12 +22,12 @@ public class TestMatrixInitializer extends TestCase
     public void testConcat()
     {
         val firstMatrix = (new MatrixInitializer(3))
-                .appendRow(new float[]{0.0f, 1.0f, 2.0f})
-                .appendRow(new float[]{3.0f, 4.0f, 5.0f})
+                .appendRow(new double[]{0.0d, 1.0d, 2.0d})
+                .appendRow(new double[]{3.0d, 4.0d, 5.0d})
                 .create();
 
         val secondMatrix = (new MatrixInitializer(3))
-                .appendRow(new float[]{6.0f, 7.0f, 8.0f})
+                .appendRow(new double[]{6.0d, 7.0d, 8.0d})
                 .create();
 
         val result = MatrixInitializer.concat(firstMatrix, secondMatrix);

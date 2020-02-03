@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.fileHandling.reading;
 
-import com.google.common.primitives.Floats;
 
 public class NullSequenceReader implements SequenceReader
 {
@@ -40,7 +39,7 @@ public class NullSequenceReader implements SequenceReader
     @Override
     public int elementSizeInBytes()
     {
-        return Floats.BYTES;
+        return Double.BYTES;
     }
 
     @Override
@@ -50,9 +49,9 @@ public class NullSequenceReader implements SequenceReader
     }
 
     @Override
-    public float[] read(long start, long length)
+    public double[] read(long start, long length)
     {
-        return new float[0];
+        return new double[0];
     }
 
     @Override
