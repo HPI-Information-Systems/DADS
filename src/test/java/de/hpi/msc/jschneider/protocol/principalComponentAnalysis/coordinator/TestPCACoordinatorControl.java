@@ -5,7 +5,6 @@ import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
-import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import lombok.val;
 
@@ -60,9 +59,8 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
         val processorJoinedEvent = processorJoined(localProcessor);
         messageInterface.apply(processorJoinedEvent);
 
-        assertThat(control.getModel().getNextParticipantIndex().get()).isEqualTo(1);
-        assertThat(control.getModel().getParticipantIndices().size()).isEqualTo(1);
-        assertThat(control.getModel().getParticipantIndices()).containsValue(localProcessor.getId());
+        assertThat(control.getModel().getParticipants().size()).isEqualTo(1);
+        assertThat(control.getModel().getParticipants()).contains(localProcessor.getId());
 
         assertThatMessageIsCompleted(processorJoinedEvent);
     }
@@ -101,8 +99,7 @@ public class TestPCACoordinatorControl extends ProtocolTestCase
         val processorJoined = processorJoined(observerProcessor);
         messageInterface.apply(processorJoined);
 
-        assertThat(control.getModel().getParticipantIndices()).isEmpty();
-        assertThat(control.getModel().getNextParticipantIndex().get()).isEqualTo(0);
+        assertThat(control.getModel().getParticipants()).isEmpty();
 
         assertThatMessageIsCompleted(processorJoined);
     }

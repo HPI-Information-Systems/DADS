@@ -4,10 +4,10 @@ from pathlib import Path
 
 
 def main(arguments):
-    with arguments.input.open("r") as input, open("output.bin", "wb+") as output:
-        for line in input:
+    with arguments.input.open("r") as in_file, arguments.output.open("wb+") as out_file:
+        for line in in_file:
             value = float(line)
-            output.write(bytearray(struct.pack("!d", value)))
+            out_file.write(bytearray(struct.pack("!d", value)))
 
 
 if __name__ == "__main__":
@@ -15,6 +15,12 @@ if __name__ == "__main__":
 
     argument_parser.add_argument(
         "--input",
+        type=Path,
+        required=True
+    )
+
+    argument_parser.add_argument(
+        "--output",
         type=Path,
         required=True
     )

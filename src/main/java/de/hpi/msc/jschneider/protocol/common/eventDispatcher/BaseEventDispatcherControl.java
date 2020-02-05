@@ -86,7 +86,7 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
                 return;
             }
 
-            getLog().info(String.format("Dispatching %1$s to %2$d subscribers.", message.getClass().getName(), subscribers.size()));
+            getLog().debug(String.format("Dispatching %1$s to %2$d subscribers.", message.getClass().getName(), subscribers.size()));
 
             for (val subscriber : subscribers)
             {

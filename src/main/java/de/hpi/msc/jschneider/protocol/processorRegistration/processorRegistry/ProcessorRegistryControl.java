@@ -139,18 +139,41 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
     {
         val processorId = message.getProcessor().getId();
+
+//        if (!getModel().isLocalRegistrationReceived() && !processorId.equals(ProcessorId.of(getModel().getSelf())))
+//        {
+//            getModel().getRegistrationMessages().put(message.getSender().path(), message);
+//            return;
+//        }
+
         getModel().getClusterProcessors().put(processorId, message.getProcessor());
         val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
+        acknowledgeRegistrationMessage(message, existingProcessors);
+//        acknowledgeQueuedRegistrationMessages(existingProcessors);
+    }
 
+    private void acknowledgeRegistrationMessage(ProcessorRegistrationMessages.ProcessorRegistrationMessage message, Processor[] processors)
+    {
         message.getSender().tell(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
-                                                                                             .existingProcessors(existingProcessors)
-                                                                                             .build(), getModel().getSelf());
+                                                                                             .existingProcessors(processors)
+                                                                                             .build(),
+                                 getModel().getSelf());
 
         trySendEvent(ProtocolType.ProcessorRegistration, eventDispatcher -> ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
                                                                                                                             .sender(getModel().getSelf())
                                                                                                                             .receiver(eventDispatcher)
                                                                                                                             .processor(message.getProcessor())
                                                                                                                             .build());
+    }
+
+    private void acknowledgeQueuedRegistrationMessages(Processor[] processors)
+    {
+        for (val message : getModel().getRegistrationMessages().values())
+        {
+            acknowledgeRegistrationMessage(message, processors);
+        }
+
+        getModel().getRegistrationMessages().clear();
     }
 }

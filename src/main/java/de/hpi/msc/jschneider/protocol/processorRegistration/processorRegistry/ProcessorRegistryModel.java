@@ -1,11 +1,13 @@
 package de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
 import akka.actor.Scheduler;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -26,6 +28,10 @@ public class ProcessorRegistryModel extends AbstractProtocolParticipantModel
     private Cancellable registrationSchedule;
     @NonNull @Getter
     private Function<String, ActorSelection> actorSelectionCallback;
+    @Getter @Setter @Builder.Default
+    private boolean localRegistrationReceived = false;
+    @NonNull @Getter @Builder.Default
+    private Map<ActorPath, ProcessorRegistrationMessages.ProcessorRegistrationMessage> registrationMessages = new HashMap<>();
     @NonNull
     private Callable<Scheduler> schedulerProvider;
     @NonNull
