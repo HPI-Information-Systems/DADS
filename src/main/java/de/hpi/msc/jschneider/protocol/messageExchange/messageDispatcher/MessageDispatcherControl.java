@@ -74,9 +74,10 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
         while (!getModel().getUndeliveredMessages().isEmpty())
         {
-            val message = getModel().getUndeliveredMessages().poll();
+            val message = getModel().getUndeliveredMessages().peek();
             if (message == null)
             {
+                getModel().getUndeliveredMessages().poll();
                 continue;
             }
 
@@ -86,8 +87,6 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
                                             message.getClass().getName(),
                                             message.getSender().path(),
                                             message.getReceiver().path()));
-
-                getModel().getUndeliveredMessages().add(message);
                 break;
             }
 
@@ -105,6 +104,8 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
     private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
+        dequeueUndeliveredMessages();
+
         if (tryDeliver(message))
         {
             return;

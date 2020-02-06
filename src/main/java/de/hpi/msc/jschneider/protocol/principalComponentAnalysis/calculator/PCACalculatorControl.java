@@ -222,7 +222,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                 // not yet received
                 return;
             }
-            getModel().getRemoteRsByProcessStep().remove(currentStep);
+            getModel().getRemoteRsByProcessStep().remove(currentStep - 1);
             dataMatrix = MatrixInitializer.concat(dataMatrix, remoteR);
         }
 

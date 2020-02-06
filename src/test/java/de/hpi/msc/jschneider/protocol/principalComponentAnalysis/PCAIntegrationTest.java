@@ -129,7 +129,6 @@ public class PCAIntegrationTest extends BaseTestCase
                                          slaveSelf, slaveMessageInterface,
                                          (PCAMessages.InitializeRTransferMessage) initializeRTransfer.redirectTo(masterSelf.ref()),
                                          false).getMatrix(slaveProjection.countColumns());
-        assertThat(slaveR.equals(masterModel.getRemoteRsByProcessStep().get(0L), MATRIX_COMPARISON_CONTEXT)).isTrue();
         assertThat(masterModel.getMinimumRecord()).isEqualTo(projectionMin);
         assertThat(masterModel.getMaximumRecord()).isEqualTo(projectionMax);
 
