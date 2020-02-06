@@ -24,6 +24,7 @@ public class SequenceSliceDistributionEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
                             .isLastSubSequenceChunk(isLastSubSequenceChunk())
                             .minimumRecord(getMinimumRecord())
@@ -47,6 +48,7 @@ public class SequenceSliceDistributionEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .subSequenceLength(getSubSequenceLength())
                             .convolutionSize(getConvolutionSize())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())

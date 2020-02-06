@@ -12,6 +12,7 @@ import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.coordinator.PCA
 import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
+import lombok.var;
 
 public class PCARootActorControl extends AbstractProtocolParticipantControl<PCARootActorModel>
 {
@@ -38,7 +39,14 @@ public class PCARootActorControl extends AbstractProtocolParticipantControl<PCAR
 
     private void createPCACalculator()
     {
+        var convolutionSize = 0;
+        if (SystemParameters.getCommand() instanceof MasterCommand)
+        {
+            convolutionSize = ((MasterCommand) SystemParameters.getCommand()).getConvolutionSize();
+        }
+
         val model = PCACalculatorModel.builder()
+                                      .convolutionSize(convolutionSize)
                                       .build();
         val control = new PCACalculatorControl(model);
         val calculator = trySpawnChild(ReapedActor.props(control), "PCACalculator");

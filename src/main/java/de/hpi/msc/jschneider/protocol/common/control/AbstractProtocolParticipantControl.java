@@ -15,6 +15,7 @@ import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
+import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -332,11 +333,28 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
             return;
         }
 
-        getLocalProtocol(ProtocolType.MessageExchange)
-                .ifPresent(protocol -> send(MessageExchangeMessages.MessageCompletedMessage.builder()
-                                                                                           .sender(message.getReceiver())
-                                                                                           .receiver(message.getSender())
-                                                                                           .completedMessageId(message.getId())
-                                                                                           .build()));
+        assert message.getReceiver().equals(getModel().getSelf()) : "Trying to complete a message, which was not intended for us!";
+
+        val protocol = getLocalProtocol(ProtocolType.MessageExchange);
+        if (!protocol.isPresent())
+        {
+            return;
+        }
+
+        var completionReceiver = message.getSender();
+        if (message instanceof MessageExchangeMessages.RedirectableMessage)
+        {
+            val forwarder = ((MessageExchangeMessages.RedirectableMessage) message).getForwarder();
+            if (forwarder != null && !forwarder.equals(ActorRef.noSender()))
+            {
+                completionReceiver = forwarder;
+            }
+        }
+
+        send(MessageExchangeMessages.MessageCompletedMessage.builder()
+                                                            .sender(getModel().getSelf())
+                                                            .receiver(completionReceiver)
+                                                            .completedMessageId(message.getId())
+                                                            .build());
     }
 }

@@ -21,6 +21,7 @@ public class ScoringMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .queryPathLength(getQueryPathLength())
                             .build();
         }
@@ -38,6 +39,7 @@ public class ScoringMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .overlappingEdgeCreationOrder(getOverlappingEdgeCreationOrder())
                             .build();
         }
@@ -53,6 +55,7 @@ public class ScoringMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .build();
         }

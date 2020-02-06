@@ -19,6 +19,7 @@ public class DimensionReductionMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .build();
         }
@@ -34,6 +35,7 @@ public class DimensionReductionMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .build();
         }
@@ -50,6 +52,7 @@ public class DimensionReductionMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .numberOfColumns(getNumberOfColumns())
                             .build();

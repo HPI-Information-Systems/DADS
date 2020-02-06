@@ -17,6 +17,7 @@ public class ReaperEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .build();
         }
     }

@@ -45,10 +45,10 @@ public class TestGraphEdge extends TestCase
                              .build();
 
         val edge1 = GraphEdge.builder()
-                                .from(nodeA)
-                                .to(nodeB)
-                                .weight(new Counter(1L))
-                                .build();
+                             .from(nodeA)
+                             .to(nodeB)
+                             .weight(new Counter(1L))
+                             .build();
 
         val edge2 = GraphEdge.builder()
                              .from(nodeA)

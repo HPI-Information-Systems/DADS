@@ -20,6 +20,7 @@ public class EdgeCreationMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .lastNode(getLastNode())
                             .build();
         }

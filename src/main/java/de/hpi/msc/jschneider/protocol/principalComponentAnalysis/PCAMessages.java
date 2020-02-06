@@ -24,6 +24,7 @@ public class PCAMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .processorIndices(new HashMap<>(getProcessorIndices()))
                             .build();
         }
@@ -43,6 +44,7 @@ public class PCAMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .processorIndex(getProcessorIndex())
                             .numberOfRows(getNumberOfRows())
                             .minimumRecord(getMinimumRecord())
@@ -64,6 +66,7 @@ public class PCAMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .processorIndex(getProcessorIndex())
                             .currentStepNumber(getCurrentStepNumber())

@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
@@ -30,6 +29,8 @@ public class MessageExchangeMessages
     public static abstract class RedirectableMessage extends MessageExchangeMessage
     {
         private static final long serialVersionUID = -2387997933538751338L;
+        @Builder.Default
+        private ActorRef forwarder = null;
 
         public abstract RedirectableMessage redirectTo(ActorRef newReceiver);
     }

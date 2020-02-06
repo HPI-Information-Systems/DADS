@@ -23,6 +23,7 @@ public class SequenceSliceDistributionMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .subSequenceLength(getSubSequenceLength())
                             .convolutionSize(getConvolutionSize())

@@ -22,6 +22,7 @@ public class DimensionReductionEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .reducedProjection(getReducedProjection())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
                             .isLastSubSequenceChunk(isLastSubSequenceChunk())

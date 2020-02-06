@@ -78,6 +78,7 @@ public class PCAIntegrationTest extends BaseTestCase
         val masterModel = finalizeModel(PCACalculatorModel.builder()
                                                           .processorIndices(processorIndices)
                                                           .myProcessorIndex(0L)
+                                                          .convolutionSize(25)
                                                           .build(), masterSelf);
         val masterControl = new PCACalculatorControl(masterModel);
         val masterMessageInterface = createMessageInterface(masterControl);
@@ -87,6 +88,7 @@ public class PCAIntegrationTest extends BaseTestCase
         val slaveModel = finalizeModel(PCACalculatorModel.builder()
                                                          .processorIndices(processorIndices)
                                                          .myProcessorIndex(1L)
+                                                         .convolutionSize(0)
                                                          .build(), slaveSelf);
         val slaveControl = new PCACalculatorControl(slaveModel);
         val slaveMessageInterface = createMessageInterface(slaveControl);
@@ -118,14 +120,14 @@ public class PCAIntegrationTest extends BaseTestCase
         // send slave column means
         val slaveColumnMeans = performDataTransfer(masterSelf, masterMessageInterface,
                                                    slaveSelf, slaveMessageInterface,
-                                                   initializeColumnMeansTransfer,
+                                                   (PCAMessages.InitializeColumnMeansTransferMessage) initializeColumnMeansTransfer.redirectTo(masterSelf.ref()),
                                                    true).getMatrix(slaveProjection.countColumns());
         assertThat(slaveColumnMeans.equals(Calculate.transposedColumnMeans(slaveProjection), MATRIX_COMPARISON_CONTEXT)).isTrue();
 
         // send slave R
         val slaveR = performDataTransfer(masterSelf, masterMessageInterface,
                                          slaveSelf, slaveMessageInterface,
-                                         initializeRTransfer,
+                                         (PCAMessages.InitializeRTransferMessage) initializeRTransfer.redirectTo(masterSelf.ref()),
                                          false).getMatrix(slaveProjection.countColumns());
         assertThat(slaveR.equals(masterModel.getRemoteRsByProcessStep().get(0L), MATRIX_COMPARISON_CONTEXT)).isTrue();
         assertThat(masterModel.getMinimumRecord()).isEqualTo(projectionMin);

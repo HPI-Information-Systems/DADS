@@ -21,6 +21,7 @@ public class ProcessorRegistrationEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .processor(getProcessor())
                             .build();
         }
@@ -36,6 +37,7 @@ public class ProcessorRegistrationEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .build();
         }
     }
