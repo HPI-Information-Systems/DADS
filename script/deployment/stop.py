@@ -3,7 +3,7 @@ import getpass
 import logging
 from pathlib import Path
 
-from worker import deployment_worker
+from worker import stop_worker
 
 
 def main():
@@ -14,34 +14,19 @@ def main():
 
     ssh_password: str = getpass.getpass(prompt=f"Enter your SSH password: ")
 
-    deployment_worker.run(args.config, args.experiment, args.skip, ssh_password)
+    stop_worker.run(args.config, ssh_password)
 
     logging.info("Done")
 
 
 def _create_parser():
-    parser = argparse.ArgumentParser(description=f"Deployment script for distributed java applications.")
+    parser = argparse.ArgumentParser(description=f"Stop script for distributed java applications.")
 
     parser.add_argument(
         "--config",
         type=Path,
         required=True,
         help=f"Path to configuration file.",
-    )
-
-    parser.add_argument(
-        "--experiment",
-        type=Path,
-        required=True,
-        default=None,
-        help=f"Path to the experiment file."
-    )
-
-    parser.add_argument(
-        "--skip",
-        default=[],
-        nargs="+",
-        help=f"Steps to skip."
     )
 
     return parser

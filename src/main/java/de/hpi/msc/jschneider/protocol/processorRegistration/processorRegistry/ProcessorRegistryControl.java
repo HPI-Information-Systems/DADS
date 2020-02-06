@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
@@ -139,18 +140,25 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
     {
         val processorId = message.getProcessor().getId();
+        val isLocalRegistrationMessage = ProcessorId.of(getModel().getSelf()).equals(processorId);
+        getModel().setLocalRegistrationReceived(getModel().isLocalRegistrationReceived() || isLocalRegistrationMessage);
 
-//        if (!getModel().isLocalRegistrationReceived() && !processorId.equals(ProcessorId.of(getModel().getSelf())))
-//        {
-//            getModel().getRegistrationMessages().put(message.getSender().path(), message);
-//            return;
-//        }
+        if (!getModel().isLocalRegistrationReceived())
+        {
+            // ignore incoming registration messages as long as we did not receive our own registration
+            return;
+        }
+
+        if (!getModel().getAcknowledgedRegistrationMessages().add(processorId))
+        {
+            // we already acknowledged the registration of that processor
+            return;
+        }
 
         getModel().getClusterProcessors().put(processorId, message.getProcessor());
         val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
         acknowledgeRegistrationMessage(message, existingProcessors);
-//        acknowledgeQueuedRegistrationMessages(existingProcessors);
     }
 
     private void acknowledgeRegistrationMessage(ProcessorRegistrationMessages.ProcessorRegistrationMessage message, Processor[] processors)
@@ -165,15 +173,5 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
                                                                                                                             .receiver(eventDispatcher)
                                                                                                                             .processor(message.getProcessor())
                                                                                                                             .build());
-    }
-
-    private void acknowledgeQueuedRegistrationMessages(Processor[] processors)
-    {
-        for (val message : getModel().getRegistrationMessages().values())
-        {
-            acknowledgeRegistrationMessage(message, processors);
-        }
-
-        getModel().getRegistrationMessages().clear();
     }
 }

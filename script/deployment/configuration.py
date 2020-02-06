@@ -68,7 +68,13 @@ class Experiment:
         return self._parameters
 
     @staticmethod
-    def from_json(json_dict: Dict[str, Any]) -> "Experiment":
+    def load(experiment_path: Path) -> "Experiment":
+        json_dict: Dict[str, Any] = json.load(experiment_path.open("r"))
+
+        return Experiment._from_json(json_dict)
+
+    @staticmethod
+    def _from_json(json_dict: Dict[str, Any]) -> "Experiment":
         experiment: Experiment = Experiment()
         experiment._id = json_dict["id"]
         experiment._parameters = json_dict["parameters"]
@@ -86,9 +92,9 @@ class Configuration:
         self._nodes: List[str] = []
         self._remote_workspace: str = ""
         self._remote_locations: List[str] = []
+        self._project_name: str = ""
         self._local_project: str = ""
         self._artifacts: List[DeploymentArtifact] = []
-        self._experiments: List[Experiment] = []
         self._master_command_template: str = ""
         self._slave_command_template: str = ""
 
@@ -109,16 +115,16 @@ class Configuration:
         return [self.remote_workspace + location for location in self._remote_locations]
 
     @property
+    def project_name(self) -> str:
+        return self._project_name
+
+    @property
     def local_project(self) -> str:
         return self._local_project
 
     @property
     def artifacts(self) -> List[DeploymentArtifact]:
         return self._artifacts
-
-    @property
-    def experiments(self) -> List[Experiment]:
-        return self._experiments
 
     @property
     def master_command_template(self) -> str:
@@ -141,15 +147,13 @@ class Configuration:
         config._nodes = json_dict["nodes"]
         config._remote_workspace = json_dict["remote-workspace"]
         config._remote_locations = json_dict["remote-locations"]
+        config._project_name = json_dict["project-name"]
         config._local_project = json_dict["local-project"]
         config._master_command_template = json_dict["master-command-template"]
         config._slave_command_template = json_dict["slave-command-template"]
 
         for json_artifact in json_dict["deploy-artifacts"]:
             config._artifacts.append(DeploymentArtifact.from_json(json_artifact))
-
-        for json_experiment in json_dict["experiments"]:
-            config._experiments.append(Experiment.from_json(json_experiment))
 
         if not config.remote_workspace.startswith("~/"):
             config._remote_workspace = "~/" + config.remote_workspace

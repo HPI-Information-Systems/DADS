@@ -2,7 +2,7 @@ import logging
 import subprocess
 from multiprocessing import Process
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List
 
 from configuration import Configuration, Experiment
 from experiment_environment import ExperimentEnvironment
@@ -11,32 +11,27 @@ from ssh_connection import SSHConnection
 
 class WorkerState:
 
-    def __init__(self, config_path: Path, node_index: int, ssh_password: str, experiment_id: str, skip_list: List[str]):
+    def __init__(self, config_path: Path, experiment_path: Path, skip_list: List[str], ssh_password: str,
+                 node_index: int):
         self.config: Configuration = Configuration.load(config_path)
+        self.experiment: Experiment = Experiment.load(experiment_path)
         self._node_index: int = node_index
         self.node: str = self.config.nodes[node_index]
-        self.ssh_password: str = ssh_password
-        self.experiment, self.command = self._set_experiment_data(experiment_id)
         self.skip_list: List[str] = skip_list
+        self.ssh_password: str = ssh_password
+        self.command: str = ExperimentEnvironment(self.config, self.experiment, node_index).command
+
         self.ssh: SSHConnection = SSHConnection(self.node,
                                                 self.config.ssh_user,
                                                 ssh_password)
 
-    def _set_experiment_data(self, experiment_id: str) -> Tuple[Optional[Experiment], str]:
-        filtered_experiments: List[Experiment] = list(filter(lambda x: x.id == experiment_id, self.config.experiments))
-        if len(filtered_experiments) == 0:
-            return None, ""
 
-        experiment: Experiment = filtered_experiments[0]
-        environment: ExperimentEnvironment = ExperimentEnvironment(self.config, experiment, self._node_index)
-
-        return experiment, environment.command
-
-
-def _worker(config_path: str, node_index: int, ssh_password: str, experiment_id: str, skip_list: List[str]) -> None:
-    state: WorkerState = WorkerState(Path(config_path), node_index, ssh_password, experiment_id, skip_list)
+def _worker(config_path: str, experiment_path: str, skip_list: List[str], ssh_password: str, node_index: int) -> None:
+    state: WorkerState = WorkerState(Path(config_path), Path(experiment_path), skip_list, ssh_password, node_index)
 
     logging.info(f"[{state.node}] Initializing SSH connection")
+
+    _stop_project(state)
 
     if "deploy" not in state.skip_list:
         logging.info(f"[{state.node}] Deploying project")
@@ -50,6 +45,12 @@ def _worker(config_path: str, node_index: int, ssh_password: str, experiment_id:
     _run_experiment(state)
 
     state.ssh.close()
+
+
+def _stop_project(state: WorkerState) -> None:
+    logging.info(f"[{state.node}] Stopping project")
+
+    state.ssh.execute(f"screen -X -S {state.config.project_name} quit")
 
 
 def _create_remote_workspace(state: WorkerState) -> None:
@@ -92,33 +93,38 @@ def _run_experiment(state: WorkerState) -> None:
     logging.info(f"[{state.node}] Starting experiment")
 
     state.ssh.execute(
-        f"screen -d -m -S {state.experiment.id} bash -c 'cd {state.config.remote_workspace} && {state.command}'")
+        f"screen -d -m -S {state.config.project_name}-{state.experiment.id} bash -c 'cd {state.config.remote_workspace} && {state.command}'")
 
 
-def run(skip_list: List[str], experiment_id: str, config_path: Path, ssh_password: str) -> None:
+def run(config_path: Path, experiment_path: Path, skip_list: List[str], ssh_password: str) -> None:
     config: Configuration = Configuration.load(config_path)
 
-    _build_project(skip_list, config)
-    _deploy_project(skip_list, experiment_id, config, config_path, ssh_password)
+    _build_project(config, skip_list)
+    _deploy_project(config_path, experiment_path, skip_list, ssh_password)
 
 
-def _build_project(skip_list: List[str], config: Configuration) -> None:
+def _build_project(config: Configuration, skip_list: List[str]) -> None:
     if "build" in skip_list:
         logging.info("Skipping build step")
         return
 
+    skip_tests: str = ""
+    if "tests" in skip_list:
+        skip_tests = "-Dmaven.test.skip=true "
+
     logging.info("Building project")
-    subprocess.run(f"mvn clean package -Dmaven.test.skip=true -q -f {config.local_project}", shell=True)
+    subprocess.run(f"mvn clean package -q {skip_tests} -f {config.local_project}", shell=True)
 
 
-def _deploy_project(skip_list: List[str], experiment_id: str, config: Configuration, config_path: Path,
-                    ssh_password: str) -> None:
+def _deploy_project(config_path: Path, experiment_path: Path, skip_list: List[str], ssh_password: str) -> None:
+    config: Configuration = Configuration.load(config_path)
     workers: List[Process] = []
 
     for node_index, _ in enumerate(config.nodes):
         worker: Process = Process(target=_worker,
                                   args=(
-                                      str(config_path.absolute()), node_index, ssh_password, experiment_id, skip_list),
+                                      str(config_path.absolute()), str(experiment_path.absolute()), skip_list,
+                                      ssh_password, node_index),
                                   daemon=False)
         workers.append(worker)
         worker.start()
