@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.Int32Range;
@@ -38,4 +39,6 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     private NodeCreationMessages.ReducedSubSequenceMessage reducedSubSequenceMessage;
     @NonNull @Getter
     private final Map<Integer, List<double[]>> intersections = new HashMap<>();
+    @NonNull @Getter
+    private final Map<Integer, NodeCollection> nodeCollections = new HashMap<>();
 }

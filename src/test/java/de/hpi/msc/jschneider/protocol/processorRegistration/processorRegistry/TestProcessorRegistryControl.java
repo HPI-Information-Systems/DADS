@@ -33,6 +33,7 @@ public class TestProcessorRegistryControl extends ProtocolTestCase
                                                    .dispatcherProvider(() -> localProcessor.getActorSystem().dispatcher())
                                                    .schedulerProvider(() -> localProcessor.getActorSystem().scheduler())
                                                    .actorSelectionCallback(path -> selection)
+                                                   .expectedNumberOfProcessors(1)
                                                    .build());
     }
 

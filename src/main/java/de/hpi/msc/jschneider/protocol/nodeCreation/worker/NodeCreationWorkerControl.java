@@ -191,7 +191,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         val intersectionCollections = Calculate.intersections(projection, firstSubSequenceIndex, getModel().getNumberOfIntersectionSegments());
 
-        Debug.print(intersectionCollections, "intersection-collections.txt");
+        Debug.print(intersectionCollections, String.format("%1$s-intersection-collections.txt", ProcessorId.of(getModel().getSelf())));
 
         for (val intersectionCollection : intersectionCollections)
         {
@@ -305,6 +305,13 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             nodeCollection.getNodes().add(Node.builder()
                                               .intersectionLength(getModel().getDensitySamples()[localMaximumIndex])
                                               .build());
+        }
+
+        getModel().getNodeCollections().put(intersectionSegment, nodeCollection);
+
+        if (getModel().getNodeCollections().size() == getModel().getNumberOfIntersectionSegments())
+        {
+            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }
 
         publishNodes(nodeCollection);

@@ -6,6 +6,7 @@ import akka.actor.Scheduler;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -24,10 +25,14 @@ import java.util.function.Function;
 @SuperBuilder
 public class ProcessorRegistryModel extends AbstractProtocolParticipantModel
 {
+    @Getter
+    private int expectedNumberOfProcessors;
     @Getter @Setter
     private Cancellable registrationSchedule;
     @NonNull @Getter
     private Function<String, ActorSelection> actorSelectionCallback;
+    @Getter @Builder.Default
+    private final Map<ProcessorId, ProcessorRegistrationMessages.ProcessorRegistrationMessage> registrationMessages = new HashMap<>();
     @Getter @Setter @Builder.Default
     private boolean localRegistrationReceived = false;
     @NonNull @Getter @Builder.Default

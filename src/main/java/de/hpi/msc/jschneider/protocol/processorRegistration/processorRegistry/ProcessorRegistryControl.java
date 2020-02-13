@@ -7,7 +7,6 @@ import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
-import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
@@ -140,25 +139,39 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
     {
         val processorId = message.getProcessor().getId();
-        val isLocalRegistrationMessage = ProcessorId.of(getModel().getSelf()).equals(processorId);
-        getModel().setLocalRegistrationReceived(getModel().isLocalRegistrationReceived() || isLocalRegistrationMessage);
-
-        if (!getModel().isLocalRegistrationReceived())
-        {
-            // ignore incoming registration messages as long as we did not receive our own registration
-            return;
-        }
-
-        if (!getModel().getAcknowledgedRegistrationMessages().add(processorId))
-        {
-            // we already acknowledged the registration of that processor
-            return;
-        }
-
+        getModel().getRegistrationMessages().put(processorId, message);
         getModel().getClusterProcessors().put(processorId, message.getProcessor());
+
+        if (getModel().getRegistrationMessages().size() > getModel().getExpectedNumberOfProcessors())
+        {
+            getLog().warn(String.format("Received registration from unexpected processor (id = %1$s).", processorId));
+            return;
+        }
+
+        if (getModel().getRegistrationMessages().size() != getModel().getExpectedNumberOfProcessors())
+        {
+            // wait for all expected nodes to register first
+            return;
+        }
+
+
+        acknowledgeRegistrationMessages();
+    }
+
+    private void acknowledgeRegistrationMessages()
+    {
         val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
-        acknowledgeRegistrationMessage(message, existingProcessors);
+        for (val entry : getModel().getRegistrationMessages().entrySet())
+        {
+            if (!getModel().getAcknowledgedRegistrationMessages().add(entry.getKey()))
+            {
+                continue;
+            }
+
+            val message = entry.getValue();
+            acknowledgeRegistrationMessage(message, existingProcessors);
+        }
     }
 
     private void acknowledgeRegistrationMessage(ProcessorRegistrationMessages.ProcessorRegistrationMessage message, Processor[] processors)

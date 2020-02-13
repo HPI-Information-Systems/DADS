@@ -95,6 +95,8 @@ class Configuration:
         self._project_name: str = ""
         self._local_project: str = ""
         self._artifacts: List[DeploymentArtifact] = []
+        self._pre_deploy_command: str = ""
+        self._post_deploy_command: str = ""
         self._master_command_template: str = ""
         self._slave_command_template: str = ""
 
@@ -127,6 +129,14 @@ class Configuration:
         return self._artifacts
 
     @property
+    def pre_deploy_command(self) -> str:
+        return self._pre_deploy_command
+
+    @property
+    def post_deploy_command(self) -> str:
+        return self._post_deploy_command
+
+    @property
     def master_command_template(self) -> str:
         return self._master_command_template
 
@@ -149,6 +159,8 @@ class Configuration:
         config._remote_locations = json_dict["remote-locations"]
         config._project_name = json_dict["project-name"]
         config._local_project = json_dict["local-project"]
+        config._pre_deploy_command = json_dict["pre-deploy"]
+        config._post_deploy_command = json_dict["post-deploy"]
         config._master_command_template = json_dict["master-command-template"]
         config._slave_command_template = json_dict["slave-command-template"]
 

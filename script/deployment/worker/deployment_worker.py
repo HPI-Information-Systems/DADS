@@ -35,10 +35,12 @@ def _worker(config_path: str, experiment_path: str, skip_list: List[str], ssh_pa
 
     if "deploy" not in state.skip_list:
         logging.info(f"[{state.node}] Deploying project")
+        _pre_deploy(state)
         _create_remote_workspace(state)
         _clean_remote_work_space(state)
         _create_remote_locations(state)
         _deploy_artifacts(state)
+        _post_deploy(state)
     else:
         logging.info(f"[{state.node}] Skipping deploy step")
 
@@ -51,6 +53,18 @@ def _stop_project(state: WorkerState) -> None:
     logging.info(f"[{state.node}] Stopping project")
 
     state.ssh.execute(f"screen -X -S {state.config.project_name} quit")
+
+
+def _pre_deploy(state: WorkerState) -> None:
+    logging.info(f"[{state.node}] Executing pre-deploy command")
+
+    state.ssh.execute(state.config.pre_deploy_command)
+
+
+def _post_deploy(state: WorkerState) -> None:
+    logging.info(f"[{state.node}] Executing post-deploy command")
+
+    state.ssh.execute(state.config.post_deploy_command)
 
 
 def _create_remote_workspace(state: WorkerState) -> None:
