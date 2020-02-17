@@ -47,7 +47,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         // we do NOT need to complete the message, because this message is not sent via a message proxy and therefore
-        // is not stored in one the queues
+        // is not stored in one of the queues
         dequeueUndeliveredMessages();
     }
 
@@ -60,18 +60,33 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         // we do NOT need to complete the message, because this message is not sent via a message proxy and therefore
-        // is not stored in one the queues
+        // is not stored in one of the queues
         dequeueUndeliveredMessages();
     }
 
     private void dequeueUndeliveredMessages()
     {
         val previousQueueSize = getModel().getUndeliveredMessages().size();
+        if (previousQueueSize > 0)
+        {
+            getLog().info(String.format("Trying to dequeue %1$d undelivered message(s).", previousQueueSize));
+        }
 
         while (!getModel().getUndeliveredMessages().isEmpty())
         {
-            if (!tryDeliver(getModel().getUndeliveredMessages().peek()))
+            val message = getModel().getUndeliveredMessages().peek();
+            if (message == null)
             {
+                getModel().getUndeliveredMessages().poll();
+                continue;
+            }
+
+            if (!tryDeliver(message))
+            {
+                getLog().info(String.format("Unable to deliver message (type = %1$s) from %2$s to %3$s.",
+                                            message.getClass().getName(),
+                                            message.getSender().path(),
+                                            message.getReceiver().path()));
                 break;
             }
 
@@ -89,6 +104,8 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
     private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
+        dequeueUndeliveredMessages();
+
         if (tryDeliver(message))
         {
             return;
@@ -116,6 +133,15 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         if (remoteProcessorId.equals(ProcessorId.of(getModel().getSelf())))
         {
             remoteProcessorId = ProcessorId.of(message.getSender());
+
+            if (message instanceof MessageExchangeMessages.RedirectableMessage)
+            {
+                val forwarder = ((MessageExchangeMessages.RedirectableMessage) message).getForwarder();
+                if (forwarder != null && !forwarder.equals(ActorRef.noSender()))
+                {
+                    remoteProcessorId = ProcessorId.of(forwarder);
+                }
+            }
         }
 
         return getOrCreateMessageProxy(remoteProcessorId);
@@ -145,7 +171,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         val model = MessageProxyModel.builder()
-                                     .messageDispatcher(remoteMessageDispatcher.get().getRootActor())
+                                     .remoteMessageDispatcher(remoteMessageDispatcher.get().getRootActor())
                                      .build();
 
         val control = new MessageProxyControl(model);

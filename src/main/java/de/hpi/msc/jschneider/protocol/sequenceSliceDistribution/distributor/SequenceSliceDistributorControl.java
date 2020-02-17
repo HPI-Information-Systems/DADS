@@ -28,6 +28,8 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         }
 
         getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializeSequenceDistributor, this::initializationMessageFactory);
+
+        getLog().info(String.format("Starting sequence slice transfer to %1$s.", getModel().getSliceReceiverActorSystem()));
     }
 
     @Override
@@ -44,6 +46,8 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
     private void whenFinished(DataDistributor distributor)
     {
         // TODO: terminate self?!
+        getLog().info(String.format("Finished sequence slice distribution to %1$s.",
+                                    getModel().getSliceReceiverActorSystem()));
     }
 
     private SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage initializationMessageFactory(DataDistributor distributor)

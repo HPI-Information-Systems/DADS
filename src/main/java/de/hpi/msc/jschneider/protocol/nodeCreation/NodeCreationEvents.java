@@ -27,6 +27,7 @@ public class NodeCreationEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .segmentResponsibilities(getSegmentResponsibilities())
                             .subSequenceResponsibilities(getSubSequenceResponsibilities())
                             .numberOfIntersectionSegments(getNumberOfIntersectionSegments())
@@ -45,6 +46,7 @@ public class NodeCreationEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .intersectionCollection(getIntersectionCollection())
                             .build();
         }

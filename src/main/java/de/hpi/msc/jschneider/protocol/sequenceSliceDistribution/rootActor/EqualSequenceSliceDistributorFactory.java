@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor;
 
 import akka.actor.Props;
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;

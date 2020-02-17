@@ -16,6 +16,7 @@ public class TestMessage extends MessageExchangeMessages.RedirectableMessage
     {
         return builder().sender(getSender())
                         .receiver(newReceiver)
+                        .forwarder(getReceiver())
                         .build();
     }
 }

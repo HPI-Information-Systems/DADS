@@ -4,6 +4,8 @@ import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
+import de.hpi.msc.jschneider.math.NodeCollection;
+import de.hpi.msc.jschneider.protocol.edgeCreation.worker.LocalIntersection;
 import lombok.SneakyThrows;
 import lombok.val;
 import lombok.var;
@@ -104,6 +106,35 @@ public class Debug
     }
 
     @SneakyThrows
+    public static void print(NodeCollection[] nodeCollections, String fileName)
+    {
+        val writer = createWriter(fileName);
+        val sortedNodeCollections = Arrays.stream(nodeCollections)
+                                          .sorted(Comparator.comparingInt(NodeCollection::getIntersectionSegment))
+                                          .collect(Collectors.toList());
+
+        for (var segmentIndex = 0; segmentIndex < sortedNodeCollections.size(); ++segmentIndex)
+        {
+            for (var nodeIndex = 0; nodeIndex < sortedNodeCollections.get(segmentIndex).getNodes().size(); ++nodeIndex)
+            {
+                val stringBuilder = new StringBuilder();
+                stringBuilder.append("{")
+                             .append(segmentIndex)
+                             .append("_")
+                             .append(nodeIndex)
+                             .append("} ")
+                             .append(sortedNodeCollections.get(segmentIndex).getNodes().get(nodeIndex).getIntersectionLength())
+                             .append("\n");
+
+                writer.write(stringBuilder.toString());
+            }
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
     public static void print(Graph graph, String fileName)
     {
         val writer = createWriter(fileName);
@@ -140,6 +171,29 @@ public class Debug
                 stringBuilder.append("\t");
             }
             stringBuilder.append("]\n");
+            writer.write(stringBuilder.toString());
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
+    public static void print(LocalIntersection[] localIntersections, String fileName)
+    {
+        val writer = createWriter(fileName);
+
+        for (val localIntersection : localIntersections)
+        {
+            val stringBuilder = new StringBuilder();
+            stringBuilder.append("{")
+                         .append(localIntersection.getSubSequenceIndex())
+                         .append("_")
+                         .append(localIntersection.getIntersectionSegment())
+                         .append("} ")
+                         .append(localIntersection.getIntersectionDistance())
+                         .append("\n");
+
             writer.write(stringBuilder.toString());
         }
 

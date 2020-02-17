@@ -3,14 +3,17 @@ import struct
 from pathlib import Path
 
 
-def main(arguments):
-    with arguments.input.open("r") as input, open("output.bin", "wb+") as output:
-        for line in input:
+def main():
+    parser = _create_arg_parser()
+    args = parser.parse_args()
+
+    with args.input.open("r") as in_file, args.output.open("wb+") as out_file:
+        for line in in_file:
             value = float(line)
-            output.write(bytearray(struct.pack("!d", value)))
+            out_file.write(bytearray(struct.pack("!d", value)))
 
 
-if __name__ == "__main__":
+def _create_arg_parser():
     argument_parser = argparse.ArgumentParser()
 
     argument_parser.add_argument(
@@ -19,5 +22,14 @@ if __name__ == "__main__":
         required=True
     )
 
-    arguments = argument_parser.parse_args()
-    main(arguments)
+    argument_parser.add_argument(
+        "--output",
+        type=Path,
+        required=True
+    )
+
+    return argument_parser
+
+
+if __name__ == "__main__":
+    main()

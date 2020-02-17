@@ -18,6 +18,7 @@ public class ScoringEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .build();
         }
     }

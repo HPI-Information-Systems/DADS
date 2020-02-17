@@ -4,6 +4,7 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
@@ -27,22 +28,22 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         val senderQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (senderQueue == null)
         {
-            getLog().debug(String.format("Unable to get %1$s in order to complete earlier message! (Sender = %2$s)",
-                                         ActorMessageQueue.class.getName(),
+            getLog().error(String.format("Unable to get message queue for %1$s in order to complete earlier message!",
                                          message.getSender().path()));
             return;
         }
         else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {
-            getLog().error(String.format("Unexpected message completion for a message we never seen before! (sender = %1$s, receiver = %2$s)",
+            getLog().error(String.format("Unexpected message completion for a message we have never seen before! (sender = %1$s, receiver = %2$s)",
                                          message.getSender().path(),
                                          message.getReceiver().path()));
+            return;
         }
 
         getModel().getTotalNumberOfEnqueuedMessages().decrement();
         dequeueAndSend(senderQueue);
 
-        if (message.getReceiver().path().root() != getModel().getSelf().path().root())
+        if (!ProcessorId.of(message.getReceiver()).equals(ProcessorId.of(getModel().getSelf())))
         {
             forward(message);
         }
@@ -99,19 +100,19 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void forward(MessageExchangeMessages.MessageExchangeMessage message)
     {
-        if (message.getReceiver().path().root() == getModel().getSelf().path().root())
+        if (ProcessorId.of(message.getReceiver()).equals(ProcessorId.of(getModel().getSelf())))
         {
             message.getReceiver().tell(message, message.getSender());
         }
         else
         {
-            getModel().getMessageDispatcher().tell(message, message.getSender());
+            getModel().getRemoteMessageDispatcher().tell(message, message.getSender());
         }
     }
 
     private void applyBackPressure(ActorRef receiver)
     {
-        if (receiver.path().root() != getModel().getSelf().path().root())
+        if (!ProcessorId.of(receiver).equals(ProcessorId.of(getModel().getSelf())))
         {
             // apply back pressure only to local actors
             return;

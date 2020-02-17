@@ -10,6 +10,7 @@ import lombok.val;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
 
 public class TestDimensionReductionReceiverControl extends ProtocolTestCase
 {
@@ -84,7 +85,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
         assertThatMessageIsCompleted(message);
     }
 
-    public void testWaitForBothTransfersBeforePerformingDimensionReduction()
+    public void testWaitForAllTransfersBeforePerformingDimensionReduction()
     {
         val principalComponents = createMatrix(5, 3);
         val rotation = createMatrix(3, 3);
@@ -119,7 +120,7 @@ public class TestDimensionReductionReceiverControl extends ProtocolTestCase
                                                                                                            .build();
         transfer(columnMeans, self, messageInterface, initializeColumnMeansTransfer, false);
 
-        val projection2d = rotation.multiply(projection.subtract(columnMeans).multiply(principalComponents).transpose()).logical().row(0, 1).get();
+        val projection2d = rotation.multiply(projection.operateOnColumns(SUBTRACT, columnMeans).get().multiply(principalComponents).transpose()).logical().row(0, 1).get();
         val reducedProjectionCreatedEvent = expectEvent(DimensionReductionEvents.ReducedProjectionCreatedEvent.class);
 
         assertThat(projection2d.equals(reducedProjectionCreatedEvent.getReducedProjection(), MATRIX_COMPARISON_CONTEXT)).isTrue();

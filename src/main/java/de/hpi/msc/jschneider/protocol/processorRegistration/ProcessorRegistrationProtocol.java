@@ -2,7 +2,8 @@ package de.hpi.msc.jschneider.protocol.processorRegistration;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.RootActorPath;
+import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
@@ -23,6 +24,7 @@ import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringProtocol;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionProtocol;
 import lombok.val;
+import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -101,7 +103,14 @@ public class ProcessorRegistrationProtocol
 
     private static ActorRef createRootActor(ActorSystem actorSystem, Processor localProcessor)
     {
+        var expectedNumberOfProcessors = 0;
+        if (SystemParameters.getCommand() instanceof MasterCommand)
+        {
+            expectedNumberOfProcessors = ((MasterCommand) SystemParameters.getCommand()).getMinimumNumberOfSlaves() + 1; // add one, because the master is always working
+        }
+
         rootActorModel = ProcessorRegistryModel.builder()
+                                               .expectedNumberOfProcessors(expectedNumberOfProcessors)
                                                .actorSelectionCallback(actorSystem::actorSelection)
                                                .schedulerProvider(actorSystem::scheduler)
                                                .dispatcherProvider(actorSystem::dispatcher)

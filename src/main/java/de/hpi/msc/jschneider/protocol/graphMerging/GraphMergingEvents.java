@@ -22,6 +22,7 @@ public class GraphMergingEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .graph(getGraph())
                             .build();
         }

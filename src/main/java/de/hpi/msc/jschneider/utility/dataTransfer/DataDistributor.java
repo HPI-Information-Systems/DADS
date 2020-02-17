@@ -82,16 +82,16 @@ public class DataDistributor
                                                           .build();
         control.send(message);
 
-        Log.info(String.format("[$1%s] Sending data part (size = %2$d, isLast = %3$s) to %4$s.",
-                               control.getClass().getName(),
-                               data.length,
-                               dataSource.isAtEnd(),
-                               receiver.path()));
+        Log.debug(String.format("[$1%s] Sending data part (size = %2$d, isLast = %3$s) to %4$s.",
+                                control.getClass().getName(),
+                                data.length,
+                                dataSource.isAtEnd(),
+                                receiver.path()));
 
         if (dataSource.isAtEnd() && !finished)
         {
             finished = true;
-            Log.info(String.format("[%1$s] Done sending data to %2$s.", control.getClass().getName(), receiver.path()));
+            Log.debug(String.format("[%1$s] Done sending data to %2$s.", control.getClass().getName(), receiver.path()));
             onFinished.invoke(this);
         }
     }

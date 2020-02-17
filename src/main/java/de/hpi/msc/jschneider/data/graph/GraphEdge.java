@@ -41,6 +41,22 @@ public class GraphEdge
     }
 
     @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+
+        if (!(obj instanceof GraphEdge))
+        {
+            return false;
+        }
+
+        return hashCode() == obj.hashCode();
+    }
+
+    @Override
     public String toString()
     {
         return String.format("%1$s -[%2$d]-> %3$s", from, weight.get(), to);

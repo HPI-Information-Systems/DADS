@@ -22,6 +22,7 @@ public class GraphMergingMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .build();
         }
@@ -52,6 +53,7 @@ public class GraphMergingMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .operationId(getOperationId())
                             .build();
         }

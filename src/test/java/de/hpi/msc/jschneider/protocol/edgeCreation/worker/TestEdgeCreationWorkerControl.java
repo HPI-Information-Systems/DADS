@@ -12,9 +12,11 @@ import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
+import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.val;
@@ -98,6 +100,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
     private IntersectionCollection[] createIntersectionCollections(int numberOfIntersectionSegments, Int64Range subSequenceRange)
     {
         val collections = new IntersectionCollection[numberOfIntersectionSegments];
+        val nextCreationIndex = new Counter(0L);
         for (var segment = 0; segment < collections.length; ++segment)
         {
             val collection = IntersectionCollection.builder()
@@ -113,12 +116,14 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
                     subSequenceIndex = RANDOM.nextInt((int) subSequenceRange.length()) + subSequenceRange.getFrom();
                 } while (usedSubSequenceIndices.contains(subSequenceIndex));
 
+                nextCreationIndex.increment(Math.max(1L, subSequenceIndex));
                 usedSubSequenceIndices.add(subSequenceIndex);
                 val intersectionDistance = RANDOM.nextDouble() * 100.0d;
 
                 collection.getIntersections().add(Intersection.builder()
                                                               .subSequenceIndex(subSequenceIndex)
                                                               .intersectionDistance(intersectionDistance)
+                                                              .creationIndex(nextCreationIndex.get())
                                                               .build());
             }
 
@@ -133,19 +138,13 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
 
     private void assertThatQueueIsSorted(List<LocalIntersection> queue)
     {
-        var lastSubSequenceIndex = -1L;
-        var lastIntersectionSegment = -1;
-        while (!queue.isEmpty())
+        var lastCreationIndex = -1L;
+        for (var queueIndex = 0; queueIndex < queue.size(); ++queueIndex)
         {
-            val intersection = queue.remove(0);
-
+            val intersection = queue.get(queueIndex);
             assertThat(intersection).isNotNull();
-            assertThat(intersection.getSubSequenceIndex() > lastSubSequenceIndex ||
-                       (intersection.getSubSequenceIndex() == lastSubSequenceIndex && intersection.getIntersectionSegment() > lastIntersectionSegment))
-                    .isTrue();
-
-            lastSubSequenceIndex = intersection.getSubSequenceIndex();
-            lastIntersectionSegment = intersection.getIntersectionSegment();
+            assertThat(intersection.getCreationIndex()).isGreaterThan(lastCreationIndex);
+            lastCreationIndex = intersection.getCreationIndex();
         }
     }
 
@@ -233,11 +232,12 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         return collection;
     }
 
-    private Intersection createIntersection(long subSequenceIndex, double intersectionLength)
+    private Intersection createIntersection(long subSequenceIndex, double intersectionLength, long creationIndex)
     {
         return Intersection.builder()
                            .subSequenceIndex(subSequenceIndex)
                            .intersectionDistance(intersectionLength)
+                           .creationIndex(creationIndex)
                            .build();
     }
 
@@ -362,28 +362,28 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
 
         val intersectionCollections = new IntersectionCollection[numberOfIntersectionSegments];
         intersectionCollections[2] = createIntersectionCollection(2,
-                                                                  createIntersection(0L, 3.5d));
+                                                                  createIntersection(0L, 3.5d, 0L));
         intersectionCollections[1] = createIntersectionCollection(1,
-                                                                  createIntersection(1L, 3.0d),
-                                                                  createIntersection(2L, 4.5d),
-                                                                  createIntersection(3L, 3.0d),
-                                                                  createIntersection(4L, 4.5d));
+                                                                  createIntersection(1L, 3.0d, 1L),
+                                                                  createIntersection(2L, 4.5d, 2L),
+                                                                  createIntersection(3L, 3.0d, 3L),
+                                                                  createIntersection(4L, 4.5d, 4L));
         intersectionCollections[3] = createIntersectionCollection(3,
-                                                                  createIntersection(5L, 4.0d),
-                                                                  createIntersection(7L, 1.0d));
+                                                                  createIntersection(5L, 4.0d, 5L),
+                                                                  createIntersection(7L, 1.0d, 7L));
         intersectionCollections[4] = createIntersectionCollection(4,
-                                                                  createIntersection(8L, 5.0d));
+                                                                  createIntersection(8L, 5.0d, 8L));
         intersectionCollections[5] = createIntersectionCollection(5,
-                                                                  createIntersection(9L, 3.0d));
+                                                                  createIntersection(9L, 3.0d, 9L));
         intersectionCollections[0] = createIntersectionCollection(0,
-                                                                  createIntersection(10L, 1.5d),
-                                                                  createIntersection(15L, 3.5d));
+                                                                  createIntersection(10L, 1.5d, 10L),
+                                                                  createIntersection(15L, 3.5d, 15L));
         intersectionCollections[6] = createIntersectionCollection(6,
-                                                                  createIntersection(11L, 2.5d),
-                                                                  createIntersection(14L, 4.5d));
+                                                                  createIntersection(11L, 2.5d, 11L),
+                                                                  createIntersection(14L, 4.5d, 14L));
         intersectionCollections[7] = createIntersectionCollection(7,
-                                                                  createIntersection(12L, 3.0d),
-                                                                  createIntersection(13L, 2.0d));
+                                                                  createIntersection(12L, 3.0d, 12L),
+                                                                  createIntersection(13L, 2.0d, 13L));
 
         val localIntersectionCollections = extractLocalIntersectionCollections(intersectionCollections, sequenceResponsibilities.get(ProcessorId.of(self.ref())));
         val totalNumberOfLocalIntersections = Arrays.stream(localIntersectionCollections).mapToLong(collection -> collection.getIntersections().size()).sum();
@@ -404,6 +404,7 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
         sendNodes(control, messageInterface, nodeCollections[0], true);
         assertThat(control.getModel().getGraph().getEdges()).isEmpty();
 
+
         sendNodes(control, messageInterface, nodeCollections[1], true);
         assertThat(control.getModel().getGraph().getEdges()).isEmpty();
 
@@ -422,6 +423,9 @@ public class TestEdgeCreationWorkerControl extends ProtocolTestCase
                                            "{3_1} -[1]-> {3_1}",
                                            "{3_1} -[1]-> {3_0}");
         assertThat(control.getModel().getIntersectionsToMatch()).isEmpty();
+
+        val lastNodeMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EdgeCreationMessages.LastNodeMessage.class);
+        assertThat(lastNodeMessage.getReceiver()).isEqualTo(remoteProcessor.getProtocolRootActor(ProtocolType.EdgeCreation).ref());
 
         val partitionCreatedEvent = expectEvent(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
         assertThat(partitionCreatedEvent.getGraphPartition().getEdges().values()).containsExactlyInAnyOrder(control.getModel().getGraph().getEdges().values().toArray(new GraphEdge[0]));

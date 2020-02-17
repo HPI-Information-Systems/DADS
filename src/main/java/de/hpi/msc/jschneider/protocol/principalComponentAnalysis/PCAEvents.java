@@ -26,6 +26,7 @@ public class PCAEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .principalComponents(getPrincipalComponents())
                             .rotation(getRotation())
                             .columnMeans(getColumnMeans())

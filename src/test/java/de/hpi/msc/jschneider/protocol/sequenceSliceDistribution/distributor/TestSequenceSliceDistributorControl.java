@@ -115,7 +115,8 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
     public void testSendSlicePartOnRequest()
     {
         val control = initializedControl();
-        control.getModel().setMaximumMessageSizeProvider(() -> (long) SEQUENCE_LENGTH * Double.BYTES);
+        val maximumMessageSize = SEQUENCE_LENGTH * Double.BYTES / DataDistributor.MESSAGE_SIZE_FACTOR / 2.0d;
+        control.getModel().setMaximumMessageSizeProvider(() -> (long) maximumMessageSize);
         val messageInterface = createMessageInterface(control);
 
         val request = DataTransferMessages.RequestNextDataPartMessage.builder()
@@ -128,7 +129,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val firstPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(firstPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(firstPartMessage.isLastPart()).isFalse();
-        assertThat(Serialize.toDoubles(firstPartMessage.getPart())).containsExactly(range(0, (int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR)));
+        assertThat(Serialize.toDoubles(firstPartMessage.getPart())).containsExactly(range(0, SEQUENCE_LENGTH / 2));
         assertThatMessageIsCompleted(request);
 
         messageInterface.apply(request);
@@ -136,7 +137,7 @@ public class TestSequenceSliceDistributorControl extends ProtocolTestCase
         val secondPartMessage = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(DataTransferMessages.DataPartMessage.class);
         assertThat(secondPartMessage.getReceiver()).isEqualTo(localSliceReceiver.ref());
         assertThat(secondPartMessage.isLastPart()).isTrue();
-        assertThat(Serialize.toDoubles(secondPartMessage.getPart())).containsExactly(range((int) (SEQUENCE_LENGTH * DataDistributor.MESSAGE_SIZE_FACTOR), (int) (SEQUENCE_LENGTH * (1.0f - DataDistributor.MESSAGE_SIZE_FACTOR))));
+        assertThat(Serialize.toDoubles(secondPartMessage.getPart())).containsExactly(range(SEQUENCE_LENGTH / 2, SEQUENCE_LENGTH / 2));
         assertThatMessageIsCompleted(request);
     }
 

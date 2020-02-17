@@ -20,6 +20,7 @@ public class EdgeCreationEvents
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .graphPartition(getGraphPartition())
                             .build();
         }

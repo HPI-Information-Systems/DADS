@@ -51,6 +51,8 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                    dataReceiver -> dataReceiver.whenDataPartReceived(this::onSlicePart)
                                                                                .whenFinished(this::whenFinished)
                                                                                .addSink(getModel().getSequenceWriter()));
+
+        getLog().info(String.format("Start receiving sequence slice from %1$s.", message.getSender().path()));
     }
 
     private void onSlicePart(DataTransferMessages.DataPartMessage message)
@@ -126,6 +128,13 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
     private void whenFinished(DataReceiver receiver)
     {
         val projection = getModel().getProjectionInitializer().create();
+
+        getLog().info(String.format("Local projection (%1$d x %2$d) for sub sequences [%3$d, %4$d) created (isLastSubSequenceChunk = %5$s).",
+                                    projection.countRows(),
+                                    projection.countColumns(),
+                                    getModel().getFirstSubSequenceIndex(),
+                                    getModel().getFirstSubSequenceIndex() + projection.countRows(),
+                                    getModel().isLastSubSequenceChunk()));
 
         trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.ProjectionCreatedEvent.builder()
                                                                                                                                       .sender(getModel().getSelf())

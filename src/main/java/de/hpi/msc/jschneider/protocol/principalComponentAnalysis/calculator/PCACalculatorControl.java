@@ -1,7 +1,5 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
-import de.hpi.msc.jschneider.SystemParameters;
-import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -95,6 +93,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val dataMatrix = Calculate.columnCenteredDataMatrix(getModel().getProjection(), transposedColumnMeans);
         calculateAndTransferR(dataMatrix);
 
+        getLog().info(String.format("PCA calculation for step %1$d done.", getModel().getCurrentCalculationStep().get()));
         getModel().getCurrentCalculationStep().increment();
 
         if (numberOfProcessors() > 1)
@@ -224,12 +223,13 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                 // not yet received
                 return;
             }
-            getModel().getRemoteRsByProcessStep().remove(currentStep);
+            getModel().getRemoteRsByProcessStep().remove(currentStep - 1);
             dataMatrix = MatrixInitializer.concat(dataMatrix, remoteR);
         }
 
         calculateAndTransferR(dataMatrix);
 
+        getLog().info(String.format("PCA calculation for step %1$d done.", getModel().getCurrentCalculationStep().get()));
         getModel().getCurrentCalculationStep().increment();
         if (isLastStep())
         {
@@ -275,10 +275,6 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         svd.compute(qrDecomposition.getR());
         val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());
         val referenceVector = createReferenceVector(principalComponents, totalColumnMeans);
-//        val angleX = Calculate.angleBetween(Calculate.makeRowVector(1.0d, 0.0d, 0.0d), referenceVector);
-//        val angleY = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 1.0d, 0.0d), referenceVector);
-//        val angleZ = Calculate.angleBetween(Calculate.makeRowVector(0.0d, 0.0d, 1.0d), referenceVector);
-//        val rotation = Calculate.makeRotationX(angleX).multiply(Calculate.makeRotationY(angleY)).multiply(Calculate.makeRotationZ(angleZ));
         val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
@@ -317,20 +313,11 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         return result;
     }
 
-//    private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents)
-//    {
-//        val min = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMinimumRecord()).multiply(principalComponents);
-//        val max = Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getMaximumRecord()).multiply(principalComponents);
-//
-//        return max.subtract(min);
-//    }
-
     private MatrixStore<Double> createReferenceVector(MatrixStore<Double> principalComponents, MatrixStore<Double> columnMeans)
     {
-        assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master is able to create the reference vector!";
-        val convolutionSize = ((MasterCommand) SystemParameters.getCommand()).getConvolutionSize();
+        assert getModel().getLocalProcessor().isMaster() : "Only the master is able to create the reference vector!";
 
-        return Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), convolutionSize * getModel().getMinimumRecord())
+        return Calculate.makeFilledRowVector(getModel().getProjection().countColumns(), getModel().getConvolutionSize() * getModel().getMinimumRecord())
                         .subtract(columnMeans)
                         .multiply(principalComponents);
     }

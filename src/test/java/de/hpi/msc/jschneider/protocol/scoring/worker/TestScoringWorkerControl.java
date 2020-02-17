@@ -64,6 +64,8 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         val graphReceivedSubscription = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(EventDispatcherMessages.SubscribeToEventMessage.class);
         assertThat(graphReceivedSubscription.getReceiver().path().root()).isEqualTo(self.ref().path().root());
         assertThat(graphReceivedSubscription.getEventType()).isEqualTo(GraphMergingEvents.GraphReceivedEvent.class);
+
+        localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectNoMessage();
     }
 
     public void testReceiveResponsibilities()
@@ -73,7 +75,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
 
         assertThat(control.getModel().isResponsibilitiesReceived()).isFalse();
 
-        val event = createResponsibilitiesReceivedEvent(self, self, 180, 100L, remoteActor, self);
+        val event = createResponsibilitiesReceivedEvent(self, self, 180, 100L, self, remoteActor);
         messageInterface.apply(event);
 
         assertThat(control.getModel().isResponsibilitiesReceived()).isTrue();
@@ -87,7 +89,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         val control = control();
         val messageInterface = createMessageInterface(control);
 
-        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, remoteActor, self);
+        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, self, remoteActor);
         messageInterface.apply(responsibilitiesReceivedEvent);
         assertThatMessageIsCompleted(responsibilitiesReceivedEvent);
 
@@ -125,7 +127,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         val messageInterface = createMessageInterface(control);
 
         assertThat(control.getModel().isResponsibilitiesReceived()).isFalse();
-        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, remoteActor, self);
+        val responsibilitiesReceivedEvent = createResponsibilitiesReceivedEvent(self, self, 180, 100L, self, remoteActor);
         messageInterface.apply(responsibilitiesReceivedEvent);
         assertThatMessageIsCompleted(responsibilitiesReceivedEvent);
 

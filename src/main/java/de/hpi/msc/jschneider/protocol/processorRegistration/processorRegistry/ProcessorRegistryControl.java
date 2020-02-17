@@ -139,13 +139,47 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     private void onRegistration(ProcessorRegistrationMessages.ProcessorRegistrationMessage message)
     {
         val processorId = message.getProcessor().getId();
+        getModel().getRegistrationMessages().put(processorId, message);
         getModel().getClusterProcessors().put(processorId, message.getProcessor());
+
+        if (getModel().getRegistrationMessages().size() > getModel().getExpectedNumberOfProcessors())
+        {
+            getLog().warn(String.format("Received registration from unexpected processor (id = %1$s).", processorId));
+            return;
+        }
+
+        if (getModel().getRegistrationMessages().size() != getModel().getExpectedNumberOfProcessors())
+        {
+            // wait for all expected nodes to register first
+            return;
+        }
+
+
+        acknowledgeRegistrationMessages();
+    }
+
+    private void acknowledgeRegistrationMessages()
+    {
         val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
+        for (val entry : getModel().getRegistrationMessages().entrySet())
+        {
+            if (!getModel().getAcknowledgedRegistrationMessages().add(entry.getKey()))
+            {
+                continue;
+            }
 
+            val message = entry.getValue();
+            acknowledgeRegistrationMessage(message, existingProcessors);
+        }
+    }
+
+    private void acknowledgeRegistrationMessage(ProcessorRegistrationMessages.ProcessorRegistrationMessage message, Processor[] processors)
+    {
         message.getSender().tell(ProcessorRegistrationMessages.AcknowledgeRegistrationMessage.builder()
-                                                                                             .existingProcessors(existingProcessors)
-                                                                                             .build(), getModel().getSelf());
+                                                                                             .existingProcessors(processors)
+                                                                                             .build(),
+                                 getModel().getSelf());
 
         trySendEvent(ProtocolType.ProcessorRegistration, eventDispatcher -> ProcessorRegistrationEvents.ProcessorJoinedEvent.builder()
                                                                                                                             .sender(getModel().getSelf())

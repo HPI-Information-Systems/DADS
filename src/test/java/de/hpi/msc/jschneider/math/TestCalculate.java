@@ -113,7 +113,6 @@ public class TestCalculate extends TestCase
                                          .appendRow(new double[]{0.0d, 1.0d})
                                          .appendRow(new double[]{-1.0d, 0.0d})
                                          .appendRow(new double[]{0.0d, -1.0d})
-                                         .appendRow(new double[]{1.0d, 0.0d})
                                          .create()
                                          .transpose());
         val numberOfSegments = 4;
@@ -127,13 +126,9 @@ public class TestCalculate extends TestCase
                                                            .allMatch(intersection -> Calculate.isSame(intersection.getIntersectionDistance(), 1.0d))))
                 .isTrue();
 
-        for (var segmentIndex = 0; segmentIndex < numberOfSegments; ++segmentIndex)
+        for (var intersectionSegment = 0; intersectionSegment < numberOfSegments; ++intersectionSegment)
         {
-            assertThat(intersections[segmentIndex].getIntersectionSegment()).isEqualTo(segmentIndex);
-            assertThat(intersections[segmentIndex].getIntersections().size()).isEqualTo(2);
-
-            assertThat(intersections[segmentIndex].getIntersections().stream().mapToLong(Intersection::getSubSequenceIndex))
-                    .containsExactlyInAnyOrder((long) segmentIndex, (long) Math.floorMod(segmentIndex - 1, numberOfSegments));
+            assertThat(intersections[intersectionSegment].getIntersectionSegment()).isEqualTo(intersectionSegment);
         }
     }
 

@@ -12,8 +12,6 @@ class SSHConnection:
         if not self._ssh_session.login(hostname, username, password):
             raise Exception(f"[{hostname}] FAILED SSH CONNECTION")
 
-        self.execute("sh")
-
     def execute(self, line: str) -> List[str]:
         self._ssh_session.sendline(line)
         self._ssh_session.prompt()
@@ -24,5 +22,4 @@ class SSHConnection:
         return response
 
     def close(self):
-        self.execute("exit")
         self._ssh_session.close()

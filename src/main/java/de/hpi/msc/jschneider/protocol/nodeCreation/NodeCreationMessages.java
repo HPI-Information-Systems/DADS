@@ -25,6 +25,7 @@ public class NodeCreationMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .subSequenceIndices(getSubSequenceIndices())
                             .maximumValue(getMaximumValue())
                             .isLastSubSequenceChunk(isLastSubSequenceChunk())
@@ -46,6 +47,7 @@ public class NodeCreationMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .numberOfIntersectionSegments(getNumberOfIntersectionSegments())
                             .maximumValue(getMaximumValue())
                             .intersectionSegmentResponsibilities(getIntersectionSegmentResponsibilities())
@@ -83,6 +85,7 @@ public class NodeCreationMessages
         {
             return builder().sender(getSender())
                             .receiver(newReceiver)
+                            .forwarder(getReceiver())
                             .intersectionSegment(getIntersectionSegment())
                             .nodes(getNodes())
                             .build();

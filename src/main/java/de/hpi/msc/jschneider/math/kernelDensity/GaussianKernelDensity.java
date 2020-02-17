@@ -44,7 +44,20 @@ public class GaussianKernelDensity
 
         if (points.length >= numberOfSamples)
         {
-            throw new UnsupportedOperationException();
+            for (var i = 0; i < numberOfSamples; ++i)
+            {
+                val samplesIndex = i;
+                val temp = Arrays.stream(scaledPoints)
+                                 .map(point -> samples[samplesIndex] - point)
+                                 .map(diff -> (diff * diff) * 0.5d)
+                                 .map(energy -> Math.exp(-energy) * weight)
+                                 .toArray();
+
+                for (var resultsIndex = 0; resultsIndex < results.length; ++resultsIndex)
+                {
+                    results[resultsIndex] += temp[resultsIndex];
+                }
+            }
         }
         else
         {
@@ -53,12 +66,14 @@ public class GaussianKernelDensity
                 val scaledPointsIndex = resultsIndex;
                 results[resultsIndex] = Arrays.stream(samples)
                                               .map(sample -> sample - scaledPoints[scaledPointsIndex])
-                                              .map(sample -> (sample * sample) * 0.5d)
-                                              .map(sample -> Math.exp(-sample) * weight)
-                                              .sum() / normalizationFactor;
+                                              .map(diff -> (diff * diff) * 0.5d)
+                                              .map(energy -> Math.exp(-energy) * weight)
+                                              .sum();
             }
         }
 
-        return results;
+        return Arrays.stream(results)
+                     .map(result -> result / normalizationFactor)
+                     .toArray();
     }
 }

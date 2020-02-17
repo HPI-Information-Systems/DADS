@@ -16,6 +16,8 @@ import java.util.Map;
 @SuperBuilder
 public class PCACalculatorModel extends AbstractProtocolParticipantModel
 {
+    @Getter
+    private int convolutionSize;
     @NonNull @Getter
     private final Counter currentCalculationStep = new Counter(0);
     @Getter @Setter

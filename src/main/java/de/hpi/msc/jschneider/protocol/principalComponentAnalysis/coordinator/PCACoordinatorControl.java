@@ -3,9 +3,15 @@ package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.coordinator;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PCACoordinatorModel>
 {
@@ -43,21 +49,9 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
                 return;
             }
 
-            if (getModel().getParticipantIndices().size() >= getModel().getNumberOfParticipants())
-            {
-                return;
-            }
+            getModel().getParticipants().add(message.getProcessor().getId());
 
-            if (getModel().getParticipantIndices().containsValue(message.getProcessor().getId()))
-            {
-                // processor re-joined?!
-                return;
-            }
-
-            val processorIndex = getModel().getNextParticipantIndex().getAndIncrement();
-            getModel().getParticipantIndices().put(processorIndex, message.getProcessor().getId());
-
-            if (getModel().getParticipantIndices().size() != getModel().getNumberOfParticipants())
+            if (getModel().getParticipants().size() != getModel().getNumberOfParticipants())
             {
                 return;
             }
@@ -73,15 +67,34 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
 
     private void initializeCalculation()
     {
-        for (val participantRootPath : getModel().getParticipantIndices().values())
+        val participantIndicesReversed = new HashMap<ProcessorId, Long>();
+        val nextParticipantIndex = new Counter(0L);
+        participantIndicesReversed.put(ProcessorId.of(getModel().getSelf()), nextParticipantIndex.getAndIncrement());
+
+        for (val participant : getModel().getParticipants())
         {
-            getProtocol(participantRootPath, ProtocolType.PrincipalComponentAnalysis)
+            if (participantIndicesReversed.containsKey(participant))
+            {
+                continue;
+            }
+
+            participantIndicesReversed.put(participant, nextParticipantIndex.getAndIncrement());
+        }
+
+        assert participantIndicesReversed.size() == getModel().getNumberOfParticipants() : "Number of participants was unexpected!";
+        val participantIndices = participantIndicesReversed.entrySet()
+                                                           .stream()
+                                                           .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+        for (val participant : participantIndices.values())
+        {
+            getProtocol(participant, ProtocolType.PrincipalComponentAnalysis)
                     .ifPresent(protocol ->
                                {
                                    send(PCAMessages.InitializePCACalculationMessage.builder()
                                                                                    .sender(getModel().getSelf())
                                                                                    .receiver(protocol.getRootActor())
-                                                                                   .processorIndices(getModel().getParticipantIndices())
+                                                                                   .processorIndices(participantIndices)
                                                                                    .build());
                                });
         }

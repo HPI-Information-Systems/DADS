@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -126,6 +127,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         allIntersections.sort(Comparator.comparingLong(LocalIntersection::getCreationIndex));
 
         getModel().setIntersectionsToMatch(allIntersections);
+
+        Debug.print(getModel().getIntersectionsToMatch().toArray(new LocalIntersection[0]), String.format("%1$s-intersection-creation-order.txt", ProcessorId.of(getModel().getSelf())));
 
         getLog().info(String.format("Number of enqueued intersections: %1$d.", allIntersections.size()));
         createEdges();
@@ -318,21 +321,21 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (var nodeIndex = 0; nodeIndex < nodes.length; ++nodeIndex)
         {
             val distance = Math.abs(nodes[nodeIndex] - intersection.getIntersectionDistance());
-            if (distance < closestDistance)
-            {
-                closestIndex = nodeIndex;
-                closestDistance = distance;
-            }
-//            if (distance >= closestDistance)
+//            if (distance < closestDistance)
 //            {
-//                // since the nodes are already sorted by their distance to the origin,
-//                // we can safely assume that once the distance is getting bigger we
-//                // have found the best match
-//                break;
+//                closestIndex = nodeIndex;
+//                closestDistance = distance;
 //            }
-//
-//            closestIndex = nodeIndex;
-//            closestDistance = distance;
+            if (distance >= closestDistance)
+            {
+                // since the nodes are already sorted by their distance to the origin,
+                // we can safely assume that once the distance is getting bigger we
+                // have found the best match
+                break;
+            }
+
+            closestIndex = nodeIndex;
+            closestDistance = distance;
         }
 
         return GraphNode.builder()

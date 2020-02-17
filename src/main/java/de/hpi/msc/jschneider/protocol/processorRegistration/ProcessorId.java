@@ -16,7 +16,7 @@ public class ProcessorId
     private static final String ACTOR_SYSTEM_NAME_GROUP_NAME = "ActorSystemName";
     private static final String HOST_GROUP_NAME = "Host";
     private static final String PORT_GROUP_NAME = "Port";
-    private static final Pattern EXTRACT_PATTERN = Pattern.compile(String.format("^akka:\\/\\/(?<%1$s>\\w+)-(?<%2$s>(?>\\d+_){3}(?>\\d+))-(?<%3$s>\\d+)",
+    private static final Pattern EXTRACT_PATTERN = Pattern.compile(String.format("^akka:\\/\\/(?<%1$s>\\w+)-(?<%2$s>.+?)-(?<%3$s>\\d+)",
                                                                                  ACTOR_SYSTEM_NAME_GROUP_NAME,
                                                                                  HOST_GROUP_NAME,
                                                                                  PORT_GROUP_NAME));

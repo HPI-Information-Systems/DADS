@@ -2,7 +2,6 @@ package de.hpi.msc.jschneider;
 
 import com.typesafe.config.Config;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
-import lombok.val;
 
 import java.nio.file.Path;
 
@@ -24,7 +23,10 @@ public class SystemParameters
         return command;
     }
 
-    public static Config getConfiguration() { return configuration; }
+    public static Config getConfiguration()
+    {
+        return configuration;
+    }
 
     public static int getNumberOfThreads()
     {

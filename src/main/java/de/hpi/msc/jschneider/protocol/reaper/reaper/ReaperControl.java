@@ -45,9 +45,9 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
 
             if (tryWatch(message.getSender()))
             {
-                getLog().info(String.format("%1$s is now watching %2$d actors.",
-                                            getClass().getName(),
-                                            getModel().getWatchedActors().size()));
+                getLog().debug(String.format("%1$s is now watching %2$d actors.",
+                                             getClass().getName(),
+                                             getModel().getWatchedActors().size()));
             }
         }
         finally
