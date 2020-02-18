@@ -242,9 +242,9 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)
+    public void subscribeToEvent(ProcessorId processorId, ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)
     {
-        subscribeToEvent(getProtocol(actorSystem, protocolType), eventType);
+        subscribeToEvent(getProtocol(processorId, protocolType), eventType);
     }
 
     private void subscribeToEvent(Optional<Protocol> protocol, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType)

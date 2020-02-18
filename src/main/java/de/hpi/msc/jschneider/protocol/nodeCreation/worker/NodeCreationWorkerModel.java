@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.ojalgo.matrix.store.MatrixStore;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,4 +42,8 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     private final Map<Integer, List<double[]>> intersections = new HashMap<>();
     @NonNull @Getter
     private final Map<Integer, NodeCollection> nodeCollections = new HashMap<>();
+    @Getter @Setter
+    private LocalDateTime startTime;
+    @Getter @Setter
+    private LocalDateTime endTime;
 }

@@ -22,6 +22,7 @@ import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
@@ -177,6 +178,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
+        getModel().setStartTime(LocalDateTime.now());
+
         var projection = getModel().getReducedProjection();
         var firstSubSequenceIndex = getModel().getFirstSubSequenceIndex();
         if (getModel().getFirstSubSequenceIndex() > 0L)
@@ -308,13 +311,21 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
 
         getModel().getNodeCollections().put(intersectionSegment, nodeCollection);
+        publishNodes(nodeCollection);
 
         if (getModel().getNodeCollections().size() == getModel().getNumberOfIntersectionSegments())
         {
+            getModel().setEndTime(LocalDateTime.now());
+
+            trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodePartitionCreationCompletedEvent.builder()
+                                                                                                                             .sender(getModel().getSelf())
+                                                                                                                             .receiver(eventDispatcher)
+                                                                                                                             .startTime(getModel().getStartTime())
+                                                                                                                             .endTime(getModel().getEndTime())
+                                                                                                                             .build());
+
             Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }
-
-        publishNodes(nodeCollection);
     }
 
     private void publishNodes(NodeCollection nodeCollection)

@@ -1,7 +1,8 @@
-package de.hpi.msc.jschneider.protocol.principalComponentAnalysis;
+package de.hpi.msc.jschneider.protocol.statistics;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
@@ -9,42 +10,43 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
-import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.rootActor.PCARootActorControl;
-import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.rootActor.PCARootActorModel;
+import de.hpi.msc.jschneider.protocol.statistics.rootActor.StatisticsLog;
+import de.hpi.msc.jschneider.protocol.statistics.rootActor.StatisticsRootActorControl;
+import de.hpi.msc.jschneider.protocol.statistics.rootActor.StatisticsRootActorModel;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class PCAProtocol
+public class StatisticsProtocol
 {
-    private static final Logger Log = LogManager.getLogger(PCAProtocol.class);
-    private static final String ROOT_ACTOR_NAME = "PrincipalComponentAnalysisRootActor";
-    private static final String EVENT_DISPATCHER_NAME = "PrincipalComponentAnalysisEventDispatcher";
+    private static final Logger Log = LogManager.getLogger(StatisticsProtocol.class);
+    private static final String ROOT_ACTOR_NAME = "StatisticsRootActor";
+    private static final String EVENT_DISPATCHER_NAME = "StatisticsEventDispatcher";
 
     public static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
-                                        .type(ProtocolType.PrincipalComponentAnalysis)
+                                        .type(ProtocolType.Statistics)
                                         .rootActor(createRootActor(actorSystem))
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", PCAProtocol.class.getName()));
+        Log.info(String.format("%1$s successfully initialized.", StatisticsProtocol.class.getName()));
         return localProtocol;
     }
 
     private static ActorRef createRootActor(ActorSystem actorSystem)
     {
-        val model = PCARootActorModel.builder().build();
-        val control = new PCARootActorControl(model);
-
+        val model = StatisticsRootActorModel.builder()
+                                            .statisticsLog(new StatisticsLog(SystemParameters.getCommand().getStatisticsFile().toFile()))
+                                            .build();
+        val control = new StatisticsRootActorControl(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);
     }
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(PCAEvents.PrincipalComponentsCreatedEvent.class,
-                                                    PCAEvents.PrincipalComponentComputationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(StatisticsEvents.DataTransferCompletedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

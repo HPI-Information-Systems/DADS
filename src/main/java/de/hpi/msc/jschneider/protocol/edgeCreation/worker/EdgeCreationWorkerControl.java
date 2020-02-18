@@ -15,6 +15,7 @@ import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -131,6 +132,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         Debug.print(getModel().getIntersectionsToMatch().toArray(new LocalIntersection[0]), String.format("%1$s-intersection-creation-order.txt", ProcessorId.of(getModel().getSelf())));
 
         getLog().info(String.format("Number of enqueued intersections: %1$d.", allIntersections.size()));
+
+        getModel().setInitialNumberOfIntersectionsToMatch(allIntersections.size());
+        getModel().setProgressLogInterval(allIntersections.size() / 100);
+        getModel().setNextProgressLog(allIntersections.size());
+
         createEdges();
     }
 
@@ -235,6 +241,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
+        if (getModel().getIntersectionsToMatch().size() == getModel().getInitialNumberOfIntersectionsToMatch())
+        {
+            getModel().setStartTime(LocalDateTime.now());
+        }
+
         while (!getModel().getIntersectionsToMatch().isEmpty())
         {
             val intersection = getModel().getIntersectionsToMatch().get(0);
@@ -263,6 +274,13 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             val matchedNode = findClosestNode(intersection);
             getModel().getIntersectionsToMatch().remove(0);
 
+            if (getModel().getIntersectionsToMatch().size() <= getModel().getNextProgressLog())
+            {
+                val iteration = getModel().getInitialNumberOfIntersectionsToMatch() - getModel().getIntersectionsToMatch().size();
+                Debug.printProgress(iteration, getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
+                getModel().setNextProgressLog(getModel().getNextProgressLog() - getModel().getProgressLogInterval());
+            }
+
             if (intersection.getSubSequenceIndex() == getModel().getNextSubSequenceIndex().get())
             {
                 getModel().getNextSubSequenceIndex().increment();
@@ -275,6 +293,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             getModel().setLastNode(matchedNode);
         }
+
+        Debug.printProgress(getModel().getInitialNumberOfIntersectionsToMatch(), getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
 
         if (!getModel().getIntersectionsToMatch().isEmpty())
         {
@@ -297,6 +317,15 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                     summedEdgeWeights,
                                     getModel().getLocalSubSequences().getFrom(),
                                     getModel().getLocalSubSequences().getTo()));
+
+        getModel().setEndTime(LocalDateTime.now());
+
+        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
+                                                                                                                         .sender(getModel().getSelf())
+                                                                                                                         .receiver(eventDispatcher)
+                                                                                                                         .startTime(getModel().getStartTime())
+                                                                                                                         .endTime(getModel().getEndTime())
+                                                                                                                         .build());
 
         trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                                      .sender(getModel().getSelf())

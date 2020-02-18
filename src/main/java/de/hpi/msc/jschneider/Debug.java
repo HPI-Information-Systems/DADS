@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider;
 
+import com.google.common.base.Strings;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
@@ -21,9 +22,16 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
+    private static final boolean ENABLED = true;
+
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
         writer.write(String.format("%1$d x %2$d\n\n", matrix.countRows(), matrix.countColumns()));
 
@@ -46,6 +54,11 @@ public class Debug
     @SneakyThrows
     public static void print(GraphEdge[] edges, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val edge : Arrays.stream(edges)
@@ -65,6 +78,11 @@ public class Debug
     @SneakyThrows
     public static void print(GraphNode[] nodes, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val node : Arrays.stream(nodes)
@@ -82,6 +100,11 @@ public class Debug
     @SneakyThrows
     public static void print(IntersectionCollection[] intersectionCollections, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val collection : Arrays.stream(intersectionCollections)
@@ -108,6 +131,11 @@ public class Debug
     @SneakyThrows
     public static void print(NodeCollection[] nodeCollections, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
         val sortedNodeCollections = Arrays.stream(nodeCollections)
                                           .sorted(Comparator.comparingInt(NodeCollection::getIntersectionSegment))
@@ -137,6 +165,11 @@ public class Debug
     @SneakyThrows
     public static void print(Graph graph, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val subSequenceIndex : graph.getCreatedEdgesBySubSequenceIndex().keySet()
@@ -158,6 +191,11 @@ public class Debug
     @SneakyThrows
     public static void print(List<List<Integer>> edgeCreationOrder, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val collection : edgeCreationOrder)
@@ -181,6 +219,11 @@ public class Debug
     @SneakyThrows
     public static void print(LocalIntersection[] localIntersections, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val localIntersection : localIntersections)
@@ -204,6 +247,11 @@ public class Debug
     @SneakyThrows
     public static void print(double[] values, String fileName)
     {
+        if (!ENABLED)
+        {
+            return;
+        }
+
         val writer = createWriter(fileName);
 
         for (val value : values)
@@ -213,6 +261,29 @@ public class Debug
 
         writer.flush();
         writer.close();
+    }
+
+    public static void printProgress(int iteration, int totalIterations, String title)
+    {
+        if (!ENABLED)
+        {
+            return;
+        }
+
+        val progressBarLength = 100;
+        val progression = (double) iteration / totalIterations;
+        val percent = String.format("%.3f %%", progression * 100.0d);
+        val filledLength = (int) ((progressBarLength * iteration) / (double) totalIterations);
+        val bar = Strings.repeat("█", filledLength) + Strings.repeat("-", progressBarLength - filledLength);
+        System.out.print(String.format("\r%1$s |%2$s| %3$s",
+                                       Strings.padEnd(title, 30, ' '),
+                                       bar,
+                                       percent));
+
+        if (iteration >= totalIterations)
+        {
+            System.out.print("\n");
+        }
     }
 
     @SneakyThrows

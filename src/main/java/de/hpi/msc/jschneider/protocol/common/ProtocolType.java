@@ -12,4 +12,5 @@ public enum ProtocolType
     EdgeCreation,
     GraphMerging,
     Scoring,
+    Statistics,
 }

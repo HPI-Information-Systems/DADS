@@ -17,6 +17,8 @@ import org.ojalgo.matrix.decomposition.QR;
 import org.ojalgo.matrix.decomposition.SingularValue;
 import org.ojalgo.matrix.store.MatrixStore;
 
+import java.time.LocalDateTime;
+
 public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCACalculatorModel>
 {
     public PCACalculatorControl(PCACalculatorModel model)
@@ -85,6 +87,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
             return;
         }
 
+        getModel().setStartTime(LocalDateTime.now());
         getLog().info("Starting PCA calculation.");
 
         val transposedColumnMeans = Calculate.transposedColumnMeans(getModel().getProjection());
@@ -206,6 +209,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                         getModel().getMyProcessorIndex()));
             // we dont have to do anything anymore
             // TODO: terminate self?!
+            getModel().setEndTime(LocalDateTime.now());
+
+            trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
+                                                                                                                                          .sender(getModel().getSelf())
+                                                                                                                                          .receiver(eventDispatcher)
+                                                                                                                                          .startTime(getModel().getStartTime())
+                                                                                                                                          .endTime(getModel().getEndTime())
+                                                                                                                                          .build());
             return;
         }
 
@@ -276,6 +287,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());
         val referenceVector = createReferenceVector(principalComponents, totalColumnMeans);
         val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
+
+        getModel().setEndTime(LocalDateTime.now());
+        trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
+                                                                                                                                      .sender(getModel().getSelf())
+                                                                                                                                      .receiver(eventDispatcher)
+                                                                                                                                      .startTime(getModel().getStartTime())
+                                                                                                                                      .endTime(getModel().getEndTime())
+                                                                                                                                      .build());
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
                                                                                                                           .sender(getModel().getSelf())

@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.ojalgo.matrix.store.MatrixStore;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,4 +39,8 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     private MatrixStore<Double> localR;
     @NonNull @Getter
     private final Map<Long, MatrixStore<Double>> remoteRsByProcessStep = new HashMap<>();
+    @Setter @Getter
+    private LocalDateTime startTime;
+    @Setter @Getter
+    private LocalDateTime endTime;
 }

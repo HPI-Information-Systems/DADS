@@ -13,6 +13,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +36,19 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Getter
     private final Map<Integer, double[]> nodesInSegment = new HashMap<>();
     @Setter @Getter
+    private int initialNumberOfIntersectionsToMatch;
+    @Setter @Getter
+    private int progressLogInterval;
+    @Setter @Getter
+    private int nextProgressLog;
+    @Setter @Getter
     private List<LocalIntersection> intersectionsToMatch;
     @Setter @Getter
     private GraphNode lastNode;
     @NonNull @Getter @Builder.Default
     private final Graph graph = new Graph();
+    @Setter @Getter
+    private LocalDateTime startTime;
+    @Setter @Getter
+    private LocalDateTime endTime;
 }

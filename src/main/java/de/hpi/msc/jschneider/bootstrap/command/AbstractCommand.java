@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.bootstrap.command;
 
 import com.beust.jcommander.Parameter;
 import de.hpi.msc.jschneider.bootstrap.command.validation.DirectoryValidator;
+import de.hpi.msc.jschneider.bootstrap.command.validation.FileValidator;
 import de.hpi.msc.jschneider.bootstrap.command.validation.StringToPathConverter;
 import lombok.Getter;
 
@@ -28,4 +29,7 @@ public abstract class AbstractCommand
 
     @Parameter(names = "--working-dir", description = "working directory", required = true, converter = StringToPathConverter.class, validateValueWith = DirectoryValidator.class)
     private Path workingDirectory;
+
+    @Parameter(names = "--statistics-output", description = "file to store statistics in", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
+    private Path statisticsFile;
 }
