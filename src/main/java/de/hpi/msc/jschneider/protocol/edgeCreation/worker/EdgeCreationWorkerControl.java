@@ -92,6 +92,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         val protocol = getProtocol(nextResponsibleProcessorId.get(), ProtocolType.EdgeCreation);
         assert protocol.isPresent() : "The next responsible processor must also implement the edge creation protocol!";
 
+        getLog().info(String.format("Next responsible processor (for edge creation) is %1$s.", nextResponsibleProcessorId));
         getModel().setNextResponsibleProcessor(protocol.get().getRootActor());
     }
 
@@ -134,7 +135,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         getLog().info(String.format("Number of enqueued intersections: %1$d.", allIntersections.size()));
 
         getModel().setInitialNumberOfIntersectionsToMatch(allIntersections.size());
-        getModel().setProgressLogInterval(allIntersections.size() / 100);
+        getModel().setProgressLogInterval(allIntersections.size() / 10000);
         getModel().setNextProgressLog(allIntersections.size());
 
         createEdges();
@@ -144,11 +145,13 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         if (getModel().getNumberOfIntersectionSegments() == 0)
         {
+//            getLog().info("Unable to start enqueuing intersections: NumberOfIntersectionSegments == 0.");
             return false;
         }
 
         if (getModel().getIntersectionsInSegment().size() != getModel().getNumberOfIntersectionSegments())
         {
+//            getLog().info("Unable to start enqueuing intersections: IntersectionsInSegment.size != NumberOfIntersectionSegments.");
             return false;
         }
 
@@ -156,10 +159,12 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             if (!getModel().getIntersectionsInSegment().containsKey(segment))
             {
+//                getLog().info(String.format("Unable to start enqueuing intersections: IntersectionSegment %1$d is missing.", segment));
                 return false;
             }
         }
 
+//        getLog().info("Ready to start enqueuing intersections!");
         return true;
     }
 
@@ -195,6 +200,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
+        getLog().info(String.format("Sending last node to %1$s for edge creation.", ProcessorId.of(getModel().getNextResponsibleProcessor())));
+
         send(EdgeCreationMessages.LastNodeMessage.builder()
                                                  .sender(getModel().getSelf())
                                                  .receiver(getModel().getNextResponsibleProcessor())
@@ -224,6 +231,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         try
         {
             assert getModel().getLastNode() == null : "Already received last node!";
+
+            getLog().info(String.format("Received last node from %1$s.", ProcessorId.of(message.getSender())));
 
             getModel().setLastNode(message.getLastNode());
             createEdges();
@@ -336,8 +345,20 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private boolean isReadyToCreateEdges()
     {
-        return getModel().getIntersectionsToMatch() != null
-               && (getModel().getLocalSubSequences().getFrom() == 0L || getModel().getLastNode() != null);
+        if (getModel().getIntersectionsToMatch() == null)
+        {
+//            getLog().info("Unable to start edge creation: IntersectionsToMatch == null.");
+            return false;
+        }
+
+        if (getModel().getLocalSubSequences().getFrom() > 0L && getModel().getLastNode() == null)
+        {
+//            getLog().info("Unable to start edge creation: LastNode == null.");
+            return false;
+        }
+
+//        getLog().info("Ready to start edge creation!");
+        return true;
     }
 
     private GraphNode findClosestNode(LocalIntersection intersection)

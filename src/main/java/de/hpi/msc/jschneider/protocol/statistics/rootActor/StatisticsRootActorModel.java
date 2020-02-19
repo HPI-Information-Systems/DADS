@@ -28,7 +28,7 @@ public class StatisticsRootActorModel extends AbstractProtocolParticipantModel
     @NonNull
     private Callable<ExecutionContextExecutor> dispatcherProvider;
     @Setter @Getter
-    private Cancellable utilizationMeasurementTask;
+    private Cancellable measureUtilizationTask;
     @Setter @Getter
     private OperatingSystemMXBean osBean;
     @Setter @Getter

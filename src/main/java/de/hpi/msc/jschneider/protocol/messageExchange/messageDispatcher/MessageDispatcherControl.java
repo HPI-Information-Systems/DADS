@@ -172,6 +172,8 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
         val model = MessageProxyModel.builder()
                                      .remoteMessageDispatcher(remoteMessageDispatcher.get().getRootActor())
+                                     .schedulerProvider(getModel().getSchedulerProvider())
+                                     .dispatcherProvider(getModel().getDispatcherProvider())
                                      .build();
 
         val control = new MessageProxyControl(model);

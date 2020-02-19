@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.statistics.rootActor;
 
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
@@ -143,6 +144,19 @@ public class StatisticsLog
                                event.getMaximumMemoryInBytes() - event.getUsedMemoryInBytes(),
                                event.getUsedMemoryInBytes(),
                                event.getCpuUtilization()));
+    }
+
+    public void log(StatisticsRootActorControl control, MessageExchangeEvents.UtilizationEvent event)
+    {
+        tryWrite(String.format("MessageExchangeUtilization { Processor = %1$s; DateTime = %2$s; RemoteProcessor = %3$s; TotalNumberOfEnqueuedMessages = %4$d; TotalNumberOfUnacknowledgedMessages = %5$d; LargestMessageQueueSize = %6$d; LargestMessageQueueReceiver = %7$s; AverageNumberOfEnqueuedMessages = %8$f; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getDateTime().format(DATE_FORMAT),
+                               event.getRemoteProcessor(),
+                               event.getTotalNumberOfEnqueuedMessages(),
+                               event.getTotalNumberOfUnacknowledgedMessages(),
+                               event.getLargestMessageQueueSize(),
+                               event.getLargestMessageQueueReceiver(),
+                               event.getAverageMessageQueueSize()));
     }
 
     public void log(StatisticsRootActorControl control, ScoringEvents.ReadyForTerminationEvent event)

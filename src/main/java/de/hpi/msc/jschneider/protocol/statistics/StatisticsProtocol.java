@@ -21,7 +21,7 @@ import java.time.Duration;
 
 public class StatisticsProtocol
 {
-    public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(250);
+    public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(500);
 
     private static final Logger Log = LogManager.getLogger(StatisticsProtocol.class);
     private static final String ROOT_ACTOR_NAME = "StatisticsRootActor";

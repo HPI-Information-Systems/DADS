@@ -162,6 +162,18 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
     {
         val existingProcessors = getModel().getClusterProcessors().values().toArray(new Processor[0]);
 
+        val masterMessage = getModel().getRegistrationMessages().entrySet()
+                                      .stream()
+                                      .filter(entry -> entry.getValue().getProcessor().isMaster())
+                                      .findFirst();
+
+        assert masterMessage.isPresent() : "Master did not register itself!";
+
+        if (getModel().getAcknowledgedRegistrationMessages().add(masterMessage.get().getKey()))
+        {
+            acknowledgeRegistrationMessage(masterMessage.get().getValue(), existingProcessors);
+        }
+
         for (val entry : getModel().getRegistrationMessages().entrySet())
         {
             if (!getModel().getAcknowledgedRegistrationMessages().add(entry.getKey()))

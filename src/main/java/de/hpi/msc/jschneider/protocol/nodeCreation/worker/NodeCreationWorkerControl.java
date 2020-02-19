@@ -205,9 +205,26 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private boolean isReadyToCalculateIntersections()
     {
-        return getModel().getReducedProjection() != null &&
-               getModel().getIntersectionSegmentResponsibilities() != null &&
-               (getModel().getFirstSubSequenceIndex() == 0 || getModel().getReducedSubSequenceMessage() != null);
+        if (getModel().getReducedProjection() == null)
+        {
+//            getLog().info("Unable to start calculating intersections: ReducedProjection == null.");
+            return false;
+        }
+
+        if (getModel().getIntersectionSegmentResponsibilities() == null)
+        {
+//            getLog().info("Unable to start calculating intersections: IntersectionSegmentResponsibilities == null.");
+            return false;
+        }
+
+        if (getModel().getFirstSubSequenceIndex() > 0L && getModel().getReducedSubSequenceMessage() == null)
+        {
+//            getLog().info("Unable to start calculating intersections: ReducedSubSequenceMessage == null.");
+            return false;
+        }
+
+//        getLog().info("Ready to start calculating intersections!");
+        return true;
     }
 
     private void sendIntersections(IntersectionCollection intersectionCollection)

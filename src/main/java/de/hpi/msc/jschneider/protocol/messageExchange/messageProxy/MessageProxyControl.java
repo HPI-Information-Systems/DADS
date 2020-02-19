@@ -2,15 +2,30 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageProxy;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
+import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
 
+import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 public class MessageProxyControl extends AbstractProtocolParticipantControl<MessageProxyModel>
 {
+    private static class MeasureUtilization implements Serializable
+    {
+        private static final long serialVersionUID = 1718695408584964708L;
+    }
+
     public MessageProxyControl(MessageProxyModel model)
     {
         super(model);
@@ -19,8 +34,131 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(MessageExchangeMessages.MessageCompletedMessage.class, this::onMessageCompleted)
-                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
+        return builder.match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
+                      .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination)
+                      .match(MessageExchangeMessages.MessageCompletedMessage.class, this::onMessageCompleted)
+                      .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage)
+                      .match(MeasureUtilization.class, this::measureUtilization);
+    }
+
+    @Override
+    public void preStart()
+    {
+        super.preStart();
+
+        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        {
+            return;
+        }
+
+        if (getModel().getNumberOfProcessors() <= 1)
+        {
+            subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
+        }
+        else
+        {
+            initializeUtilizationMeasurements();
+        }
+    }
+
+    private void onRegistrationAcknowledged(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent message)
+    {
+        if (!message.getReceiver().path().equals(getModel().getSelf().path()))
+        {
+            // if we are not the intended receiver, we need to forward the message accordingly
+            onMessage(message);
+            return;
+        }
+
+        initializeUtilizationMeasurements();
+    }
+
+    private void initializeUtilizationMeasurements()
+    {
+        subscribeToMasterEvent(ProtocolType.Scoring, ScoringEvents.ReadyForTerminationEvent.class);
+        startMeasureUtilization();
+    }
+
+    private void startMeasureUtilization()
+    {
+        if (getModel().getMeasureUtilizationTask() != null)
+        {
+            return;
+        }
+
+        val scheduler = getModel().getScheduler();
+        val dispatcher = getModel().getDispatcher();
+
+        assert scheduler != null : "Scheduler must not be null!";
+        assert dispatcher != null : "Dispatcher must not be null!";
+
+        val task = scheduler.scheduleAtFixedRate(Duration.ZERO,
+                                                 StatisticsProtocol.MEASUREMENT_INTERVAL,
+                                                 () -> getModel().getSelf().tell(new MeasureUtilization(), getModel().getSelf()),
+                                                 dispatcher);
+        getModel().setMeasureUtilizationTask(task);
+    }
+
+    private void measureUtilization(MeasureUtilization message)
+    {
+        if (getModel().getMessageQueues().size() < 1)
+        {
+            return;
+        }
+
+        val totalEnqueuedMessages = new Counter(0L);
+        val totalUnacknowledgedMessages = new Counter(0L);
+        var largestMessageQueueSize = 0L;
+        ActorPath largestMessageQueueReceiver = null;
+
+        for (val entry : getModel().getMessageQueues().entrySet())
+        {
+            val receiver = entry.getKey();
+            val queue = entry.getValue();
+
+            totalEnqueuedMessages.increment(queue.size());
+            totalUnacknowledgedMessages.increment(queue.numberOfUncompletedMessages());
+
+            if (queue.size() <= largestMessageQueueSize && largestMessageQueueReceiver != null)
+            {
+                continue;
+            }
+
+            largestMessageQueueSize = queue.size();
+            largestMessageQueueReceiver = receiver;
+        }
+
+        val averageQueueSize = totalEnqueuedMessages.get() / (double) getModel().getMessageQueues().size();
+
+        val finalLargestMessageQueueSize = largestMessageQueueSize;
+        val finalLargestMessageQueueReceiver = largestMessageQueueReceiver;
+
+        trySendEvent(ProtocolType.MessageExchange, eventDispatcher -> MessageExchangeEvents.UtilizationEvent.builder()
+                                                                                                            .sender(getModel().getSelf())
+                                                                                                            .receiver(eventDispatcher)
+                                                                                                            .dateTime(LocalDateTime.now())
+                                                                                                            .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageDispatcher()))
+                                                                                                            .totalNumberOfEnqueuedMessages(totalEnqueuedMessages.get())
+                                                                                                            .totalNumberOfUnacknowledgedMessages(totalUnacknowledgedMessages.get())
+                                                                                                            .largestMessageQueueSize(finalLargestMessageQueueSize)
+                                                                                                            .largestMessageQueueReceiver(finalLargestMessageQueueReceiver)
+                                                                                                            .averageMessageQueueSize(averageQueueSize)
+                                                                                                            .build());
+    }
+
+    private void onReadyForTermination(ScoringEvents.ReadyForTerminationEvent message)
+    {
+        if (!message.getReceiver().path().equals(getModel().getSelf().path()))
+        {
+            // if we are not the intended receiver, we need to forward the message accordingly
+            onMessage(message);
+            return;
+        }
+
+        if (getModel().getMeasureUtilizationTask() != null)
+        {
+            getModel().getMeasureUtilizationTask().cancel();
+        }
     }
 
     private void onMessageCompleted(MessageExchangeMessages.MessageCompletedMessage message)

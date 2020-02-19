@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
@@ -44,6 +45,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                     .match(PCAEvents.PrincipalComponentComputationCompletedEvent.class, this::onPrincipalComponentComputationCompleted)
                     .match(CreateUtilizationMeasurement.class, this::measureUtilization)
                     .match(StatisticsEvents.UtilizationEvent.class, this::onUtilization)
+                    .match(MessageExchangeEvents.UtilizationEvent.class, this::onMessageExchangeUtilization)
                     .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination);
     }
 
@@ -59,6 +61,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         subscribeToLocalEvent(ProtocolType.EdgeCreation, EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.PrincipalComponentAnalysis, PCAEvents.PrincipalComponentComputationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.UtilizationEvent.class);
+        subscribeToLocalEvent(ProtocolType.MessageExchange, MessageExchangeEvents.UtilizationEvent.class);
     }
 
     private void onRegistrationAcknowledged(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent message)
@@ -79,9 +82,9 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
 
     private void startMeasuringUtilization()
     {
-        if (getModel().getUtilizationMeasurementTask() != null)
+        if (getModel().getMeasureUtilizationTask() != null)
         {
-            getModel().getUtilizationMeasurementTask().cancel();
+            getModel().getMeasureUtilizationTask().cancel();
         }
 
         val scheduler = getModel().getScheduler();
@@ -94,7 +97,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                                                  StatisticsProtocol.MEASUREMENT_INTERVAL,
                                                  () -> getModel().getSelf().tell(new CreateUtilizationMeasurement(), getModel().getSelf()),
                                                  dispatcher);
-        getModel().setUtilizationMeasurementTask(task);
+        getModel().setMeasureUtilizationTask(task);
     }
 
     private void measureUtilization(CreateUtilizationMeasurement message)
@@ -183,6 +186,18 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         }
     }
 
+    private void onMessageExchangeUtilization(MessageExchangeEvents.UtilizationEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
     private void onReadyForTermination(ScoringEvents.ReadyForTerminationEvent message)
     {
         try
@@ -190,9 +205,9 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
             getModel().setCalculationEndTime(LocalDateTime.now());
             getModel().getStatisticsLog().log(this, message);
 
-            if (getModel().getUtilizationMeasurementTask() != null)
+            if (getModel().getMeasureUtilizationTask() != null)
             {
-                getModel().getUtilizationMeasurementTask().cancel();
+                getModel().getMeasureUtilizationTask().cancel();
             }
 
             getModel().getStatisticsLog().close();
