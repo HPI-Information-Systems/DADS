@@ -3,6 +3,8 @@ package de.hpi.msc.jschneider.protocol.statistics.rootActor;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import lombok.val;
@@ -18,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 
 public class StatisticsLog
 {
-    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS");
 
     private FileOutputStream outputStream;
     private Writer outputWriter;
@@ -75,6 +77,12 @@ public class StatisticsLog
         return new FileOutputStream(file.getAbsolutePath(), false);
     }
 
+    public void log(StatisticsRootActorControl control, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent event)
+    {
+        tryWrite(String.format("RegistrationAcknowledged { StartTime = %1$s; }",
+                               control.getModel().getCalculationStartTime().format(DATE_FORMAT)));
+    }
+
     public void log(StatisticsRootActorControl control, StatisticsEvents.DataTransferCompletedEvent event)
     {
         tryWrite(String.format("DataTransferCompleted { Type = %1$s; Source = %2$s; Sink = %3$s; Start = %4$s; End = %5$s; Bytes = %6$d; }",
@@ -124,6 +132,17 @@ public class StatisticsLog
                                event.getStartTime().format(DATE_FORMAT),
                                event.getEndTime().format(DATE_FORMAT),
                                duration));
+    }
+
+    public void log(StatisticsRootActorControl control, StatisticsEvents.UtilizationEvent event)
+    {
+        tryWrite(String.format("Utilization { Processor = %1$s; DateTime = %2$s; MaximumMemory = %3$d; FreeMemory = %4$d; UsedMemory = %5$d; CPULoad = %6$f; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getDateTime().format(DATE_FORMAT),
+                               event.getMaximumMemoryInBytes(),
+                               event.getMaximumMemoryInBytes() - event.getUsedMemoryInBytes(),
+                               event.getUsedMemoryInBytes(),
+                               event.getCpuUtilization()));
     }
 
     public void log(StatisticsRootActorControl control, ScoringEvents.ReadyForTerminationEvent event)
