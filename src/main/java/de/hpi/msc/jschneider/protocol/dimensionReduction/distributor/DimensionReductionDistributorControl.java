@@ -56,6 +56,5 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
 
     private void onAllTransfersFinished(DataTransferManager dataTransferManager)
     {
-        // TODO: terminate self?!
     }
 }

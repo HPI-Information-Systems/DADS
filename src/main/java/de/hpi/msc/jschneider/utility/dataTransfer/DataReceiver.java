@@ -1,17 +1,21 @@
 package de.hpi.msc.jschneider.utility.dataTransfer;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.event.EventHandler;
 import de.hpi.msc.jschneider.utility.event.EventImpl;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 public class DataReceiver
 {
@@ -26,10 +30,15 @@ public class DataReceiver
     private Object state;
     private final EventImpl<DataReceiver> onFinished = new EventImpl<>();
     private final EventImpl<DataTransferMessages.DataPartMessage> onDataPartReceived = new EventImpl<>();
+    private final DataTransferMessages.InitializeDataTransferMessage initializationMessage;
+    private final LocalDateTime startTime = LocalDateTime.now();
+    private LocalDateTime endTime;
+    private final Counter transferredBytes = new Counter(0L);
 
-    public DataReceiver(String operationId, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
+    public DataReceiver(String operationId, DataTransferMessages.InitializeDataTransferMessage initializationMessage, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.operationId = operationId;
+        this.initializationMessage = initializationMessage;
         this.control = control;
     }
 
@@ -68,6 +77,8 @@ public class DataReceiver
 
     public void receive(DataTransferMessages.DataPartMessage message)
     {
+        transferredBytes.increment(message.getPart().length);
+
         for (val sink : dataSinks)
         {
             sink.write(message.getPart());
@@ -86,8 +97,21 @@ public class DataReceiver
         }
         else if (!finished)
         {
+            endTime = LocalDateTime.now();
             finished = true;
             onFinished.invoke(this);
+
+            control.trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
+                                                                                                                        .sender(control.getModel().getSelf())
+                                                                                                                        .receiver(eventDispatcher)
+                                                                                                                        .processor(ProcessorId.of(control.getModel().getSelf()))
+                                                                                                                        .startTime(startTime)
+                                                                                                                        .endTime(endTime)
+                                                                                                                        .initializationMessageType(initializationMessage.getClass())
+                                                                                                                        .source(ProcessorId.of(message.getSender()))
+                                                                                                                        .sink(ProcessorId.of(control.getModel().getSelf()))
+                                                                                                                        .transferredBytes(transferredBytes.get())
+                                                                                                                        .build());
         }
     }
 }

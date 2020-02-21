@@ -18,6 +18,9 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
@@ -44,7 +47,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                     .match(DimensionReductionEvents.ReducedProjectionCreatedEvent.class, this::onReducedProjectionCreated)
                     .match(NodeCreationMessages.InitializeNodeCreationMessage.class, this::onInitializeNodeCreation)
                     .match(NodeCreationMessages.ReducedSubSequenceMessage.class, this::onReducedSubSequence)
-                    .match(NodeCreationMessages.IntersectionsMessage.class, this::onIntersections);
+                    .match(NodeCreationMessages.InitializeIntersectionsTransferMessage.class, this::acceptIntersectionsTransfer);
     }
 
     @Override
@@ -198,7 +201,6 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         for (val intersectionCollection : intersectionCollections)
         {
-            // TODO: send via DataTransfer?!
             sendIntersections(intersectionCollection);
         }
     }
@@ -236,13 +238,13 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                   .sorted(Comparator.comparingLong(Intersection::getCreationIndex))
                                                                   .map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
-        // send intersections directly to the processor which is responsible for the segment
-        send(NodeCreationMessages.IntersectionsMessage.builder()
-                                                      .sender(getModel().getSelf())
-                                                      .receiver(responsibleProcessor)
-                                                      .intersectionSegment(intersectionCollection.getIntersectionSegment())
-                                                      .intersections(intersections)
-                                                      .build());
+        getModel().getDataTransferManager().transfer(GenericDataSource.create(intersections),
+                                                     dataDistributor -> NodeCreationMessages.InitializeIntersectionsTransferMessage.builder()
+                                                                                                                                   .sender(getModel().getSelf())
+                                                                                                                                   .receiver(responsibleProcessor)
+                                                                                                                                   .operationId(dataDistributor.getOperationId())
+                                                                                                                                   .intersectionSegment(intersectionCollection.getIntersectionSegment())
+                                                                                                                                   .build());
 
         // publish intersection event, so that the edge creation protocol does not need to calculate those again
         trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.IntersectionsCalculatedEvent.builder()
@@ -264,27 +266,39 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         return processorRootPath.get();
     }
 
-    private void onIntersections(NodeCreationMessages.IntersectionsMessage message)
+    private void acceptIntersectionsTransfer(NodeCreationMessages.InitializeIntersectionsTransferMessage message)
     {
-        try
-        {
-            val myResponsibilities = getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf());
-            assert myResponsibilities.contains(message.getIntersectionSegment()) : "Received intersections for an intersection segment we are not responsible for!";
+        val myResponsibilities = getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf());
+        assert myResponsibilities.contains(message.getIntersectionSegment()) : "Received intersections for an intersection segment we are not responsible for!";
 
-            getModel().getIntersections().putIfAbsent(message.getIntersectionSegment(), new ArrayList<>());
-            getModel().getIntersections().get(message.getIntersectionSegment()).add(message.getIntersections());
+        getModel().getIntersections().putIfAbsent(message.getIntersectionSegment(), new ArrayList<>());
+        getModel().getDataTransferManager().accept(message,
+                                                   dataReceiver ->
+                                                   {
+                                                       dataReceiver.setState(message.getIntersectionSegment());
+                                                       return dataReceiver.addSink(new DoublesSink())
+                                                                          .whenFinished(this::onIntersectionsTransferFinished);
+                                                   });
+    }
 
-            // TODO: use round-robin actor pool for better parallelization
-            createNodes(message.getIntersectionSegment());
-        }
-        finally
-        {
-            complete(message);
-        }
+    private void onIntersectionsTransferFinished(DataReceiver dataReceiver)
+    {
+        assert dataReceiver.getState() instanceof Integer : "DataReceiver state should be an Integer!";
+
+        val doublesSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof DoublesSink).findFirst();
+        assert doublesSink.isPresent() : "DataReceiver should contain a DoublesSink!";
+
+        val intersectionSegment = (int) dataReceiver.getState();
+        val intersections = ((DoublesSink) doublesSink.get()).getDoubles();
+        getModel().getIntersections().get(intersectionSegment).add(intersections);
+
+        createNodes(intersectionSegment);
     }
 
     private void createNodes(int intersectionSegment)
     {
+        // TODO: use round-robin actor pool for better parallelization
+
         val intersectionList = getModel().getIntersections().get(intersectionSegment);
         if (intersectionList.size() != getModel().getIntersectionSegmentResponsibilities().size())
         {
@@ -347,20 +361,19 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
     private void publishNodes(NodeCollection nodeCollection)
     {
-        // TODO: send via DataTransfer
-
         val nodes = Doubles.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
         for (val worker : getModel().getIntersectionSegmentResponsibilities().keySet())
         {
             val protocol = getProtocol(worker.path().root(), ProtocolType.EdgeCreation);
             assert protocol.isPresent() : "Node creation processors must also implement the Edge creation protocol!";
 
-            send(NodeCreationMessages.NodesMessage.builder()
-                                                  .sender(getModel().getSelf())
-                                                  .receiver(protocol.get().getRootActor())
-                                                  .intersectionSegment(nodeCollection.getIntersectionSegment())
-                                                  .nodes(nodes)
-                                                  .build());
+            getModel().getDataTransferManager().transfer(GenericDataSource.create(nodes),
+                                                         dataDistributor -> NodeCreationMessages.InitializeNodesTransferMessage.builder()
+                                                                                                                               .sender(getModel().getSelf())
+                                                                                                                               .receiver(protocol.get().getRootActor())
+                                                                                                                               .operationId(dataDistributor.getOperationId())
+                                                                                                                               .intersectionSegment(nodeCollection.getIntersectionSegment())
+                                                                                                                               .build());
         }
     }
 }

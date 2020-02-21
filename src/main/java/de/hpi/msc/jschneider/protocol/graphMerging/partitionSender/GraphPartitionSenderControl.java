@@ -65,6 +65,5 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
 
     private void onDataTransferFinished(DataDistributor dataDistributor)
     {
-        // TODO: terminate self?!
     }
 }

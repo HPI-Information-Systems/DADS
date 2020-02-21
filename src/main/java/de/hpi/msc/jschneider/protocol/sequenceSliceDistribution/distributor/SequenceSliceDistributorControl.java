@@ -45,7 +45,6 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
 
     private void whenFinished(DataDistributor distributor)
     {
-        // TODO: terminate self?!
         getLog().info(String.format("Finished sequence slice distribution to %1$s.",
                                     getModel().getSliceReceiverActorSystem()));
     }

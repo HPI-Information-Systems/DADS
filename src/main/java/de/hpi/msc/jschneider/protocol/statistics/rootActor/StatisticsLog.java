@@ -80,13 +80,15 @@ public class StatisticsLog
 
     public void log(StatisticsRootActorControl control, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent event)
     {
-        tryWrite(String.format("RegistrationAcknowledged { StartTime = %1$s; }",
+        tryWrite(String.format("RegistrationAcknowledged { Processor = %1$s; StartTime = %2$s; }",
+                               ProcessorId.of(control.getModel().getSelf()),
                                control.getModel().getCalculationStartTime().format(DATE_FORMAT)));
     }
 
     public void log(StatisticsRootActorControl control, StatisticsEvents.DataTransferCompletedEvent event)
     {
-        tryWrite(String.format("DataTransferCompleted { Type = %1$s; Source = %2$s; Sink = %3$s; Start = %4$s; End = %5$s; Bytes = %6$d; }",
+        tryWrite(String.format("DataTransferCompleted { Processor = %1$s; Type = %2$s; Source = %3$s; Sink = %4$s; StartTime = %5$s; EndTime = %6$s; Bytes = %7$d; }",
+                               event.getProcessor(),
                                event.getInitializationMessageType().getSimpleName(),
                                event.getSource(),
                                event.getSink(),
@@ -163,7 +165,8 @@ public class StatisticsLog
     {
         val duration = Duration.between(control.getModel().getCalculationStartTime(), control.getModel().getCalculationEndTime());
 
-        tryWrite(String.format("CalculationCompleted { StartTime = %1$s; EndTime = %2$s; Duration = %3$s; }",
+        tryWrite(String.format("CalculationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(control.getModel().getSelf()),
                                control.getModel().getCalculationStartTime().format(DATE_FORMAT),
                                control.getModel().getCalculationEndTime().format(DATE_FORMAT),
                                duration));

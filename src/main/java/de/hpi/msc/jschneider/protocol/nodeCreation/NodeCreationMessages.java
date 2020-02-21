@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -66,19 +67,10 @@ public class NodeCreationMessages
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class IntersectionsMessage extends MessageExchangeMessages.MessageExchangeMessage
+    public static class InitializeIntersectionsTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
     {
-        private static final long serialVersionUID = -8012069364274224581L;
+        private static final long serialVersionUID = 5135611685398428729L;
         private int intersectionSegment;
-        private double[] intersections;
-    }
-
-    @NoArgsConstructor @SuperBuilder @Getter
-    public static class NodesMessage extends MessageExchangeMessages.RedirectableMessage
-    {
-        private static final long serialVersionUID = 2030668695666469041L;
-        private int intersectionSegment;
-        private double[] nodes;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -86,8 +78,26 @@ public class NodeCreationMessages
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
+                            .operationId(getOperationId())
                             .intersectionSegment(getIntersectionSegment())
-                            .nodes(getNodes())
+                            .build();
+        }
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class InitializeNodesTransferMessage extends DataTransferMessages.InitializeDataTransferMessage
+    {
+        private static final long serialVersionUID = -3101297135840015501L;
+        private int intersectionSegment;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .forwarder(getReceiver())
+                            .operationId(getOperationId())
+                            .intersectionSegment(getIntersectionSegment())
                             .build();
         }
     }

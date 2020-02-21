@@ -12,6 +12,8 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
 import lombok.val;
 import lombok.var;
 
@@ -44,7 +46,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(NodeCreationEvents.IntersectionsCalculatedEvent.class, this::onIntersectionsCalculated)
                     .match(EdgeCreationMessages.LastNodeMessage.class, this::onLastNode)
-                    .match(NodeCreationMessages.NodesMessage.class, this::onNodes);
+                    .match(NodeCreationMessages.InitializeNodesTransferMessage.class, this::acceptNodesTransfer);
     }
 
     private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
@@ -168,23 +170,33 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         return true;
     }
 
-    private void onNodes(NodeCreationMessages.NodesMessage message)
+    private void acceptNodesTransfer(NodeCreationMessages.InitializeNodesTransferMessage message)
     {
-        try
-        {
-            assert getModel().getNodesInSegment().get(message.getIntersectionSegment()) == null
-                    : "Nodes for this segment have already been created!";
+        assert getModel().getNodesInSegment().get(message.getIntersectionSegment()) == null
+                : "Nodes for this segment have already been created!";
 
-            getModel().getNodesInSegment().put(message.getIntersectionSegment(), message.getNodes());
+        getModel().getDataTransferManager().accept(message,
+                                                   dataReceiver ->
+                                                   {
+                                                       dataReceiver.setState(message.getIntersectionSegment());
+                                                       return dataReceiver.addSink(new DoublesSink())
+                                                                          .whenFinished(this::onNodesTransferFinished);
+                                                   });
+    }
 
-            trySendLastNodeToNextResponsibleProcessor(message.getIntersectionSegment());
+    private void onNodesTransferFinished(DataReceiver dataReceiver)
+    {
+        assert dataReceiver.getState() instanceof Integer : "DataReceiver state should be an Integer!";
 
-            createEdges();
-        }
-        finally
-        {
-            complete(message);
-        }
+        val doublesSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof DoublesSink).findFirst();
+        assert doublesSink.isPresent() : "DataReceiver should contain a DoublesSink!";
+
+        val intersectionSegment = (int) dataReceiver.getState();
+        val nodes = ((DoublesSink) doublesSink.get()).getDoubles();
+
+        getModel().getNodesInSegment().put(intersectionSegment, nodes);
+        trySendLastNodeToNextResponsibleProcessor(intersectionSegment);
+        createEdges();
     }
 
     private void trySendLastNodeToNextResponsibleProcessor(int intersectionSegment)

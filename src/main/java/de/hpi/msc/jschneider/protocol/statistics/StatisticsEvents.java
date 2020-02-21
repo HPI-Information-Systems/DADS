@@ -17,10 +17,17 @@ public class StatisticsEvents
     public static class DataTransferCompletedEvent extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 4803800742224247453L;
+        @NonNull
+        private ProcessorId processor;
+        @NonNull
         private Class<? extends DataTransferMessages.InitializeDataTransferMessage> initializationMessageType;
+        @NonNull
         private ProcessorId source;
+        @NonNull
         private ProcessorId sink;
+        @NonNull
         private LocalDateTime startTime;
+        @NonNull
         private LocalDateTime endTime;
         private long transferredBytes;
 
@@ -30,6 +37,7 @@ public class StatisticsEvents
             return builder().sender(getSender())
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
+                            .processor(getProcessor())
                             .initializationMessageType(getInitializationMessageType())
                             .source(getSource())
                             .sink(getSink())

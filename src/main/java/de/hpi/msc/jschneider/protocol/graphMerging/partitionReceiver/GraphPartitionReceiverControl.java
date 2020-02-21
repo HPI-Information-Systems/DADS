@@ -105,7 +105,5 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
                                                          .receiver(getModel().getGraphMerger())
                                                          .workerSystems(getModel().getWorkerSystems())
                                                          .build());
-
-        // TODO: terminate self?!
     }
 }

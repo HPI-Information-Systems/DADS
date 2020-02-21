@@ -208,7 +208,6 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                         currentStep,
                                         getModel().getMyProcessorIndex()));
             // we dont have to do anything anymore
-            // TODO: terminate self?!
             getModel().setEndTime(LocalDateTime.now());
 
             trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()

@@ -109,6 +109,7 @@ public class DataDistributor
             control.trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
                                                                                                                         .sender(control.getModel().getSelf())
                                                                                                                         .receiver(eventDispatcher)
+                                                                                                                        .processor(ProcessorId.of(control.getModel().getSelf()))
                                                                                                                         .initializationMessageType(initializationMessage.getClass())
                                                                                                                         .source(ProcessorId.of(control.getModel().getSelf()))
                                                                                                                         .sink(ProcessorId.of(initializationMessage.getReceiver()))
