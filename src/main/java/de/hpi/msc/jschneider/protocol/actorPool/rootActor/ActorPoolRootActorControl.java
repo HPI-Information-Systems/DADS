@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerControl;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerModel;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
 import lombok.var;
@@ -97,5 +98,18 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
         val worker = getModel().getWorkers().poll();
         val work = getModel().getWorkQueue().poll();
         send(work.redirectTo(worker));
+    }
+
+    @Override
+    protected void onBackPressure(MessageExchangeMessages.BackPressureMessage message)
+    {
+        try
+        {
+            // do nothing
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 }

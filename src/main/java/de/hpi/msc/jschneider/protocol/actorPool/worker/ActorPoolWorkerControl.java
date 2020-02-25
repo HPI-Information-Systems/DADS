@@ -27,9 +27,9 @@ public class ActorPoolWorkerControl extends AbstractProtocolParticipantControl<A
         val startTime = LocalDateTime.now();
         try
         {
-            getLog().info(String.format("PoolWorker (%1$s) starts working on %2$s.",
-                                        getModel().getSelf().path(),
-                                        message.getClass().getSimpleName()));
+            getLog().debug(String.format("PoolWorker (%1$s) starts working on %2$s.",
+                                         getModel().getSelf().path(),
+                                         message.getClass().getSimpleName()));
 
             message.getConsumer().process(this, message);
         }
@@ -37,11 +37,11 @@ public class ActorPoolWorkerControl extends AbstractProtocolParticipantControl<A
         {
             val endTime = LocalDateTime.now();
 
-            getLog().info(String.format("PoolWorker (%1$s) finished working on %2$s after %3$s (supervisor = %4$s).",
-                                        getModel().getSelf().path(),
-                                        message.getClass().getSimpleName(),
-                                        Duration.between(startTime, endTime),
-                                        getModel().getSupervisor().path()));
+            getLog().debug(String.format("PoolWorker (%1$s) finished working on %2$s after %3$s (supervisor = %4$s).",
+                                         getModel().getSelf().path(),
+                                         message.getClass().getSimpleName(),
+                                         Duration.between(startTime, endTime),
+                                         getModel().getSupervisor().path()));
 
             send(ActorPoolMessages.WorkDoneMessage.builder()
                                                   .sender(getModel().getSelf())
