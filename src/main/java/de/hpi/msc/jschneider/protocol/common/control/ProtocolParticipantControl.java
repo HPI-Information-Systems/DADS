@@ -49,6 +49,8 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     void send(Object message, ActorRef receiver);
 
+    boolean executePooled(Function<ActorRef, MessageExchangeMessages.RedirectableMessage> messageFactory);
+
     boolean trySendEvent(ProtocolType protocolType, Function<ActorRef, MessageExchangeMessages.RedirectableMessage> eventFactory);
 
     void subscribeToLocalEvent(ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);

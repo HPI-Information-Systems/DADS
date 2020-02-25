@@ -13,4 +13,5 @@ public enum ProtocolType
     GraphMerging,
     Scoring,
     Statistics,
+    ActorPool,
 }
