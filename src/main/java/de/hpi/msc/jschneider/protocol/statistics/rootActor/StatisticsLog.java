@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.statistics.rootActor;
 
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -159,6 +160,16 @@ public class StatisticsLog
                                event.getLargestMessageQueueSize(),
                                event.getLargestMessageQueueReceiver(),
                                event.getAverageMessageQueueSize()));
+    }
+
+    public void log(StatisticsRootActorControl control, ActorPoolEvents.UtilizationEvent event)
+    {
+        tryWrite(String.format("ActorPoolUtilization { Processor = %1$s; DateTime = %2$s; Workers = %3$d; AvailableWorkers = %4$d; QueueSize = %5$d; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getDateTime().format(DATE_FORMAT),
+                               event.getNumberOfWorkers(),
+                               event.getNumberOfAvailableWorkers(),
+                               event.getWorkQueueSize()));
     }
 
     public void log(StatisticsRootActorControl control, ScoringEvents.ReadyForTerminationEvent event)

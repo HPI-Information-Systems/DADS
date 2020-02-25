@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.statistics.rootActor;
 
 import com.sun.management.OperatingSystemMXBean;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -62,6 +63,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         subscribeToLocalEvent(ProtocolType.PrincipalComponentAnalysis, PCAEvents.PrincipalComponentComputationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.UtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.MessageExchange, MessageExchangeEvents.UtilizationEvent.class);
+        subscribeToLocalEvent(ProtocolType.ActorPool, ActorPoolEvents.UtilizationEvent.class);
     }
 
     private void onRegistrationAcknowledged(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent message)
@@ -187,6 +189,18 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
     }
 
     private void onMessageExchangeUtilization(MessageExchangeEvents.UtilizationEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onActorPoolUtilization(ActorPoolEvents.UtilizationEvent message)
     {
         try
         {
