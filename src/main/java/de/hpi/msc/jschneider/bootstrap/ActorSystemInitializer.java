@@ -12,6 +12,7 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRole;
+import de.hpi.msc.jschneider.utility.IdGenerator;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,8 @@ public class ActorSystemInitializer
     public static void runMaster(MasterCommand masterCommand) throws Exception
     {
         val processorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, masterCommand.getHost(), masterCommand.getPort());
+        IdGenerator.initialize(processorId);
+
         val actorSystem = initializeActorSystem(processorId.toString(), masterCommand);
 
         val masterSystemAddress = new Address("akka", processorId.toString(), masterCommand.getHost(), masterCommand.getPort());
@@ -44,6 +47,8 @@ public class ActorSystemInitializer
     public static void runSlave(SlaveCommand slaveCommand) throws Exception
     {
         val processorId = new ProcessorId(SLAVE_ACTOR_SYSTEM_NAME, slaveCommand.getHost(), slaveCommand.getPort());
+        IdGenerator.initialize(processorId);
+
         val actorSystem = initializeActorSystem(processorId.toString(), slaveCommand);
 
         val masterProcessorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, slaveCommand.getMasterHost(), slaveCommand.getMasterPort());

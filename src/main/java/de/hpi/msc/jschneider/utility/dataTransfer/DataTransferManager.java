@@ -1,16 +1,17 @@
 package de.hpi.msc.jschneider.utility.dataTransfer;
 
+import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
-import de.hpi.msc.jschneider.utility.event.EventHandler;
-import de.hpi.msc.jschneider.utility.event.EventImpl;
-import lombok.Getter;
+import de.hpi.msc.jschneider.utility.IdGenerator;
+import de.hpi.msc.jschneider.utility.dataTransfer.distributor.DataDistributorControl;
+import de.hpi.msc.jschneider.utility.dataTransfer.distributor.DataDistributorInitializer;
+import de.hpi.msc.jschneider.utility.dataTransfer.distributor.DataDistributorModel;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.ojalgo.structure.Access1D;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,46 +21,34 @@ public class DataTransferManager
 {
     private static final Logger Log = LogManager.getLogger(DataTransferManager.class);
 
-    @Getter
-    private final Map<Integer, DataDistributor> dataDistributors = new HashMap<>();
-    @Getter
-    private final Map<Integer, DataReceiver> dataReceivers = new HashMap<>();
+    private final Map<Long, DataReceiver> dataReceivers = new HashMap<>();
+    private final Map<Long, ActorRef> dataDistributors = new HashMap<>();
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
-    private final EventImpl<DataTransferManager> onAllTransfersFinished = new EventImpl<>();
-
-    public DataTransferManager whenAllTransfersFinished(EventHandler<DataTransferManager> handler)
-    {
-        onAllTransfersFinished.subscribe(handler);
-        return this;
-    }
 
     public DataTransferManager(ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.control = control;
     }
 
-    public void transfer(Access1D<Double> data, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
+    public void transfer(DataSource dataSource, DataDistributorInitializer initializer)
     {
-        transfer(data, distributor -> distributor, initializationMessageFactory);
-    }
+        val operationId = IdGenerator.next();
+        val model = DataDistributorModel.builder()
+                                        .operationId(operationId)
+                                        .supervisor(control.getModel().getSelf())
+                                        .dataSource(dataSource)
+                                        .initializer(initializer)
+                                        .build();
+        val distributorControl = new DataDistributorControl(model);
+        val distributor = control.trySpawnChild(ProtocolParticipant.props(distributorControl), "DataDistributor");
 
-    public void transfer(Access1D<Double> data, Function<DataDistributor, DataDistributor> dataDistributorInitializer, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
-    {
-        transfer(GenericDataSource.create(data), dataDistributorInitializer, initializationMessageFactory);
-    }
+        if (!distributor.isPresent())
+        {
+            Log.error("Unable to create new DataDistributor!");
+            return;
+        }
 
-    public void transfer(DataSource dataSource, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
-    {
-        transfer(dataSource, distributor -> distributor, initializationMessageFactory);
-    }
-
-    public void transfer(DataSource dataSource, Function<DataDistributor, DataDistributor> dataDistributorInitializer, Function<DataDistributor, DataTransferMessages.InitializeDataTransferMessage> initializationMessageFactory)
-    {
-        val distributor = dataDistributorInitializer.apply(new DataDistributor(control, dataSource));
-        distributor.whenFinished(d -> transferFinished());
-        dataDistributors.put(distributor.getOperationId(), distributor);
-
-        distributor.initialize(initializationMessageFactory);
+        dataDistributors.put(operationId, distributor.get());
     }
 
     public void accept(DataTransferMessages.InitializeDataTransferMessage initializationMessage, Function<DataReceiver, DataReceiver> dataReceiverInitializer)
@@ -76,7 +65,7 @@ public class DataTransferManager
             }
 
             receiver = dataReceiverInitializer.apply(new DataReceiver(initializationMessage.getOperationId(), initializationMessage, control));
-            receiver.whenFinished(r -> transferFinished());
+            receiver.whenFinished(this::whenDataReceived);
             dataReceivers.put(receiver.getOperationId(), receiver);
 
             receiver.pull(initializationMessage.getSender());
@@ -84,26 +73,6 @@ public class DataTransferManager
         finally
         {
             control.complete(initializationMessage);
-        }
-    }
-
-    public void onRequestNextPart(DataTransferMessages.RequestNextDataPartMessage message)
-    {
-        try
-        {
-            val distributor = dataDistributors.get(message.getOperationId());
-            if (distributor == null)
-            {
-                Log.error(String.format("[$1%s] Unable to deliver next data part, because there is no distributor for that operation!",
-                                        control.getClass().getName()));
-                return;
-            }
-
-            distributor.transfer(message.getSender());
-        }
-        finally
-        {
-            control.complete(message);
         }
     }
 
@@ -126,19 +95,20 @@ public class DataTransferManager
         }
     }
 
-    private void transferFinished()
+    private void whenDataReceived(DataReceiver receiver)
     {
-        if (!allTransfersFinished())
-        {
-            return;
-        }
-
-        onAllTransfersFinished.invoke(this);
+        dataReceivers.remove(receiver.getOperationId());
     }
 
-    public boolean allTransfersFinished()
+    public void onDataSent(DataTransferMessages.DataTransferFinishedMessage message)
     {
-        return dataDistributors.values().stream().allMatch(DataDistributor::isFinished) &&
-               dataReceivers.values().stream().allMatch(DataReceiver::isFinished);
+        try
+        {
+            dataDistributors.remove(message.getOperationId());
+        }
+        finally
+        {
+            control.complete(message);
+        }
     }
 }

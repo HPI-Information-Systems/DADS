@@ -90,7 +90,7 @@ public class StatisticsLog
     {
         tryWrite(String.format("DataTransferCompleted { Processor = %1$s; Type = %2$s; Source = %3$s; Sink = %4$s; StartTime = %5$s; EndTime = %6$s; Bytes = %7$d; }",
                                event.getProcessor(),
-                               event.getInitializationMessageType().getSimpleName(),
+                               event.getInitializationMessageClassName(),
                                event.getSource(),
                                event.getSink(),
                                event.getStartTime().format(DATE_FORMAT),

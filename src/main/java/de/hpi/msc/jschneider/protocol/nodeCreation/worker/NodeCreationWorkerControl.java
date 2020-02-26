@@ -297,12 +297,12 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                   .map(Intersection::getIntersectionDistance).collect(Collectors.toList()));
 
         getModel().getDataTransferManager().transfer(GenericDataSource.create(intersections),
-                                                     dataDistributor -> NodeCreationMessages.InitializeIntersectionsTransferMessage.builder()
-                                                                                                                                   .sender(getModel().getSelf())
-                                                                                                                                   .receiver(responsibleProcessor)
-                                                                                                                                   .operationId(dataDistributor.getOperationId())
-                                                                                                                                   .intersectionSegment(intersectionCollection.getIntersectionSegment())
-                                                                                                                                   .build());
+                                                     (dataDistributor, operationId) -> NodeCreationMessages.InitializeIntersectionsTransferMessage.builder()
+                                                                                                                                                  .sender(dataDistributor)
+                                                                                                                                                  .receiver(responsibleProcessor)
+                                                                                                                                                  .operationId(operationId)
+                                                                                                                                                  .intersectionSegment(intersectionCollection.getIntersectionSegment())
+                                                                                                                                                  .build());
 
         // publish intersection event, so that the edge creation protocol does not need to calculate those again
         trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.IntersectionsCalculatedEvent.builder()

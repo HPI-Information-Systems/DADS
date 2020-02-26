@@ -313,10 +313,10 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         assert protocol.isPresent() : "The master processor must implement the Scoring protocol!";
 
         getModel().getDataTransferManager().transfer(GenericDataSource.create(pathScores),
-                                                     dataDistributor -> ScoringMessages.InitializePathScoresTransferMessage.builder()
-                                                                                                                           .sender(getModel().getSelf())
-                                                                                                                           .receiver(protocol.get().getRootActor())
-                                                                                                                           .operationId(dataDistributor.getOperationId())
-                                                                                                                           .build());
+                                                     (dataDistributor, operationId) -> ScoringMessages.InitializePathScoresTransferMessage.builder()
+                                                                                                                                          .sender(dataDistributor)
+                                                                                                                                          .receiver(protocol.get().getRootActor())
+                                                                                                                                          .operationId(operationId)
+                                                                                                                                          .build());
     }
 }

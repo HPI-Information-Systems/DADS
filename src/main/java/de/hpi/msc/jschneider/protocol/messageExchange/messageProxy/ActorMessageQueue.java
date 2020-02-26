@@ -11,7 +11,7 @@ import java.util.Map;
 public class ActorMessageQueue
 {
     private final List<MessageExchangeMessages.MessageExchangeMessage> queuedMessages = new ArrayList<>();
-    private final Map<Integer, MessageExchangeMessages.MessageExchangeMessage> uncompletedMessages = new HashMap<>();
+    private final Map<Long, MessageExchangeMessages.MessageExchangeMessage> uncompletedMessages = new HashMap<>();
 
     public int size()
     {
@@ -48,7 +48,7 @@ public class ActorMessageQueue
         return message;
     }
 
-    public boolean tryAcknowledge(int messageId)
+    public boolean tryAcknowledge(long messageId)
     {
         val message = uncompletedMessages.remove(messageId);
         return message != null;

@@ -7,7 +7,6 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataDistributor;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 
@@ -55,15 +54,10 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
         val edges = message.getGraphPartition().getEdges().values().toArray(new GraphEdge[0]);
 
         getModel().getDataTransferManager().transfer(GenericDataSource.create(edges),
-                                                     dataDistributor -> dataDistributor.whenFinished(this::onDataTransferFinished),
-                                                     dataDistributor -> GraphMergingMessages.InitializeEdgePartitionTransferMessage.builder()
-                                                                                                                                   .sender(getModel().getSelf())
-                                                                                                                                   .receiver(receiver)
-                                                                                                                                   .operationId(dataDistributor.getOperationId())
-                                                                                                                                   .build());
-    }
-
-    private void onDataTransferFinished(DataDistributor dataDistributor)
-    {
+                                                     (dataDistributor, operationId) -> GraphMergingMessages.InitializeEdgePartitionTransferMessage.builder()
+                                                                                                                                                  .sender(dataDistributor)
+                                                                                                                                                  .receiver(receiver)
+                                                                                                                                                  .operationId(operationId)
+                                                                                                                                                  .build());
     }
 }

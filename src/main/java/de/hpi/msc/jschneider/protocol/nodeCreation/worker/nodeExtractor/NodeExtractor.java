@@ -78,12 +78,12 @@ public class NodeExtractor implements WorkConsumer
             assert protocol.isPresent() : "Node creation processors must also implement the Edge creation protocol!";
 
             control.getModel().getDataTransferManager().transfer(GenericDataSource.create(nodes),
-                                                                 dataDistributor -> NodeCreationMessages.InitializeNodesTransferMessage.builder()
-                                                                                                                                       .sender(control.getModel().getSelf())
-                                                                                                                                       .receiver(protocol.get().getRootActor())
-                                                                                                                                       .operationId(dataDistributor.getOperationId())
-                                                                                                                                       .intersectionSegment(nodeCollection.getIntersectionSegment())
-                                                                                                                                       .build());
+                                                                 (dataDistributor, operationId) -> NodeCreationMessages.InitializeNodesTransferMessage.builder()
+                                                                                                                                                      .sender(dataDistributor)
+                                                                                                                                                      .receiver(protocol.get().getRootActor())
+                                                                                                                                                      .operationId(operationId)
+                                                                                                                                                      .intersectionSegment(nodeCollection.getIntersectionSegment())
+                                                                                                                                                      .build());
         }
     }
 }

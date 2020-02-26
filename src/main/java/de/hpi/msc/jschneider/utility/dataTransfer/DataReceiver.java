@@ -20,7 +20,7 @@ import java.util.Set;
 public class DataReceiver
 {
     @Getter
-    private final int operationId;
+    private final long operationId;
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     @Getter
     private final Set<DataSink> dataSinks = new HashSet<>();
@@ -35,7 +35,7 @@ public class DataReceiver
     private LocalDateTime endTime;
     private final Counter transferredBytes = new Counter(0L);
 
-    public DataReceiver(int operationId, DataTransferMessages.InitializeDataTransferMessage initializationMessage, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
+    public DataReceiver(long operationId, DataTransferMessages.InitializeDataTransferMessage initializationMessage, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.operationId = operationId;
         this.initializationMessage = initializationMessage;
@@ -107,7 +107,7 @@ public class DataReceiver
                                                                                                                         .processor(ProcessorId.of(control.getModel().getSelf()))
                                                                                                                         .startTime(startTime)
                                                                                                                         .endTime(endTime)
-                                                                                                                        .initializationMessageType(initializationMessage.getClass())
+                                                                                                                        .initializationMessageClassName(initializationMessage.getClass().getName())
                                                                                                                         .source(ProcessorId.of(message.getSender()))
                                                                                                                         .sink(ProcessorId.of(control.getModel().getSelf()))
                                                                                                                         .transferredBytes(transferredBytes.get())

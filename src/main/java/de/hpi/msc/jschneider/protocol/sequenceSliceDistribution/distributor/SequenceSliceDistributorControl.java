@@ -1,10 +1,10 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor;
 
+import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataDistributor;
 import lombok.val;
 
 public class SequenceSliceDistributorControl extends AbstractProtocolParticipantControl<SequenceSliceDistributorModel>
@@ -27,7 +27,7 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
             return;
         }
 
-        getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializeSequenceDistributor, this::initializationMessageFactory);
+        getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializationMessageFactory);
 
         getLog().info(String.format("Starting sequence slice transfer to %1$s.", getModel().getSliceReceiverActorSystem()));
     }
@@ -38,30 +38,19 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         return super.complementReceiveBuilder(builder);
     }
 
-    private DataDistributor initializeSequenceDistributor(DataDistributor distributor)
-    {
-        return distributor.whenFinished(this::whenFinished);
-    }
-
-    private void whenFinished(DataDistributor distributor)
-    {
-        getLog().info(String.format("Finished sequence slice distribution to %1$s.",
-                                    getModel().getSliceReceiverActorSystem()));
-    }
-
-    private SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage initializationMessageFactory(DataDistributor distributor)
+    private SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage initializationMessageFactory(ActorRef dataDistributor, long operationId)
     {
         @SuppressWarnings("OptionalGetWithoutIsPresent")
         val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution).get(); // no need to check, because we already checked that in preStart
 
         return SequenceSliceDistributionMessages.InitializeSequenceSliceTransferMessage.builder()
-                                                                                       .sender(getModel().getSelf())
+                                                                                       .sender(dataDistributor)
                                                                                        .receiver(protocol.getRootActor())
                                                                                        .subSequenceLength(getModel().getSubSequenceLength())
                                                                                        .convolutionSize(getModel().getConvolutionSize())
                                                                                        .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                                        .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
-                                                                                       .operationId(distributor.getOperationId())
+                                                                                       .operationId(operationId)
                                                                                        .build();
     }
 }

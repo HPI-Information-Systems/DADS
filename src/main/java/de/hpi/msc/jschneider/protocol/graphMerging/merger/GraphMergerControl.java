@@ -125,11 +125,11 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
                     : String.format("Unable to transfer graph to %1$s, because the processor does not implement the required protocol!", workerSystem);
 
             getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getEdges().values().toArray(new GraphEdge[0])),
-                                                         dataDistributor -> GraphMergingMessages.InitializeGraphTransferMessage.builder()
-                                                                                                                               .sender(getModel().getSelf())
-                                                                                                                               .receiver(protocol.get().getRootActor())
-                                                                                                                               .operationId(dataDistributor.getOperationId())
-                                                                                                                               .build());
+                                                         (dataDistributor, operationId) -> GraphMergingMessages.InitializeGraphTransferMessage.builder()
+                                                                                                                                              .sender(dataDistributor)
+                                                                                                                                              .receiver(protocol.get().getRootActor())
+                                                                                                                                              .operationId(operationId)
+                                                                                                                                              .build());
         }
     }
 }

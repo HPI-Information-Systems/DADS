@@ -58,7 +58,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(DataTransferMessages.RequestNextDataPartMessage.class, getModel().getDataTransferManager()::onRequestNextPart)
+        return builder.match(DataTransferMessages.DataTransferFinishedMessage.class, getModel().getDataTransferManager()::onDataSent)
                       .match(DataTransferMessages.DataPartMessage.class, getModel().getDataTransferManager()::onPart)
                       .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure);
     }
