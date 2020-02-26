@@ -112,7 +112,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
                                                                                                 .dateTime(LocalDateTime.now())
                                                                                                 .numberOfWorkers(getModel().getMaximumNumberOfWorkers())
                                                                                                 .numberOfAvailableWorkers(getModel().getWorkers().size())
-                                                                                                .workFactories(getModel().getWorkFactories().size())
+                                                                                                .workQueueSize(getModel().getWorkMessages().size())
                                                                                                 .build());
     }
 

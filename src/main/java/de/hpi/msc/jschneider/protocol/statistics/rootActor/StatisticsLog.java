@@ -164,12 +164,12 @@ public class StatisticsLog
 
     public void log(StatisticsRootActorControl control, ActorPoolEvents.UtilizationEvent event)
     {
-        tryWrite(String.format("ActorPoolUtilization { Processor = %1$s; DateTime = %2$s; Workers = %3$d; AvailableWorkers = %4$d; WorkFactories = %5$d; }",
+        tryWrite(String.format("ActorPoolUtilization { Processor = %1$s; DateTime = %2$s; Workers = %3$d; AvailableWorkers = %4$d; QueueSize = %5$d; }",
                                ProcessorId.of(event.getSender()),
                                event.getDateTime().format(DATE_FORMAT),
                                event.getNumberOfWorkers(),
                                event.getNumberOfAvailableWorkers(),
-                               event.getWorkFactories()));
+                               event.getWorkQueueSize()));
     }
 
     public void log(StatisticsRootActorControl control, ScoringEvents.ReadyForTerminationEvent event)
@@ -225,7 +225,8 @@ public class StatisticsLog
 
         try
         {
-            outputStream.close();
+            outputWriter.flush();
+            outputWriter.close();
         }
         catch (IOException ioException)
         {

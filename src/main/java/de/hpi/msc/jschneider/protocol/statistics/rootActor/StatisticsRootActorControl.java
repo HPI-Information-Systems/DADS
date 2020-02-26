@@ -47,6 +47,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                     .match(CreateUtilizationMeasurement.class, this::measureUtilization)
                     .match(StatisticsEvents.UtilizationEvent.class, this::onUtilization)
                     .match(MessageExchangeEvents.UtilizationEvent.class, this::onMessageExchangeUtilization)
+                    .match(ActorPoolEvents.UtilizationEvent.class, this::onActorPoolUtilization)
                     .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination);
     }
 
