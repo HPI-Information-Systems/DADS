@@ -20,7 +20,7 @@ import java.util.Set;
 public class DataReceiver
 {
     @Getter
-    private final String operationId;
+    private final int operationId;
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     @Getter
     private final Set<DataSink> dataSinks = new HashSet<>();
@@ -35,7 +35,7 @@ public class DataReceiver
     private LocalDateTime endTime;
     private final Counter transferredBytes = new Counter(0L);
 
-    public DataReceiver(String operationId, DataTransferMessages.InitializeDataTransferMessage initializationMessage, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
+    public DataReceiver(int operationId, DataTransferMessages.InitializeDataTransferMessage initializationMessage, ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.operationId = operationId;
         this.initializationMessage = initializationMessage;

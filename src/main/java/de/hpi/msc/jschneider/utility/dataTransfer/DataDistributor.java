@@ -16,7 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class DataDistributor
@@ -25,8 +25,10 @@ public class DataDistributor
 
     private static final Logger Log = LogManager.getLogger(DataDistributor.class);
 
+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
+
     @Getter
-    private final String operationId = UUID.randomUUID().toString();
+    private final int operationId = ID_GENERATOR.incrementAndGet();
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
     private final DataSource dataSource;
     @Getter

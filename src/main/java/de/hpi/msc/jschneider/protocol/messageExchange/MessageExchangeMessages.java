@@ -9,16 +9,18 @@ import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageExchangeMessages
 {
+    private static final AtomicInteger ID = new AtomicInteger();
+
     @NoArgsConstructor @SuperBuilder @Getter
     public static abstract class MessageExchangeMessage implements Serializable
     {
         private static final long serialVersionUID = -5714914705070819888L;
         @NotNull @Builder.Default
-        private String id = UUID.randomUUID().toString();
+        private int id = ID.incrementAndGet();
         @NonNull
         private ActorRef sender;
         @NonNull
@@ -46,6 +48,6 @@ public class MessageExchangeMessages
     {
         private static final long serialVersionUID = -7753147974709076497L;
         @NonNull
-        private String completedMessageId;
+        private int completedMessageId;
     }
 }
