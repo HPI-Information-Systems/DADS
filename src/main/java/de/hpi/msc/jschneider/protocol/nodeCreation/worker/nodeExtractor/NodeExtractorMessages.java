@@ -35,8 +35,8 @@ public class NodeExtractorMessages
                             .forwarder(getReceiver())
                             .consumer(getConsumer())
                             .intersectionSegment(getIntersectionSegment())
-                            .densitySamples(getDensitySamples())
                             .intersections(getIntersections())
+                            .densitySamples(getDensitySamples())
                             .participants(getParticipants())
                             .build();
         }

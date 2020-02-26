@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.actorPool;
 
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
+import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkFactory;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +10,14 @@ import lombok.experimental.SuperBuilder;
 
 public class ActorPoolMessages
 {
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class ExecuteDistributedFromFactoryMessage extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = -5051662566998145495L;
+        @NonNull
+        private WorkFactory workFactory;
+    }
+
     @NoArgsConstructor @SuperBuilder @Getter
     public static abstract class WorkMessage extends MessageExchangeMessages.RedirectableMessage
     {

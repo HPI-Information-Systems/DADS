@@ -4,6 +4,7 @@ import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerControl;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerModel;
+import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -34,18 +35,17 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
+                    .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(CreateUtilizationMeasurement.class, this::measureUtilization)
                     .match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
                     .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination)
                     .match(ActorPoolMessages.WorkMessage.class, this::onWork)
+                    .match(ActorPoolMessages.ExecuteDistributedFromFactoryMessage.class, this::onWorkFactory)
                     .match(ActorPoolMessages.WorkDoneMessage.class, this::onWorkDone);
     }
 
-    @Override
-    public void preStart()
+    private void onSetUp(CommonMessages.SetUpProtocolMessage message)
     {
-        super.preStart();
-
         subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
 
         for (var workerNumber = 0; workerNumber < getModel().getMaximumNumberOfWorkers(); ++workerNumber)
@@ -112,7 +112,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
                                                                                                 .dateTime(LocalDateTime.now())
                                                                                                 .numberOfWorkers(getModel().getMaximumNumberOfWorkers())
                                                                                                 .numberOfAvailableWorkers(getModel().getWorkers().size())
-                                                                                                .workQueueSize(getModel().getWorkQueue().size())
+                                                                                                .workFactories(getModel().getWorkFactories().size())
                                                                                                 .build());
     }
 
@@ -135,11 +135,20 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
     {
         try
         {
-            if (!getModel().getWorkQueue().add(message))
-            {
-                getLog().error(String.format("Unable to enqueue work message from %1$s!", message.getSender().path()));
-                return;
-            }
+            getModel().getWorkMessages().add(message);
+            workOnNextItem();
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onWorkFactory(ActorPoolMessages.ExecuteDistributedFromFactoryMessage message)
+    {
+        try
+        {
+            getModel().getWorkFactories().add(message.getWorkFactory());
             workOnNextItem();
         }
         finally
@@ -168,13 +177,40 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        if (getModel().getWorkQueue().isEmpty())
+        generateNewWork();
+
+        if (getModel().getWorkMessages().isEmpty())
         {
             return;
         }
 
+        val work = getModel().getWorkMessages().poll();
         val worker = getModel().getWorkers().poll();
-        val work = getModel().getWorkQueue().poll();
+
+        assert work != null : "Work == null!";
+        assert worker != null : "Worker == null!";
+
         send(work.redirectTo(worker));
+    }
+
+    private void generateNewWork()
+    {
+        if (!getModel().getWorkMessages().isEmpty())
+        {
+            return;
+        }
+
+        val it = getModel().getWorkFactories().iterator();
+        while (it.hasNext())
+        {
+            val factory = it.next();
+            if (!factory.hasNext())
+            {
+                it.remove();
+                continue;
+            }
+
+            getModel().getWorkMessages().add(factory.next(getModel().getSelf()));
+        }
     }
 }

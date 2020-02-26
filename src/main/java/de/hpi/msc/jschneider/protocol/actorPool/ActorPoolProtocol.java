@@ -38,6 +38,8 @@ public class ActorPoolProtocol
     {
         val model = ActorPoolRootActorModel.builder()
                                            .maximumNumberOfWorkers(SystemParameters.getNumberOfWorkers())
+                                           .schedulerProvider(actorSystem::scheduler)
+                                           .dispatcherProvider(actorSystem::dispatcher)
                                            .build();
         val control = new ActorPoolRootActorControl(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);

@@ -309,21 +309,6 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public boolean executePooled(Function<ActorRef, MessageExchangeMessages.RedirectableMessage> messageFactory)
-    {
-        val protocol = getLocalProtocol(ProtocolType.ActorPool);
-        if (!protocol.isPresent())
-        {
-            return false;
-        }
-
-        val message = messageFactory.apply(protocol.get().getRootActor());
-        send(message);
-
-        return true;
-    }
-
-    @Override
     public boolean trySendEvent(ProtocolType protocolType, Function<ActorRef, MessageExchangeMessages.RedirectableMessage> eventFactory)
     {
         try

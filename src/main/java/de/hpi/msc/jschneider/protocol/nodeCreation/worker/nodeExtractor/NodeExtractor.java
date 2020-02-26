@@ -5,10 +5,10 @@ import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Node;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.math.kernelDensity.GaussianKernelDensity;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerControl;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class NodeExtractor implements WorkConsumer
 {
     @Override
-    public void process(ActorPoolWorkerControl control, MessageExchangeMessages.RedirectableMessage workLoad)
+    public void process(ActorPoolWorkerControl control, ActorPoolMessages.WorkMessage workLoad)
     {
         assert workLoad instanceof NodeExtractorMessages.CreateNodeCollectionMessage : "Unexpected workload!";
         process(control, (NodeExtractorMessages.CreateNodeCollectionMessage) workLoad);

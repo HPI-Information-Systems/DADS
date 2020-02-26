@@ -19,7 +19,7 @@ public class ActorPoolEvents
         private LocalDateTime dateTime;
         private int numberOfWorkers;
         private int numberOfAvailableWorkers;
-        private int workQueueSize;
+        private int workFactories;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -30,7 +30,7 @@ public class ActorPoolEvents
                             .dateTime(getDateTime())
                             .numberOfWorkers(getNumberOfWorkers())
                             .numberOfAvailableWorkers(getNumberOfAvailableWorkers())
-                            .workQueueSize(getWorkQueueSize())
+                            .workFactories(getWorkFactories())
                             .build();
         }
     }

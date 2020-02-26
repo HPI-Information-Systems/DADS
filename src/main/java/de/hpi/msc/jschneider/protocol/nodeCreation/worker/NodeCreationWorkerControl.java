@@ -7,17 +7,17 @@ import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
-import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionCalculator;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionCalculatorMessages;
+import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionWorkFactory;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractor;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractorMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
-import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
@@ -27,20 +27,16 @@ import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
-import org.ojalgo.matrix.store.MatrixStore;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 public class NodeCreationWorkerControl extends AbstractProtocolParticipantControl<NodeCreationWorkerModel>
 {
     private static final int NUMBER_OF_DENSITY_SAMPLES = 250;
-    private static final long INTERSECTION_CHUNK_SIZE = 10000;
 
     public NodeCreationWorkerControl(NodeCreationWorkerModel model)
     {
@@ -192,7 +188,6 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         getModel().setStartTime(LocalDateTime.now());
 
-        // TODO: use actor pool for better parallelization
         var projection = getModel().getReducedProjection();
         var firstSubSequenceIndex = getModel().getFirstSubSequenceIndex();
         if (getModel().getFirstSubSequenceIndex() > 0L)
@@ -205,30 +200,17 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                   .transpose());
         }
 
-        val radiusX = Math.max(projection.aggregateRow(0L, Aggregator.MAXIMUM), Math.abs(projection.aggregateRow(0L, Aggregator.MINIMUM)));
-        val radiusY = Math.max(projection.aggregateRow(1L, Aggregator.MAXIMUM), Math.abs(projection.aggregateRow(1L, Aggregator.MINIMUM)));
-        val radiusLength = Math.sqrt(radiusX * radiusX + radiusY * radiusY);
-        val intersectionPoints = Calculate.makeIntersectionPoints(radiusLength, getModel().getNumberOfIntersectionSegments());
+        val actorPool = getLocalProtocol(ProtocolType.ActorPool);
+        assert actorPool.isPresent() : "ActorPooling is not supported!";
 
-        getModel().setExpectedNumberOfIntersectionCollections((int) Math.max(1, Math.floor(projection.countColumns() / (double) INTERSECTION_CHUNK_SIZE)));
-        val nextIntersectionChunkStartIndex = new Counter(0L);
-        val nextIntersectionChunkFirstSubSequenceIndex = new Counter(firstSubSequenceIndex);
+        val workFactory = new IntersectionWorkFactory(getModel().getSelf(), projection, getModel().getNumberOfIntersectionSegments(), firstSubSequenceIndex);
+        getModel().setExpectedNumberOfIntersectionCollections(workFactory.getNumberOfIntersectionChunks());
 
-        for (var chunkNumber = 0; chunkNumber < getModel().getExpectedNumberOfIntersectionCollections(); ++chunkNumber)
-        {
-            val chunkStart = nextIntersectionChunkStartIndex.get();
-            var chunkEnd = Math.min(projection.countColumns(), chunkStart + INTERSECTION_CHUNK_SIZE);
-            if (chunkNumber == getModel().getExpectedNumberOfIntersectionCollections() - 1)
-            {
-                chunkEnd = projection.countColumns();
-            }
-
-            val chunk = projection.logical().columns(LongStream.range(chunkStart, chunkEnd).toArray()).get();
-            calculateIntersections(chunk, intersectionPoints, nextIntersectionChunkFirstSubSequenceIndex.get());
-
-            nextIntersectionChunkStartIndex.increment(chunk.countColumns() - 1);
-            nextIntersectionChunkFirstSubSequenceIndex.increment(chunk.countColumns() - 1);
-        }
+        send(ActorPoolMessages.ExecuteDistributedFromFactoryMessage.builder()
+                                                                   .sender(getModel().getSelf())
+                                                                   .receiver(actorPool.get().getRootActor())
+                                                                   .workFactory(workFactory)
+                                                                   .build());
     }
 
     private boolean isReadyToCalculateIntersections()
@@ -253,18 +235,6 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
 //        getLog().info("Ready to start calculating intersections!");
         return true;
-    }
-
-    private void calculateIntersections(MatrixStore<Double> projectionChunk, List<MatrixStore<Double>> intersectionPoints, long firstSubSequenceIndex)
-    {
-        executePooled(actorPool -> IntersectionCalculatorMessages.CalculateIntersectionsMessage.builder()
-                                                                                               .sender(getModel().getSelf())
-                                                                                               .receiver(actorPool)
-                                                                                               .consumer(new IntersectionCalculator())
-                                                                                               .projectionChunk(projectionChunk)
-                                                                                               .intersectionPoints(intersectionPoints)
-                                                                                               .firstSubSequenceIndex(firstSubSequenceIndex)
-                                                                                               .build());
     }
 
     private void onIntersectionsCalculated(IntersectionCalculatorMessages.IntersectionsCalculatedMessage message)
@@ -392,15 +362,18 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        executePooled(actorPool -> NodeExtractorMessages.CreateNodeCollectionMessage.builder()
-                                                                                    .sender(getModel().getSelf())
-                                                                                    .receiver(actorPool)
-                                                                                    .consumer(new NodeExtractor())
-                                                                                    .intersectionSegment(intersectionSegment)
-                                                                                    .intersections(getModel().getIntersections().get(intersectionSegment))
-                                                                                    .densitySamples(getModel().getDensitySamples())
-                                                                                    .participants(getModel().getIntersectionSegmentResponsibilities().keySet().stream().map(ProcessorId::of).collect(Collectors.toSet()))
-                                                                                    .build());
+        val actorPool = getLocalProtocol(ProtocolType.ActorPool);
+        assert actorPool.isPresent() : "ActorPooling is not supported!";
+
+        send(NodeExtractorMessages.CreateNodeCollectionMessage.builder()
+                                                              .sender(getModel().getSelf())
+                                                              .receiver(actorPool.get().getRootActor())
+                                                              .consumer(new NodeExtractor())
+                                                              .intersectionSegment(intersectionSegment)
+                                                              .intersections(getModel().getIntersections().get(intersectionSegment))
+                                                              .densitySamples(getModel().getDensitySamples())
+                                                              .participants(getModel().getIntersectionSegmentResponsibilities().keySet().stream().map(ProcessorId::of).collect(Collectors.toSet()))
+                                                              .build());
     }
 
     private void onNodeCollectionCreated(NodeExtractorMessages.NodeCollectionCreatedMessage message)
