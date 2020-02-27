@@ -1,12 +1,15 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
 import de.hpi.msc.jschneider.Debug;
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
+import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationMessages;
+import de.hpi.msc.jschneider.protocol.edgeCreation.worker.graphPartitionCreator.GraphPartitionCreatorMessages;
+import de.hpi.msc.jschneider.protocol.edgeCreation.worker.graphPartitionCreator.GraphPartitionCreatorWorkFactory;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
@@ -46,7 +49,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(NodeCreationEvents.IntersectionsCalculatedEvent.class, this::onIntersectionsCalculated)
                     .match(EdgeCreationMessages.LastNodeMessage.class, this::onLastNode)
-                    .match(NodeCreationMessages.InitializeNodesTransferMessage.class, this::acceptNodesTransfer);
+                    .match(NodeCreationMessages.InitializeNodesTransferMessage.class, this::acceptNodesTransfer)
+                    .match(GraphPartitionCreatorMessages.GraphPartitionCreatedMessage.class, this::onGraphPartitionCreated);
     }
 
     private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
@@ -64,7 +68,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             var nextExpectedSubSequenceIndex = getModel().getLocalSubSequences().getFrom();
             if (nextExpectedSubSequenceIndex > 0L)
             {
-                // we must have received a reduced sub sequence from out predecessor processor
+                // we must have received a reduced sub sequence from our predecessor processor
                 nextExpectedSubSequenceIndex -= 1L;
             }
 
@@ -140,7 +144,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         getModel().setProgressLogInterval(allIntersections.size() / 10000);
         getModel().setNextProgressLog(allIntersections.size());
 
-        createEdges();
+        createGraphPartitions();
     }
 
     private boolean isReadyToEnqueueIntersections()
@@ -196,7 +200,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         getModel().getNodesInSegment().put(intersectionSegment, nodes);
         trySendLastNodeToNextResponsibleProcessor(intersectionSegment);
-        createEdges();
+        createGraphPartitions();
     }
 
     private void trySendLastNodeToNextResponsibleProcessor(int intersectionSegment)
@@ -247,7 +251,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             getLog().info(String.format("Received last node from %1$s.", ProcessorId.of(message.getSender())));
 
             getModel().setLastNode(message.getLastNode());
-            createEdges();
+            createGraphPartitions();
         }
         finally
         {
@@ -255,107 +259,120 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         }
     }
 
-    private void createEdges()
+    private void createGraphPartitions()
     {
-        if (!isReadyToCreateEdges())
+        if (!isReadyToCreateGraphPartitions())
         {
             return;
         }
 
-        if (getModel().getIntersectionsToMatch().size() == getModel().getInitialNumberOfIntersectionsToMatch())
-        {
-            getModel().setStartTime(LocalDateTime.now());
-        }
+        getModel().setStartTime(LocalDateTime.now());
 
-        while (!getModel().getIntersectionsToMatch().isEmpty())
-        {
-            val intersection = getModel().getIntersectionsToMatch().get(0);
-            assert intersection != null : "Queued intersections must not be null!";
+        val factory = new GraphPartitionCreatorWorkFactory(getModel().getSelf(),
+                                                           getModel().getIntersectionsToMatch(),
+                                                           getModel().getNodesInSegment(),
+                                                           getModel().getNextSubSequenceIndex().get(),
+                                                           getModel().getLastNode(),
+                                                           getModel().getLocalSubSequences());
+        getModel().setExpectedNumberOfGraphPartitions(factory.getNumberOfChunks());
+        val actorPool = getLocalProtocol(ProtocolType.ActorPool);
+        assert actorPool.isPresent() : "ActorPooling is not supported!";
 
-            if (getModel().getNodesInSegment().get(intersection.getIntersectionSegment()) == null)
-            {
-                // we did not receive these nodes yet
-                return;
-            }
+        send(ActorPoolMessages.ExecuteDistributedFromFactoryMessage.builder()
+                                                                   .sender(getModel().getSelf())
+                                                                   .receiver(actorPool.get().getRootActor())
+                                                                   .workFactory(factory)
+                                                                   .build());
 
-            assert intersection.getSubSequenceIndex() >= getModel().getNextSubSequenceIndex().get() : "Unexpected sub sequence index!";
-
-            while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
-            {
-                val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
-                val lastNode = getModel().getLastNode();
-                if (lastNode == null)
-                {
-                    continue;
-                }
-
-                getModel().getGraph().addEdge(subSequenceIndex, lastNode, lastNode);
-            }
-
-            val matchedNode = findClosestNode(intersection);
-            getModel().getIntersectionsToMatch().remove(0);
-
-            if (getModel().getIntersectionsToMatch().size() <= getModel().getNextProgressLog())
-            {
-                val iteration = getModel().getInitialNumberOfIntersectionsToMatch() - getModel().getIntersectionsToMatch().size();
-                Debug.printProgress(iteration, getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
-                getModel().setNextProgressLog(getModel().getNextProgressLog() - getModel().getProgressLogInterval());
-            }
-
-            if (intersection.getSubSequenceIndex() == getModel().getNextSubSequenceIndex().get())
-            {
-                getModel().getNextSubSequenceIndex().increment();
-            }
-
-            if (getModel().getLastNode() != null)
-            {
-                getModel().getGraph().addEdge(getModel().getNextSubSequenceIndex().get() - 1, getModel().getLastNode(), matchedNode);
-            }
-
-            getModel().setLastNode(matchedNode);
-        }
-
-        Debug.printProgress(getModel().getInitialNumberOfIntersectionsToMatch(), getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
-
-        if (!getModel().getIntersectionsToMatch().isEmpty())
-        {
-            return;
-        }
-
-        getModel().getNextSubSequenceIndex().increment();
-
-        while (getModel().getLocalSubSequences().contains(getModel().getNextSubSequenceIndex().get()))
-        {
-            val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
-            getModel().getGraph().addEdge(subSequenceIndex, getModel().getLastNode(), getModel().getLastNode());
-        }
-
-        val summedEdgeWeights = getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum();
-
-        getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d, tot. edge weights = %3$d) for sub sequences [%4$d, %5$d).",
-                                    getModel().getGraph().getNodes().size(),
-                                    getModel().getGraph().getEdges().size(),
-                                    summedEdgeWeights,
-                                    getModel().getLocalSubSequences().getFrom(),
-                                    getModel().getLocalSubSequences().getTo()));
-
-        getModel().setEndTime(LocalDateTime.now());
-
-        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
-                                                                                                                         .sender(getModel().getSelf())
-                                                                                                                         .receiver(eventDispatcher)
-                                                                                                                         .startTime(getModel().getStartTime())
-                                                                                                                         .endTime(getModel().getEndTime())
-                                                                                                                         .build());
-
-        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
-                                                                                                                     .sender(getModel().getSelf())
-                                                                                                                     .receiver(eventDispatcher)
-                                                                                                                     .graphPartition(getModel().getGraph())
-                                                                                                                     .build());
+//        while (!getModel().getIntersectionsToMatch().isEmpty())
+//        {
+//            val intersection = getModel().getIntersectionsToMatch().get(0);
+//            assert intersection != null : "Queued intersections must not be null!";
+//
+//            if (getModel().getNodesInSegment().get(intersection.getIntersectionSegment()) == null)
+//            {
+//                // we did not receive these nodes yet
+//                return;
+//            }
+//
+//            assert intersection.getSubSequenceIndex() >= getModel().getNextSubSequenceIndex().get() : "Unexpected sub sequence index!";
+//
+//            while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
+//            {
+//                val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
+//                val lastNode = getModel().getLastNode();
+//                if (lastNode == null)
+//                {
+//                    continue;
+//                }
+//
+//                getModel().getGraph().addEdge(subSequenceIndex, lastNode, lastNode);
+//            }
+//
+//            val matchedNode = findClosestNode(intersection);
+//            getModel().getIntersectionsToMatch().remove(0);
+//
+//            if (getModel().getIntersectionsToMatch().size() <= getModel().getNextProgressLog())
+//            {
+//                val iteration = getModel().getInitialNumberOfIntersectionsToMatch() - getModel().getIntersectionsToMatch().size();
+//                Debug.printProgress(iteration, getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
+//                getModel().setNextProgressLog(getModel().getNextProgressLog() - getModel().getProgressLogInterval());
+//            }
+//
+//            if (intersection.getSubSequenceIndex() == getModel().getNextSubSequenceIndex().get())
+//            {
+//                getModel().getNextSubSequenceIndex().increment();
+//            }
+//
+//            if (getModel().getLastNode() != null)
+//            {
+//                getModel().getGraph().addEdge(getModel().getNextSubSequenceIndex().get() - 1, getModel().getLastNode(), matchedNode);
+//            }
+//
+//            getModel().setLastNode(matchedNode);
+//        }
+//
+//        Debug.printProgress(getModel().getInitialNumberOfIntersectionsToMatch(), getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
+//
+//        if (!getModel().getIntersectionsToMatch().isEmpty())
+//        {
+//            return;
+//        }
+//
+//        getModel().getNextSubSequenceIndex().increment();
+//
+//        while (getModel().getLocalSubSequences().contains(getModel().getNextSubSequenceIndex().get()))
+//        {
+//            val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
+//            getModel().getGraph().addEdge(subSequenceIndex, getModel().getLastNode(), getModel().getLastNode());
+//        }
+//
+//        val summedEdgeWeights = getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum();
+//
+//        getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d, tot. edge weights = %3$d) for sub sequences [%4$d, %5$d).",
+//                                    getModel().getGraph().getNodes().size(),
+//                                    getModel().getGraph().getEdges().size(),
+//                                    summedEdgeWeights,
+//                                    getModel().getLocalSubSequences().getFrom(),
+//                                    getModel().getLocalSubSequences().getTo()));
+//
+//        getModel().setEndTime(LocalDateTime.now());
+//
+//        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
+//                                                                                                                         .sender(getModel().getSelf())
+//                                                                                                                         .receiver(eventDispatcher)
+//                                                                                                                         .startTime(getModel().getStartTime())
+//                                                                                                                         .endTime(getModel().getEndTime())
+//                                                                                                                         .build());
+//
+//        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
+//                                                                                                                     .sender(getModel().getSelf())
+//                                                                                                                     .receiver(eventDispatcher)
+//                                                                                                                     .graphPartition(getModel().getGraph())
+//                                                                                                                     .build());
     }
 
-    private boolean isReadyToCreateEdges()
+    private boolean isReadyToCreateGraphPartitions()
     {
         if (getModel().getIntersectionsToMatch() == null)
         {
@@ -369,8 +386,59 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return false;
         }
 
+        if (getModel().getNodesInSegment().size() != getModel().getNumberOfIntersectionSegments())
+        {
+            return false;
+        }
+
 //        getLog().info("Ready to start edge creation!");
         return true;
+    }
+
+    private void onGraphPartitionCreated(GraphPartitionCreatorMessages.GraphPartitionCreatedMessage message)
+    {
+        try
+        {
+            getModel().getGraphPartitions().put(message.getFirstIntersectionCreationIndex(), message.getGraphPartition());
+            getLog().info(String.format("Received GraphPartition (%1$d / %2$d).",
+                                        getModel().getGraphPartitions().size(),
+                                        getModel().getExpectedNumberOfGraphPartitions()));
+
+            if (getModel().getGraphPartitions().size() != getModel().getExpectedNumberOfGraphPartitions())
+            {
+                return;
+            }
+
+            getModel().setEndTime(LocalDateTime.now());
+
+            val sortedGraphPartitions = getModel().getGraphPartitions().entrySet().stream()
+                                                  .sorted(Comparator.comparingLong(Map.Entry::getKey))
+                                                  .map(Map.Entry::getValue)
+                                                  .toArray(Graph[]::new);
+
+            val graph = new Graph();
+            for (val graphPartition : sortedGraphPartitions)
+            {
+                graph.add(graphPartition);
+            }
+
+            trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
+                                                                                                                             .sender(getModel().getSelf())
+                                                                                                                             .receiver(eventDispatcher)
+                                                                                                                             .startTime(getModel().getStartTime())
+                                                                                                                             .endTime(getModel().getEndTime())
+                                                                                                                             .build());
+
+            trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
+                                                                                                                         .sender(getModel().getSelf())
+                                                                                                                         .receiver(eventDispatcher)
+                                                                                                                         .graphPartition(graph)
+                                                                                                                         .build());
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 
     private GraphNode findClosestNode(LocalIntersection intersection)

@@ -16,6 +16,7 @@ public class EdgeCreationEvents
     public static class LocalGraphPartitionCreatedEvent extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = -8606899178152425096L;
+        @NonNull
         private Graph graphPartition;
 
         @Override

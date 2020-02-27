@@ -52,6 +52,9 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
         getLog().info(String.format("Start transferring edge partition to %1$s.", receiver.path().root()));
 
         val edges = message.getGraphPartition().getEdges().values().toArray(new GraphEdge[0]);
+//        val edges = Arrays.stream(message.getGraphPartition())
+//                          .flatMap(graph -> graph.getEdges().values().stream())
+//                          .toArray(GraphEdge[]::new);
 
         getModel().getDataTransferManager().transfer(GenericDataSource.create(edges),
                                                      (dataDistributor, operationId) -> GraphMergingMessages.InitializeEdgePartitionTransferMessage.builder()

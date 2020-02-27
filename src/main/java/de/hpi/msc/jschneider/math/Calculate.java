@@ -414,6 +414,28 @@ public class Calculate
         return Ints.toArray(indices);
     }
 
+    public static int minimumDistanceIndex(double value, double[] possibleResults, boolean isSorted)
+    {
+        var closestIndex = 0;
+        var closestDistance = Double.MAX_VALUE;
+        for (var index = 0; index < possibleResults.length; ++index)
+        {
+            val distance = Math.abs(possibleResults[index] - value);
+            if (distance < closestDistance)
+            {
+                closestIndex = index;
+                closestDistance = distance;
+            }
+
+            if (isSorted && distance >= closestDistance)
+            {
+                break;
+            }
+        }
+
+        return closestIndex;
+    }
+
     public static double scottsFactor(long numberOfRecords, long numberOfDimensions)
     {
         return Math.pow(numberOfRecords, -1.0d / (numberOfDimensions + 4.0d));
