@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class GraphPartitionCreatorWorkFactory implements WorkFactory
 {
-    private static final int CHUNK_SIZE = 10000;
+    private static final int CHUNK_SIZE = 5000;
 
     private final ActorRef supervisor;
     private final List<LocalIntersection> intersections;

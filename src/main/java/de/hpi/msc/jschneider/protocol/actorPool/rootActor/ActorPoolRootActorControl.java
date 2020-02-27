@@ -136,7 +136,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
         try
         {
             getModel().getWorkMessages().add(message);
-            workOnNextItem();
+            dispatchWork();
         }
         finally
         {
@@ -148,8 +148,11 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
     {
         try
         {
-            getModel().getWorkFactories().add(message.getWorkFactory());
-            workOnNextItem();
+            while (message.getWorkFactory().hasNext())
+            {
+                getModel().getWorkMessages().add(message.getWorkFactory().next(getModel().getSelf()));
+            }
+            dispatchWork();
         }
         finally
         {
@@ -162,7 +165,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
         try
         {
             getModel().getWorkers().add(message.getSender());
-            workOnNextItem();
+            dispatchWork();
         }
         finally
         {
@@ -170,20 +173,16 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
         }
     }
 
+    private void dispatchWork()
+    {
+        while (!getModel().getWorkers().isEmpty() && !getModel().getWorkMessages().isEmpty())
+        {
+            workOnNextItem();
+        }
+    }
+
     private void workOnNextItem()
     {
-        if (getModel().getWorkers().isEmpty())
-        {
-            return;
-        }
-
-        generateNewWork();
-
-        if (getModel().getWorkMessages().isEmpty())
-        {
-            return;
-        }
-
         val work = getModel().getWorkMessages().poll();
         val worker = getModel().getWorkers().poll();
 
@@ -191,26 +190,5 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
         assert worker != null : "Worker == null!";
 
         send(work.redirectTo(worker));
-    }
-
-    private void generateNewWork()
-    {
-        if (!getModel().getWorkMessages().isEmpty())
-        {
-            return;
-        }
-
-        val it = getModel().getWorkFactories().iterator();
-        while (it.hasNext())
-        {
-            val factory = it.next();
-            if (!factory.hasNext())
-            {
-                it.remove();
-                continue;
-            }
-
-            getModel().getWorkMessages().add(factory.next(getModel().getSelf()));
-        }
     }
 }
