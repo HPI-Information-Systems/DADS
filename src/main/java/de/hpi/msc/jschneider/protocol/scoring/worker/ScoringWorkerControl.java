@@ -2,7 +2,6 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -208,7 +207,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 //        }
 
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
-        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
+//        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
         var pathSum = 0.0d;

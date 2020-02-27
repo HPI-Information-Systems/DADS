@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
@@ -20,9 +19,10 @@ import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
 import lombok.val;
 import lombok.var;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -126,7 +126,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        val allIntersections = new LinkedList<LocalIntersection>();
+        val startTime = LocalDateTime.now();
+
+        val allIntersections = new ArrayList<LocalIntersection>();
         for (val part : getModel().getIntersectionsInSegment().values())
         {
             allIntersections.addAll(part);
@@ -134,11 +136,15 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         allIntersections.sort(Comparator.comparingLong(LocalIntersection::getCreationIndex));
 
+        val endTime = LocalDateTime.now();
+
         getModel().setIntersectionsToMatch(allIntersections);
 
-        Debug.print(getModel().getIntersectionsToMatch().toArray(new LocalIntersection[0]), String.format("%1$s-intersection-creation-order.txt", ProcessorId.of(getModel().getSelf())));
+//        Debug.print(getModel().getIntersectionsToMatch().toArray(new LocalIntersection[0]), String.format("%1$s-intersection-creation-order.txt", ProcessorId.of(getModel().getSelf())));
 
-        getLog().info(String.format("Number of enqueued intersections: %1$d.", allIntersections.size()));
+        getLog().info(String.format("%1$d intersections enqueued in %2$s.",
+                                    allIntersections.size(),
+                                    Duration.between(startTime, endTime)));
 
         getModel().setInitialNumberOfIntersectionsToMatch(allIntersections.size());
         getModel().setProgressLogInterval(allIntersections.size() / 10000);
@@ -151,13 +157,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         if (getModel().getNumberOfIntersectionSegments() == 0)
         {
-//            getLog().info("Unable to start enqueuing intersections: NumberOfIntersectionSegments == 0.");
             return false;
         }
 
         if (getModel().getIntersectionsInSegment().size() != getModel().getNumberOfIntersectionSegments())
         {
-//            getLog().info("Unable to start enqueuing intersections: IntersectionsInSegment.size != NumberOfIntersectionSegments.");
             return false;
         }
 
@@ -165,12 +169,10 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             if (!getModel().getIntersectionsInSegment().containsKey(segment))
             {
-//                getLog().info(String.format("Unable to start enqueuing intersections: IntersectionSegment %1$d is missing.", segment));
                 return false;
             }
         }
 
-//        getLog().info("Ready to start enqueuing intersections!");
         return true;
     }
 
@@ -283,106 +285,17 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                    .receiver(actorPool.get().getRootActor())
                                                                    .workFactory(factory)
                                                                    .build());
-
-//        while (!getModel().getIntersectionsToMatch().isEmpty())
-//        {
-//            val intersection = getModel().getIntersectionsToMatch().get(0);
-//            assert intersection != null : "Queued intersections must not be null!";
-//
-//            if (getModel().getNodesInSegment().get(intersection.getIntersectionSegment()) == null)
-//            {
-//                // we did not receive these nodes yet
-//                return;
-//            }
-//
-//            assert intersection.getSubSequenceIndex() >= getModel().getNextSubSequenceIndex().get() : "Unexpected sub sequence index!";
-//
-//            while (intersection.getSubSequenceIndex() > getModel().getNextSubSequenceIndex().get())
-//            {
-//                val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
-//                val lastNode = getModel().getLastNode();
-//                if (lastNode == null)
-//                {
-//                    continue;
-//                }
-//
-//                getModel().getGraph().addEdge(subSequenceIndex, lastNode, lastNode);
-//            }
-//
-//            val matchedNode = findClosestNode(intersection);
-//            getModel().getIntersectionsToMatch().remove(0);
-//
-//            if (getModel().getIntersectionsToMatch().size() <= getModel().getNextProgressLog())
-//            {
-//                val iteration = getModel().getInitialNumberOfIntersectionsToMatch() - getModel().getIntersectionsToMatch().size();
-//                Debug.printProgress(iteration, getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
-//                getModel().setNextProgressLog(getModel().getNextProgressLog() - getModel().getProgressLogInterval());
-//            }
-//
-//            if (intersection.getSubSequenceIndex() == getModel().getNextSubSequenceIndex().get())
-//            {
-//                getModel().getNextSubSequenceIndex().increment();
-//            }
-//
-//            if (getModel().getLastNode() != null)
-//            {
-//                getModel().getGraph().addEdge(getModel().getNextSubSequenceIndex().get() - 1, getModel().getLastNode(), matchedNode);
-//            }
-//
-//            getModel().setLastNode(matchedNode);
-//        }
-//
-//        Debug.printProgress(getModel().getInitialNumberOfIntersectionsToMatch(), getModel().getInitialNumberOfIntersectionsToMatch(), "Extracting Edges: ");
-//
-//        if (!getModel().getIntersectionsToMatch().isEmpty())
-//        {
-//            return;
-//        }
-//
-//        getModel().getNextSubSequenceIndex().increment();
-//
-//        while (getModel().getLocalSubSequences().contains(getModel().getNextSubSequenceIndex().get()))
-//        {
-//            val subSequenceIndex = getModel().getNextSubSequenceIndex().getAndIncrement();
-//            getModel().getGraph().addEdge(subSequenceIndex, getModel().getLastNode(), getModel().getLastNode());
-//        }
-//
-//        val summedEdgeWeights = getModel().getGraph().getEdges().values().stream().mapToLong(GraphEdge::getWeight).sum();
-//
-//        getLog().info(String.format("Done creating local graph partition (#nodes = %1$d, #edges = %2$d, tot. edge weights = %3$d) for sub sequences [%4$d, %5$d).",
-//                                    getModel().getGraph().getNodes().size(),
-//                                    getModel().getGraph().getEdges().size(),
-//                                    summedEdgeWeights,
-//                                    getModel().getLocalSubSequences().getFrom(),
-//                                    getModel().getLocalSubSequences().getTo()));
-//
-//        getModel().setEndTime(LocalDateTime.now());
-//
-//        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
-//                                                                                                                         .sender(getModel().getSelf())
-//                                                                                                                         .receiver(eventDispatcher)
-//                                                                                                                         .startTime(getModel().getStartTime())
-//                                                                                                                         .endTime(getModel().getEndTime())
-//                                                                                                                         .build());
-//
-//        trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
-//                                                                                                                     .sender(getModel().getSelf())
-//                                                                                                                     .receiver(eventDispatcher)
-//                                                                                                                     .graphPartition(getModel().getGraph())
-//                                                                                                                     .build());
     }
 
     private boolean isReadyToCreateGraphPartitions()
     {
         if (getModel().getIntersectionsToMatch() == null)
         {
-//            getLog().info("Unable to start edge creation: IntersectionsToMatch == null.");
             return false;
         }
 
         if (getModel().getLocalSubSequences().getFrom() > 0L && getModel().getLastNode() == null)
         {
-//            getLog().info("Unable to start edge creation: LastNode == null.");
             return false;
         }
 
@@ -391,7 +304,6 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return false;
         }
 
-//        getLog().info("Ready to start edge creation!");
         return true;
     }
 

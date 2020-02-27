@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.merger;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -106,7 +105,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             getLog().info("================================================================================================");
             getLog().info("================================================================================================");
 
-            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("%1$s-graph.txt", ProcessorId.of(getModel().getSelf())));
+//            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("%1$s-graph.txt", ProcessorId.of(getModel().getSelf())));
 
             publishGraph(message.getWorkerSystems());
         }
