@@ -77,7 +77,7 @@ public class GraphPartitionCreatorWorkFactory implements WorkFactory
 
         val lastIntersection = chunk.get(chunk.size() - 1);
         val nodeValues = nodes.get(lastIntersection.getIntersectionSegment());
-        val lastNodeIndex = Calculate.minimumDistanceIndex(lastIntersection.getIntersectionDistance(), nodeValues);
+        val lastNodeIndex = Calculate.minimumDistanceIndexSorted(lastIntersection.getIntersectionDistance(), nodeValues);
         nextChunkStartIndex += chunk.size();
         nextSubSequenceIndex.set(lastIntersection.getSubSequenceIndex() + 1);
         lastNode = GraphNode.builder()

@@ -414,7 +414,7 @@ public class Calculate
         return Ints.toArray(indices);
     }
 
-    public static int minimumDistanceIndex(double value, double[] possibleResults)
+    public static int minimumDistanceIndexSorted(double value, double[] possibleResults)
     {
         var closestIndex = 0;
         var closestDistance = Double.MAX_VALUE;
@@ -424,7 +424,6 @@ public class Calculate
 
             if (distance >= closestDistance)
             {
-                // **ATTENTION**: This assumes, that the possible results are sorted in ascending order!
                 break;
             }
 

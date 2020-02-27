@@ -40,7 +40,7 @@ public class GraphPartitionCreator implements WorkConsumer
                 graph.addEdge(subSequenceIndex, lastNode, lastNode);
             }
 
-            val nodeIndex = Calculate.minimumDistanceIndex(intersection.getIntersectionDistance(), message.getNodes().get(intersection.getIntersectionSegment()));
+            val nodeIndex = Calculate.minimumDistanceIndexSorted(intersection.getIntersectionDistance(), message.getNodes().get(intersection.getIntersectionSegment()));
             val matchedNode = GraphNode.builder()
                                        .intersectionSegment(intersection.getIntersectionSegment())
                                        .index(nodeIndex)
