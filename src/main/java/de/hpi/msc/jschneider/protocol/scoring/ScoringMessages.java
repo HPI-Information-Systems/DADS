@@ -11,10 +11,11 @@ import lombok.experimental.SuperBuilder;
 public class ScoringMessages
 {
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class QueryPathLengthMessage extends MessageExchangeMessages.RedirectableMessage
+    public static class ScoringParametersMessage extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 1117346665010797573L;
         private int queryPathLength;
+        private int subSequenceLength;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -23,6 +24,7 @@ public class ScoringMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .queryPathLength(getQueryPathLength())
+                            .subSequenceLength(getSubSequenceLength())
                             .build();
         }
     }
@@ -41,6 +43,25 @@ public class ScoringMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .overlappingEdgeCreationOrder(getOverlappingEdgeCreationOrder())
+                            .build();
+        }
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class MinimumAndMaximumScoreMessage extends MessageExchangeMessages.RedirectableMessage
+    {
+        private static final long serialVersionUID = -6601476448525010953L;
+        private double minimumScore;
+        private double maximumScore;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .forwarder(getReceiver())
+                            .minimumScore(getMinimumScore())
+                            .maximumScore(getMaximumScore())
                             .build();
         }
     }

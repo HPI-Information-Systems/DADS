@@ -44,6 +44,8 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                     .match(NodeCreationEvents.NodeCreationCompletedEvent.class, this::onNodeCreationCompleted)
                     .match(EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class, this::onEdgePartitionCreationCompleted)
                     .match(PCAEvents.PrincipalComponentComputationCompletedEvent.class, this::onPrincipalComponentComputationCompleted)
+                    .match(ScoringEvents.PathScoringCompletedEvent.class, this::onPathScoringCompleted)
+                    .match(ScoringEvents.PathScoreNormalizationCompletedEvent.class, this::onPathScoreNormalizationCompleted)
                     .match(CreateUtilizationMeasurement.class, this::measureUtilization)
                     .match(StatisticsEvents.UtilizationEvent.class, this::onUtilization)
                     .match(MessageExchangeEvents.UtilizationEvent.class, this::onMessageExchangeUtilization)
@@ -62,6 +64,8 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.NodeCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.EdgeCreation, EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.PrincipalComponentAnalysis, PCAEvents.PrincipalComponentComputationCompletedEvent.class);
+        subscribeToLocalEvent(ProtocolType.Scoring, ScoringEvents.PathScoringCompletedEvent.class);
+        subscribeToLocalEvent(ProtocolType.Scoring, ScoringEvents.PathScoreNormalizationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.UtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.MessageExchange, MessageExchangeEvents.UtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.ActorPool, ActorPoolEvents.UtilizationEvent.class);
@@ -166,6 +170,30 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
     }
 
     private void onPrincipalComponentComputationCompleted(PCAEvents.PrincipalComponentComputationCompletedEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onPathScoringCompleted(ScoringEvents.PathScoringCompletedEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onPathScoreNormalizationCompleted(ScoringEvents.PathScoreNormalizationCompletedEvent message)
     {
         try
         {

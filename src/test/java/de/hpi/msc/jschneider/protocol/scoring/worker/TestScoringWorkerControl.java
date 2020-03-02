@@ -93,11 +93,11 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         messageInterface.apply(responsibilitiesReceivedEvent);
         assertThatMessageIsCompleted(responsibilitiesReceivedEvent);
 
-        val queryLengthMessage = ScoringMessages.QueryPathLengthMessage.builder()
-                                                                       .sender(self.ref())
-                                                                       .receiver(self.ref())
-                                                                       .queryPathLength(50)
-                                                                       .build();
+        val queryLengthMessage = ScoringMessages.ScoringParametersMessage.builder()
+                                                                         .sender(self.ref())
+                                                                         .receiver(self.ref())
+                                                                         .queryPathLength(50)
+                                                                         .build();
         messageInterface.apply(queryLengthMessage);
         assertThat(control.getModel().getQueryPathLength()).isEqualTo(50);
         assertThatMessageIsCompleted(queryLengthMessage);
@@ -131,11 +131,11 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         messageInterface.apply(responsibilitiesReceivedEvent);
         assertThatMessageIsCompleted(responsibilitiesReceivedEvent);
 
-        val queryLengthMessage = ScoringMessages.QueryPathLengthMessage.builder()
-                                                                       .sender(self.ref())
-                                                                       .receiver(self.ref())
-                                                                       .queryPathLength(50)
-                                                                       .build();
+        val queryLengthMessage = ScoringMessages.ScoringParametersMessage.builder()
+                                                                         .sender(self.ref())
+                                                                         .receiver(self.ref())
+                                                                         .queryPathLength(50)
+                                                                         .build();
         messageInterface.apply(queryLengthMessage);
         assertThat(control.getModel().getQueryPathLength()).isEqualTo(50);
         assertThatMessageIsCompleted(queryLengthMessage);

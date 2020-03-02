@@ -9,6 +9,7 @@ import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
@@ -16,6 +17,7 @@ import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 import lombok.var;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -47,7 +49,8 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
                     .match(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class, this::onLocalGraphPartitionCreated)
                     .match(GraphMergingEvents.GraphReceivedEvent.class, this::onGraphReceived)
-                    .match(ScoringMessages.QueryPathLengthMessage.class, this::onQueryPathLength)
+                    .match(ScoringMessages.ScoringParametersMessage.class, this::onScoringParameters)
+                    .match(ScoringMessages.MinimumAndMaximumScoreMessage.class, this::onMinimumAndMaximum)
                     .match(ScoringMessages.OverlappingEdgeCreationOrder.class, this::onOverlappingEdgeCreationOrder);
     }
 
@@ -57,8 +60,9 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             assert getModel().getProcessorResponsibleForNextSubSequences() == null : "Received responsibilities already!";
 
-            getModel().setResponsibilitiesReceived(true);
             setProcessorResponsibleForNextSubSequences(message.getSubSequenceResponsibilities());
+            getModel().getParticipants().addAll(message.getSubSequenceResponsibilities().keySet());
+            getModel().getMissingMinimumAndMaximumValueSenders().addAll(message.getSubSequenceResponsibilities().keySet());
             sendEdgeCreationOrderToNextResponsibleProcessor();
             scoreSubSequences();
         }
@@ -91,13 +95,14 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         getModel().setProcessorResponsibleForNextSubSequences(protocol.get().getRootActor());
     }
 
-    private void onQueryPathLength(ScoringMessages.QueryPathLengthMessage message)
+    private void onScoringParameters(ScoringMessages.ScoringParametersMessage message)
     {
         try
         {
             assert getModel().getQueryPathLength() == 0 : "Already received query path length!";
 
             getModel().setQueryPathLength(message.getQueryPathLength());
+            getModel().setSubSequenceLength(message.getSubSequenceLength());
             sendEdgeCreationOrderToNextResponsibleProcessor();
             scoreSubSequences();
         }
@@ -196,24 +201,18 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             return;
         }
 
-        getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
-//        val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
-//        if (getModel().getRemoteEdgeCreationOrder() != null)
-//        {
-//            for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
-//            {
-//                combinedEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
-//            }
-//        }
+        val startTime = LocalDateTime.now();
 
+        getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
 //        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
         var pathSum = 0.0d;
         var first = true;
+        var minScore = Double.MAX_VALUE;
+        var maxScore = Double.MIN_VALUE;
 
-        val pathScores = new ArrayList<Double>();
         for (var pathStartIndex = 0; pathStartIndex <= combinedEdgeCreationOrder.size() - getModel().getQueryPathLength(); ++pathStartIndex)
         {
             if (first)
@@ -234,10 +233,38 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                 pathSum = addSummands(pathSummands, combinedEdgeCreationOrder.get(pathStartIndex + getModel().getQueryPathLength() - 1), pathSum);
             }
 
-            pathScores.add(pathSum / pathSummands.size());
+            val score = pathSum / pathSummands.size();
+            maxScore = Math.max(maxScore, score);
+            minScore = Math.min(minScore, score);
+            getModel().getPathScores().add(score);
         }
 
-        publishPathScores(Doubles.toArray(pathScores));
+        val endTime = LocalDateTime.now();
+
+        trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.PathScoringCompletedEvent.builder()
+                                                                                                     .sender(getModel().getSelf())
+                                                                                                     .receiver(eventDispatcher)
+                                                                                                     .startTime(startTime)
+                                                                                                     .endTime(endTime)
+                                                                                                     .build());
+
+        publishMinimumAndMaximumScore(minScore, maxScore);
+    }
+
+    public void publishMinimumAndMaximumScore(double minScore, double maxScore)
+    {
+        for (val participant : getModel().getParticipants())
+        {
+            val protocol = getProtocol(participant, ProtocolType.Scoring);
+            assert protocol.isPresent() : String.format("The participant (%1$s) does not support the Scoring protocol!", participant);
+
+            send(ScoringMessages.MinimumAndMaximumScoreMessage.builder()
+                                                              .sender(getModel().getSelf())
+                                                              .receiver(protocol.get().getRootActor())
+                                                              .minimumScore(minScore)
+                                                              .maximumScore(maxScore)
+                                                              .build());
+        }
     }
 
     private List<List<Integer>> createEdgeCreationOrder()
@@ -276,7 +303,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
     private boolean isReadyToScoreSubSequences()
     {
-        if (!getModel().isResponsibilitiesReceived())
+        if (getModel().getParticipants().isEmpty())
         {
             return false;
         }
@@ -297,6 +324,87 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
 
         if (getModel().isWaitForRemoteEdgeCreationOrder() && getModel().getRemoteEdgeCreationOrder() == null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void onMinimumAndMaximum(ScoringMessages.MinimumAndMaximumScoreMessage message)
+    {
+        try
+        {
+            if (!getModel().getMissingMinimumAndMaximumValueSenders().remove(ProcessorId.of(message.getSender())))
+            {
+                return;
+            }
+
+            getModel().setGlobalMaximumScore(Math.max(getModel().getGlobalMaximumScore(), message.getMaximumScore()));
+            getModel().setGlobalMinimumScore(Math.min(getModel().getGlobalMinimumScore(), message.getMinimumScore()));
+
+            calculateRunningMean();
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void calculateRunningMean()
+    {
+        if (!isReadyToCalculateRunningMean())
+        {
+            return;
+        }
+
+        val startTime = LocalDateTime.now();
+
+        val minScore = getModel().getGlobalMaximumScore() * -1.0d;
+        val maxScore = getModel().getGlobalMinimumScore() * -1.0d;
+        val scoreRange = maxScore - minScore;
+        val normalizedScores = new double[getModel().getPathScores().size()];
+        for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
+        {
+            normalizedScores[scoreIndex] = (-getModel().getPathScores().get(scoreIndex) - minScore) / scoreRange;
+        }
+
+        var runningMean = 0.0d;
+        val runningMeans = new ArrayList<Double>();
+        final double windowSizeAsDouble = getModel().getSubSequenceLength();
+        for (var runningMeanStartIndex = 0; runningMeanStartIndex <= normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
+        {
+            if (runningMeans.isEmpty())
+            {
+                for (var windowIndex = 0; windowIndex < getModel().getSubSequenceLength(); ++windowIndex)
+                {
+                    runningMean += normalizedScores[runningMeanStartIndex + windowIndex] / windowSizeAsDouble;
+                }
+            }
+            else
+            {
+                runningMean -= normalizedScores[runningMeanStartIndex - 1] / windowSizeAsDouble;
+                runningMean += normalizedScores[runningMeanStartIndex + getModel().getSubSequenceLength() - 1] / windowSizeAsDouble;
+            }
+
+            runningMeans.add(runningMean);
+        }
+
+        val endTime = LocalDateTime.now();
+
+        trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.PathScoreNormalizationCompletedEvent.builder()
+                                                                                                                .sender(getModel().getSelf())
+                                                                                                                .receiver(eventDispatcher)
+                                                                                                                .startTime(startTime)
+                                                                                                                .endTime(endTime)
+                                                                                                                .build());
+
+        publishPathScores(Doubles.toArray(runningMeans));
+    }
+
+    private boolean isReadyToCalculateRunningMean()
+    {
+        if (!getModel().getMissingMinimumAndMaximumValueSenders().isEmpty())
         {
             return false;
         }

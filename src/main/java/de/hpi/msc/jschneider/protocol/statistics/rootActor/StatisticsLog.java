@@ -88,54 +88,69 @@ public class StatisticsLog
 
     public void log(StatisticsRootActorControl control, StatisticsEvents.DataTransferCompletedEvent event)
     {
-        tryWrite(String.format("DataTransferCompleted { Processor = %1$s; Type = %2$s; Source = %3$s; Sink = %4$s; StartTime = %5$s; EndTime = %6$s; Bytes = %7$d; }",
+        tryWrite(String.format("DataTransferCompleted { Processor = %1$s; Type = %2$s; Source = %3$s; Sink = %4$s; StartTime = %5$s; EndTime = %6$s; Duration = %7$s; Bytes = %8$d; }",
                                event.getProcessor(),
                                event.getInitializationMessageClassName(),
                                event.getSource(),
                                event.getSink(),
                                event.getStartTime().format(DATE_FORMAT),
                                event.getEndTime().format(DATE_FORMAT),
+                               Duration.between(event.getStartTime(), event.getEndTime()),
                                event.getTransferredBytes()));
     }
 
     public void log(StatisticsRootActorControl control, NodeCreationEvents.NodePartitionCreationCompletedEvent event)
     {
-        val duration = Duration.between(event.getStartTime(), event.getEndTime());
-
-        tryWrite(String.format("NodePartitionCreationCompleted { StartTime = %1$s; EndTime = %2$s; Duration = %3$s; }",
+        tryWrite(String.format("NodePartitionCreationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
                                event.getStartTime().format(DATE_FORMAT),
                                event.getEndTime().format(DATE_FORMAT),
-                               duration));
+                               Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
     public void log(StatisticsRootActorControl control, NodeCreationEvents.NodeCreationCompletedEvent event)
     {
-        val duration = Duration.between(event.getStartTime(), event.getEndTime());
-
-        tryWrite(String.format("NodeCreationCompleted { StartTime = %1$s; EndTime = %2$s; Duration = %3$s; }",
+        tryWrite(String.format("NodeCreationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
                                event.getStartTime().format(DATE_FORMAT),
                                event.getEndTime().format(DATE_FORMAT),
-                               duration));
+                               Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
     public void log(StatisticsRootActorControl control, EdgeCreationEvents.EdgePartitionCreationCompletedEvent event)
     {
-        val duration = Duration.between(event.getStartTime(), event.getEndTime());
-
-        tryWrite(String.format("EdgePartitionCreationCompleted { StartTime = %1$s; EndTime = %2$s; Duration = %3$s; }",
+        tryWrite(String.format("EdgePartitionCreationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
                                event.getStartTime().format(DATE_FORMAT),
                                event.getEndTime().format(DATE_FORMAT),
-                               duration));
+                               Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
     public void log(StatisticsRootActorControl control, PCAEvents.PrincipalComponentComputationCompletedEvent event)
     {
-        val duration = Duration.between(event.getStartTime(), event.getEndTime());
-
-        tryWrite(String.format("PrincipalComponentComputationCompleted { StartTime = %1$s; EndTime = %2$s; Duration = %3$s; }",
+        tryWrite(String.format("PrincipalComponentComputationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
                                event.getStartTime().format(DATE_FORMAT),
                                event.getEndTime().format(DATE_FORMAT),
-                               duration));
+                               Duration.between(event.getStartTime(), event.getEndTime())));
+    }
+
+    public void log(StatisticsRootActorControl control, ScoringEvents.PathScoringCompletedEvent event)
+    {
+        tryWrite(String.format("PathScoringCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getStartTime().format(DATE_FORMAT),
+                               event.getEndTime().format(DATE_FORMAT),
+                               Duration.between(event.getStartTime(), event.getEndTime())));
+    }
+
+    public void log(StatisticsRootActorControl control, ScoringEvents.PathScoreNormalizationCompletedEvent event)
+    {
+        tryWrite(String.format("PathScoreNormalizationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getStartTime().format(DATE_FORMAT),
+                               event.getEndTime().format(DATE_FORMAT),
+                               Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
     public void log(StatisticsRootActorControl control, StatisticsEvents.UtilizationEvent event)
