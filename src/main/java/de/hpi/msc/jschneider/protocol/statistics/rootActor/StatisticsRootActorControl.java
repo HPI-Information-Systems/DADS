@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
@@ -40,6 +41,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
                     .match(StatisticsEvents.DataTransferCompletedEvent.class, this::onDataTransferCompleted)
+                    .match(SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent.class, this::onProjectionCreationCompleted)
                     .match(NodeCreationEvents.NodePartitionCreationCompletedEvent.class, this::onNodePartitionCreationCompleted)
                     .match(NodeCreationEvents.NodeCreationCompletedEvent.class, this::onNodeCreationCompleted)
                     .match(EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class, this::onEdgePartitionCreationCompleted)
@@ -60,6 +62,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
 
         subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.DataTransferCompletedEvent.class);
+        subscribeToLocalEvent(ProtocolType.SequenceSliceDistribution, SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.NodePartitionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.NodeCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.EdgeCreation, EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
@@ -122,6 +125,18 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
     }
 
     private void onDataTransferCompleted(StatisticsEvents.DataTransferCompletedEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onProjectionCreationCompleted(SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent message)
     {
         try
         {

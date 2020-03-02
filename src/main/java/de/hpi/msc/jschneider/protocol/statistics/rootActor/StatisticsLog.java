@@ -8,6 +8,7 @@ import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import lombok.val;
 
@@ -97,6 +98,15 @@ public class StatisticsLog
                                event.getEndTime().format(DATE_FORMAT),
                                Duration.between(event.getStartTime(), event.getEndTime()),
                                event.getTransferredBytes()));
+    }
+
+    public void log(StatisticsRootActorControl control, SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent event)
+    {
+        tryWrite(String.format("ProjectionCreationCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getStartTime().format(DATE_FORMAT),
+                               event.getEndTime().format(DATE_FORMAT),
+                               Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
     public void log(StatisticsRootActorControl control, NodeCreationEvents.NodePartitionCreationCompletedEvent event)
