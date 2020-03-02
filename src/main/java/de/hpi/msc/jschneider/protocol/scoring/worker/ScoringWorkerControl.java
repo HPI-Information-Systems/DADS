@@ -250,7 +250,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                                                                      .endTime(endTime)
                                                                                                      .build());
 
-        sendLastPathScoresToNextResponsibleActor();
+        sendLastPathScoresToNextResponsibleProcessor();
         publishMinimumAndMaximumScore(minScore, maxScore);
     }
 
@@ -270,20 +270,20 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
     }
 
-    private void sendLastPathScoresToNextResponsibleActor()
+    private void sendLastPathScoresToNextResponsibleProcessor()
     {
         if (getModel().getProcessorResponsibleForNextSubSequences() == null)
         {
             return;
         }
 
-        val scores = getModel().getPathScores().subList(getModel().getPathScores().size() - (getModel().getSubSequenceLength() - 1), getModel().getPathScores().size() - 1);
+        val scores = getModel().getPathScores().subList(getModel().getPathScores().size() - (getModel().getSubSequenceLength() - 1), getModel().getPathScores().size());
         assert scores.size() == getModel().getSubSequenceLength() - 1 : "Unexpected number of path scores selected!";
 
         send(ScoringMessages.OverlappingPathScoresMessage.builder()
                                                          .sender(getModel().getSelf())
                                                          .receiver(getModel().getProcessorResponsibleForNextSubSequences())
-                                                         .overlappingPathScores(scores)
+                                                         .overlappingPathScores(Doubles.toArray(scores))
                                                          .build());
     }
 
@@ -292,9 +292,9 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         try
         {
             assert getModel().isWaitForRemotePathScores() : "No overlapping path scores expected!";
-            assert getModel().getOverlappingPathScores().isEmpty() : "Overlapping path scores were received already!";
+            assert getModel().getOverlappingPathScores().length == 0 : "Overlapping path scores were received already!";
 
-            getModel().getOverlappingPathScores().addAll(message.getOverlappingPathScores());
+            getModel().setOverlappingPathScores(message.getOverlappingPathScores());
             calculateRunningMean();
         }
         finally
@@ -399,17 +399,17 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         val minScore = getModel().getGlobalMaximumScore() * -1.0d;
         val maxScore = getModel().getGlobalMinimumScore() * -1.0d;
         val scoreRange = maxScore - minScore;
-        val normalizedScores = new double[getModel().getPathScores().size() + getModel().getOverlappingPathScores().size()];
+        val normalizedScores = new double[getModel().getPathScores().size() + getModel().getOverlappingPathScores().length];
         for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
         {
             var score = 0.0d;
-            if (scoreIndex < getModel().getOverlappingPathScores().size())
+            if (scoreIndex < getModel().getOverlappingPathScores().length)
             {
-                score = getModel().getOverlappingPathScores().get(scoreIndex);
+                score = getModel().getOverlappingPathScores()[scoreIndex];
             }
             else
             {
-                score = getModel().getPathScores().get(scoreIndex - getModel().getOverlappingPathScores().size());
+                score = getModel().getPathScores().get(scoreIndex - getModel().getOverlappingPathScores().length);
             }
 
             normalizedScores[scoreIndex] = (-score - minScore) / scoreRange;
@@ -455,7 +455,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             return false;
         }
 
-        if (getModel().isWaitForRemotePathScores() && getModel().getOverlappingPathScores().isEmpty())
+        if (getModel().isWaitForRemotePathScores() && getModel().getOverlappingPathScores().length == 0)
         {
             return false;
         }

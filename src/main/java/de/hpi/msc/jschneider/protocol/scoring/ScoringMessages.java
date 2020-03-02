@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 public class ScoringMessages
 {
     @NoArgsConstructor @SuperBuilder @Getter
@@ -55,7 +53,7 @@ public class ScoringMessages
     {
         private static final long serialVersionUID = 3583198169495096939L;
         @NonNull
-        private List<Double> overlappingPathScores;
+        private double[] overlappingPathScores;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
