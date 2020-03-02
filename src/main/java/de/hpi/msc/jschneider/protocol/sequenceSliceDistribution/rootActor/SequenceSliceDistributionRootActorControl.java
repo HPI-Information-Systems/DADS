@@ -49,7 +49,7 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
 
         if (!sliceReceiver.isPresent())
         {
-            getLog().error(String.format("Unable to create %1$s!", SequenceSliceReceiverControl.class.getName()));
+            getLog().error("Unable to create {}!", SequenceSliceReceiverControl.class.getName());
             getModel().setSliceReceiver(ActorRef.noSender());
             return;
         }

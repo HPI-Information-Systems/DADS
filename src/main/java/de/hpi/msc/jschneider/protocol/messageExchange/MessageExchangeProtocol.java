@@ -15,13 +15,25 @@ import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class MessageExchangeProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(MessageExchangeProtocol.class);
     private static final String ROOT_ACTOR_NAME = "MessageExchangeRootActor";
     private static final String EVENT_DISPATCHER_NAME = "MessageExchangeEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.MessageExchange)
@@ -29,7 +41,7 @@ public class MessageExchangeProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", MessageExchangeProtocol.class.getName()));
+        Log.info("{} successfully initialized.", MessageExchangeProtocol.class.getName());
         return localProtocol;
     }
 

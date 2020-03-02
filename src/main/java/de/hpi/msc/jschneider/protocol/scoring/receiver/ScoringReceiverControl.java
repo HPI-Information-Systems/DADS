@@ -110,7 +110,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
-        getLog().info(String.format("%1$d results written to %2$s.", numberOfPathScores.get(), filePath.toString()));
+        getLog().info("{} results written to {}.", numberOfPathScores.get(), filePath.toString());
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 

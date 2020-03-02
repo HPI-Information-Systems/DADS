@@ -67,7 +67,7 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
 
         if (!receiver.isPresent())
         {
-            getLog().error(String.format("Unable to create %1$s!", DimensionReductionReceiverControl.class.getName()));
+            getLog().error("Unable to create {}!", DimensionReductionReceiverControl.class.getName());
             getModel().setReceiver(ActorRef.noSender());
             return;
         }
@@ -103,7 +103,7 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
 
         if (!distributor.isPresent())
         {
-            getLog().error(String.format("Unable to create %1$s!", DimensionReductionDistributorControl.class.getName()));
+            getLog().error("Unable to create {}!", DimensionReductionDistributorControl.class.getName());
             return ActorRef.noSender();
         }
 

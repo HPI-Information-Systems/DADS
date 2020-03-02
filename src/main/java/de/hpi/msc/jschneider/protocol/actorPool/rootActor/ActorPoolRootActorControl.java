@@ -46,11 +46,14 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)
     {
-        subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
-
         for (var workerNumber = 0; workerNumber < getModel().getMaximumNumberOfWorkers(); ++workerNumber)
         {
             spawnWorker();
+        }
+
+        if (StatisticsProtocol.IS_ENABLED)
+        {
+            subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
         }
     }
 

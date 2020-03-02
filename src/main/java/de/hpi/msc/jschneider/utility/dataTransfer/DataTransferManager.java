@@ -58,9 +58,9 @@ public class DataTransferManager
             var receiver = dataReceivers.get(initializationMessage.getOperationId());
             if (receiver != null)
             {
-                Log.error(String.format("[%1$s] A data transfer for the operation id %2$s has already been accepted!",
-                                        control.getClass().getName(),
-                                        initializationMessage.getOperationId()));
+                Log.error("[{}] A data transfer for the operation id {} has already been accepted!",
+                          control.getClass().getName(),
+                          initializationMessage.getOperationId());
                 return;
             }
 
@@ -83,7 +83,7 @@ public class DataTransferManager
             val receiver = dataReceivers.get(message.getOperationId());
             if (receiver == null)
             {
-                Log.error(String.format("[%1$s] Unable to process data part, because there is no receiver for that operation!", control.getClass().getName()));
+                Log.error("[{}] Unable to process data part, because there is no receiver for that operation!", control.getClass().getName());
                 return;
             }
 

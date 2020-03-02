@@ -15,13 +15,25 @@ import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class GraphMergingProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(GraphMergingProtocol.class);
     private static final String ROOT_ACTOR_NAME = "GraphMergingRootActor";
     private static final String EVENT_DISPATCHER_NAME = "GraphMergingEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.GraphMerging)
@@ -29,7 +41,7 @@ public class GraphMergingProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", GraphMergingProtocol.class.getName()));
+        Log.info("{} successfully initialized.", GraphMergingProtocol.class.getName());
         return localProtocol;
     }
 

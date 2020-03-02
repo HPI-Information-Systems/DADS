@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
@@ -243,12 +244,15 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
         val endTime = LocalDateTime.now();
 
-        trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.PathScoringCompletedEvent.builder()
-                                                                                                     .sender(getModel().getSelf())
-                                                                                                     .receiver(eventDispatcher)
-                                                                                                     .startTime(startTime)
-                                                                                                     .endTime(endTime)
-                                                                                                     .build());
+        if (StatisticsProtocol.IS_ENABLED)
+        {
+            trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.PathScoringCompletedEvent.builder()
+                                                                                                         .sender(getModel().getSelf())
+                                                                                                         .receiver(eventDispatcher)
+                                                                                                         .startTime(startTime)
+                                                                                                         .endTime(endTime)
+                                                                                                         .build());
+        }
 
         sendLastPathScoresToNextResponsibleProcessor();
         publishMinimumAndMaximumScore(minScore, maxScore);
@@ -438,12 +442,15 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
         val endTime = LocalDateTime.now();
 
-        trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.PathScoreNormalizationCompletedEvent.builder()
-                                                                                                                .sender(getModel().getSelf())
-                                                                                                                .receiver(eventDispatcher)
-                                                                                                                .startTime(startTime)
-                                                                                                                .endTime(endTime)
-                                                                                                                .build());
+        if (StatisticsProtocol.IS_ENABLED)
+        {
+            trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.PathScoreNormalizationCompletedEvent.builder()
+                                                                                                                    .sender(getModel().getSelf())
+                                                                                                                    .receiver(eventDispatcher)
+                                                                                                                    .startTime(startTime)
+                                                                                                                    .endTime(endTime)
+                                                                                                                    .build());
+        }
 
         publishPathScores(Doubles.toArray(runningMeans));
     }

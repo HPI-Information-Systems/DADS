@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
@@ -43,8 +44,8 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
             val protocol = getProtocol(message.getSender().path().root(), ProtocolType.EdgeCreation);
             if (!protocol.isPresent())
             {
-                getLog().error(String.format("Processor (%1$s) declared ready for node creation although edge creation is not supported!",
-                                             message.getSender().path().root()));
+                getLog().error("Processor ({}) declared ready for node creation although edge creation is not supported!",
+                               ProcessorId.of(message.getSender()));
                 return;
             }
 
@@ -158,12 +159,16 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
             }
 
             getModel().setEndTime(LocalDateTime.now());
-            trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodeCreationCompletedEvent.builder()
-                                                                                                                    .sender(getModel().getSelf())
-                                                                                                                    .receiver(eventDispatcher)
-                                                                                                                    .startTime(getModel().getStartTime())
-                                                                                                                    .endTime(getModel().getEndTime())
-                                                                                                                    .build());
+
+            if (StatisticsProtocol.IS_ENABLED)
+            {
+                trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodeCreationCompletedEvent.builder()
+                                                                                                                        .sender(getModel().getSelf())
+                                                                                                                        .receiver(eventDispatcher)
+                                                                                                                        .startTime(getModel().getStartTime())
+                                                                                                                        .endTime(getModel().getEndTime())
+                                                                                                                        .build());
+            }
         }
         finally
         {

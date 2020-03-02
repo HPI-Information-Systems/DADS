@@ -16,6 +16,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractor;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractorMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
@@ -157,7 +158,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        getLog().error(String.format("Unable to find responsible actor for subsequence index %1$d!", subSequenceIndexToSend));
+        getLog().error("Unable to find responsible actor for subsequence index {}!", subSequenceIndexToSend);
     }
 
     private void onReducedSubSequence(NodeCreationMessages.ReducedSubSequenceMessage message)
@@ -241,9 +242,9 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             getModel().getIntersectionCollections().add(message.getIntersectionCollections());
 
-            getLog().info(String.format("Received IntersectionCollections (%1$d / %2$d).",
-                                        getModel().getIntersectionCollections().size(),
-                                        getModel().getExpectedNumberOfIntersectionCollections()));
+            getLog().info("Received IntersectionCollections ({} / {}).",
+                          getModel().getIntersectionCollections().size(),
+                          getModel().getExpectedNumberOfIntersectionCollections());
 
             if (getModel().getIntersectionCollections().size() < getModel().getExpectedNumberOfIntersectionCollections())
             {
@@ -387,12 +388,15 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             getModel().setEndTime(LocalDateTime.now());
 
-            trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodePartitionCreationCompletedEvent.builder()
-                                                                                                                             .sender(getModel().getSelf())
-                                                                                                                             .receiver(eventDispatcher)
-                                                                                                                             .startTime(getModel().getStartTime())
-                                                                                                                             .endTime(getModel().getEndTime())
-                                                                                                                             .build());
+            if (StatisticsProtocol.IS_ENABLED)
+            {
+                trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodePartitionCreationCompletedEvent.builder()
+                                                                                                                                 .sender(getModel().getSelf())
+                                                                                                                                 .receiver(eventDispatcher)
+                                                                                                                                 .startTime(getModel().getStartTime())
+                                                                                                                                 .endTime(getModel().getEndTime())
+                                                                                                                                 .build());
+            }
 
 //            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }

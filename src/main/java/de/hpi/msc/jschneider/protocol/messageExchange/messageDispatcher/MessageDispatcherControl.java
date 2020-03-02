@@ -69,7 +69,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         val previousQueueSize = getModel().getUndeliveredMessages().size();
         if (previousQueueSize > 0)
         {
-            getLog().info(String.format("Trying to dequeue %1$d undelivered message(s).", previousQueueSize));
+            getLog().info("Trying to dequeue {} undelivered message(s).", previousQueueSize);
         }
 
         while (!getModel().getUndeliveredMessages().isEmpty())
@@ -83,10 +83,10 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
             if (!tryDeliver(message))
             {
-                getLog().info(String.format("Unable to deliver message (type = %1$s) from %2$s to %3$s.",
-                                            message.getClass().getName(),
-                                            message.getSender().path(),
-                                            message.getReceiver().path()));
+                getLog().info("Unable to deliver message (type = {}) from {} to {}.",
+                              message.getClass().getName(),
+                              message.getSender().path(),
+                              message.getReceiver().path());
                 break;
             }
 
@@ -96,9 +96,9 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         val queueSizeDifference = getModel().getUndeliveredMessages().size() - previousQueueSize;
         if (queueSizeDifference > 0)
         {
-            getLog().info(String.format("Undelivered message queue size just shrunk by %1$d and is now %2$d.",
-                                        queueSizeDifference,
-                                        getModel().getUndeliveredMessages().size()));
+            getLog().info("Undelivered message queue size just shrunk by {} and is now {}.",
+                          queueSizeDifference,
+                          getModel().getUndeliveredMessages().size());
         }
     }
 
@@ -112,7 +112,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         getModel().getUndeliveredMessages().add(message);
-        getLog().info(String.format("Undelivered message queue just grew to %1$d.", getModel().getUndeliveredMessages().size()));
+        getLog().info("Undelivered message queue just grew to {}.", getModel().getUndeliveredMessages().size());
     }
 
     private boolean tryDeliver(MessageExchangeMessages.MessageExchangeMessage message)
@@ -164,8 +164,8 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         val remoteMessageDispatcher = getProtocol(processorId, ProtocolType.MessageExchange);
         if (!remoteMessageDispatcher.isPresent())
         {
-            getLog().error(String.format("Unable to get the MessageExchange root actor for (remote) actor system at \"%1$s\"!",
-                                         processorId));
+            getLog().error("Unable to get the MessageExchange root actor for (remote) actor system at \"{}\"!",
+                           processorId);
 
             return Optional.empty();
         }

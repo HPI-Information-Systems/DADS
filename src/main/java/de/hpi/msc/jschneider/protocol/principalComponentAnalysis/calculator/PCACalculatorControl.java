@@ -8,6 +8,7 @@ import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
@@ -97,7 +98,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val dataMatrix = Calculate.columnCenteredDataMatrix(getModel().getProjection(), transposedColumnMeans);
         calculateAndTransferR(dataMatrix);
 
-        getLog().info(String.format("PCA calculation for step %1$d done.", getModel().getCurrentCalculationStep().get()));
+        getLog().debug("PCA calculation for step {} done.", getModel().getCurrentCalculationStep().get());
         getModel().getCurrentCalculationStep().increment();
 
         if (numberOfProcessors() > 1)
@@ -138,7 +139,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                                        .maximumRecord(getModel().getMaximumRecord())
                                                                                                                                        .build());
 
-        getLog().info(String.format("Transferring PCA column means to %1$s.", receiverProtocol.getRootActor().path().root()));
+        getLog().info("Transferring PCA column means to {}.", ProcessorId.of(receiverProtocol.getRootActor()));
     }
 
     private void calculateAndTransferR(MatrixStore<Double> matrix)
@@ -175,7 +176,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                              .operationId(operationId)
                                                                                                                              .build());
 
-        getLog().info(String.format("Transferring local R (step = %1$d) to %2$s.", stepNumber, receiverProtocol.getRootActor().path().root()));
+        getLog().info("Transferring local R (step = {}) to {}.", stepNumber, ProcessorId.of(receiverProtocol.getRootActor()));
     }
 
     private long nextRReceiverIndex()
@@ -207,18 +208,21 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val currentStep = getModel().getCurrentCalculationStep().get();
         if (getModel().getMyProcessorIndex() >= numberOfInvolvedProcessors(currentStep))
         {
-            getLog().info(String.format("Stopping PCA calculation at step %1$d, because we (index = %2$d) are no longer involved.",
-                                        currentStep,
-                                        getModel().getMyProcessorIndex()));
+            getLog().info("Stopping PCA calculation at step {}, because we (index = {}) are no longer involved.",
+                          currentStep,
+                          getModel().getMyProcessorIndex());
             // we dont have to do anything anymore
             getModel().setEndTime(LocalDateTime.now());
 
-            trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
-                                                                                                                                          .sender(getModel().getSelf())
-                                                                                                                                          .receiver(eventDispatcher)
-                                                                                                                                          .startTime(getModel().getStartTime())
-                                                                                                                                          .endTime(getModel().getEndTime())
-                                                                                                                                          .build());
+            if (StatisticsProtocol.IS_ENABLED)
+            {
+                trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
+                                                                                                                                              .sender(getModel().getSelf())
+                                                                                                                                              .receiver(eventDispatcher)
+                                                                                                                                              .startTime(getModel().getStartTime())
+                                                                                                                                              .endTime(getModel().getEndTime())
+                                                                                                                                              .build());
+            }
             return;
         }
 
@@ -227,7 +231,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         var dataMatrix = getModel().getLocalR();
         if (expectedRSenderIndex < getModel().getProcessorIndices().size())
         {
-            getLog().info(String.format("Expecting remote R (step = %1$d).", currentStep - 1));
+            getLog().debug("Expecting remote R (step = {}).", currentStep - 1);
 
             // we expect to receive a R from an other processor
             val remoteR = getModel().getRemoteRsByProcessStep().get(currentStep - 1);
@@ -242,7 +246,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
         calculateAndTransferR(dataMatrix);
 
-        getLog().info(String.format("PCA calculation for step %1$d done.", getModel().getCurrentCalculationStep().get()));
+        getLog().debug("PCA calculation for step {} done.", getModel().getCurrentCalculationStep().get());
         getModel().getCurrentCalculationStep().increment();
         if (isLastStep())
         {
@@ -291,12 +295,16 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
 
         getModel().setEndTime(LocalDateTime.now());
-        trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
-                                                                                                                                      .sender(getModel().getSelf())
-                                                                                                                                      .receiver(eventDispatcher)
-                                                                                                                                      .startTime(getModel().getStartTime())
-                                                                                                                                      .endTime(getModel().getEndTime())
-                                                                                                                                      .build());
+
+        if (StatisticsProtocol.IS_ENABLED)
+        {
+            trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
+                                                                                                                                          .sender(getModel().getSelf())
+                                                                                                                                          .receiver(eventDispatcher)
+                                                                                                                                          .startTime(getModel().getStartTime())
+                                                                                                                                          .endTime(getModel().getEndTime())
+                                                                                                                                          .build());
+        }
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
                                                                                                                           .sender(getModel().getSelf())
@@ -362,7 +370,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private void columnMeansTransferFinished(ProcessorId sender, PrimitiveMatrixSink sink)
     {
-        getLog().info(String.format("Received column means from %1$s.", sender));
+        getLog().debug("Received column means from {}.", sender);
         getModel().getTransposedColumnMeans().put(sender, sink.getMatrix(getModel().getProjection().countColumns()));
 
         finalizeCalculation();
@@ -381,7 +389,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
     private void whenRTransferFinished(long stepNumber, PrimitiveMatrixSink sink)
     {
-        getLog().info(String.format("Received R for step %1$d.", stepNumber));
+        getLog().debug("Received R for step {}.", stepNumber);
 
         getModel().getRemoteRsByProcessStep().put(stepNumber, sink.getMatrix(getModel().getProjection().countColumns()));
         continueCalculation();

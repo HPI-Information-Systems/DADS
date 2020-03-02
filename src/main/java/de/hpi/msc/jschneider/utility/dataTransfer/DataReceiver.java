@@ -6,6 +6,7 @@ import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.event.EventHandler;
 import de.hpi.msc.jschneider.utility.event.EventImpl;
@@ -101,17 +102,20 @@ public class DataReceiver
             finished = true;
             onFinished.invoke(this);
 
-            control.trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
-                                                                                                                        .sender(control.getModel().getSelf())
-                                                                                                                        .receiver(eventDispatcher)
-                                                                                                                        .processor(ProcessorId.of(control.getModel().getSelf()))
-                                                                                                                        .startTime(startTime)
-                                                                                                                        .endTime(endTime)
-                                                                                                                        .initializationMessageClassName(initializationMessage.getClass().getName())
-                                                                                                                        .source(ProcessorId.of(message.getSender()))
-                                                                                                                        .sink(ProcessorId.of(control.getModel().getSelf()))
-                                                                                                                        .transferredBytes(transferredBytes.get())
-                                                                                                                        .build());
+            if (StatisticsProtocol.IS_ENABLED)
+            {
+                control.trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
+                                                                                                                            .sender(control.getModel().getSelf())
+                                                                                                                            .receiver(eventDispatcher)
+                                                                                                                            .processor(ProcessorId.of(control.getModel().getSelf()))
+                                                                                                                            .startTime(startTime)
+                                                                                                                            .endTime(endTime)
+                                                                                                                            .initializationMessageClassName(initializationMessage.getClass().getName())
+                                                                                                                            .source(ProcessorId.of(message.getSender()))
+                                                                                                                            .sink(ProcessorId.of(control.getModel().getSelf()))
+                                                                                                                            .transferredBytes(transferredBytes.get())
+                                                                                                                            .build());
+            }
         }
     }
 }

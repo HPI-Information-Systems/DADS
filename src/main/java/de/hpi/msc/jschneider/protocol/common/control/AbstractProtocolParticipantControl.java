@@ -67,7 +67,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         try
         {
-            getLog().warn(String.format("%1$s received back pressure!", getClass().getName()));
+            getLog().warn("{} received back pressure!", getClass().getName());
 //            Thread.sleep(1000);
         }
 //        catch (InterruptedException interruptedException)
@@ -224,9 +224,9 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     @Override
     public void onAny(Object message)
     {
-        getLog().warn(String.format("%1$s received unmatched message of type %2$s!",
-                                    getClass().getName(),
-                                    message.getClass().getName()));
+        getLog().warn("{} received unmatched message of type {}!",
+                      getClass().getName(),
+                      message.getClass().getName());
     }
 
     @Override

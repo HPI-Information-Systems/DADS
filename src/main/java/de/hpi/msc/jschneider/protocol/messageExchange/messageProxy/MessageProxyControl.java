@@ -46,18 +46,16 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     {
         super.preStart();
 
-        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        if (StatisticsProtocol.IS_ENABLED)
         {
-            return;
-        }
-
-        if (getModel().getNumberOfProcessors() <= 1)
-        {
-            subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
-        }
-        else
-        {
-            initializeUtilizationMeasurements();
+            if (getModel().getNumberOfProcessors() <= 1)
+            {
+                subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
+            }
+            else
+            {
+                initializeUtilizationMeasurements();
+            }
         }
     }
 
@@ -166,15 +164,15 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         val senderQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (senderQueue == null)
         {
-            getLog().error(String.format("Unable to get message queue for %1$s in order to complete earlier message!",
-                                         message.getSender().path()));
+            getLog().error("Unable to get message queue for {} in order to complete earlier message!",
+                           message.getSender().path());
             return;
         }
         else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {
-            getLog().error(String.format("Unexpected message completion for a message we have never seen before! (sender = %1$s, receiver = %2$s)",
-                                         message.getSender().path(),
-                                         message.getReceiver().path()));
+            getLog().error("Unexpected message completion for a message we have never seen before! (sender = {}, receiver = {})",
+                           message.getSender().path(),
+                           message.getReceiver().path());
             return;
         }
 

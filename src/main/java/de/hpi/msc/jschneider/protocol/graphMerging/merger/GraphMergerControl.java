@@ -101,7 +101,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
 
             getLog().info("================================================================================================");
             getLog().info("================================================================================================");
-            getLog().info(String.format("Graph merged: %1$d edges (tot. weight: %2$d), %3$d nodes.", numberOfEdges, totalEdgeWeights, numberOfNodes));
+            getLog().info("Graph merged: {} edges (tot. weight: {}), {} nodes.", numberOfEdges, totalEdgeWeights, numberOfNodes);
             getLog().info("================================================================================================");
             getLog().info("================================================================================================");
 

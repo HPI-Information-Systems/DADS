@@ -18,16 +18,26 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
+import java.util.Set;
 
 public class StatisticsProtocol
 {
     public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(250);
+    public static final boolean IS_ENABLED = true;
 
     private static final Logger Log = LogManager.getLogger(StatisticsProtocol.class);
     private static final String ROOT_ACTOR_NAME = "StatisticsRootActor";
     private static final String EVENT_DISPATCHER_NAME = "StatisticsEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.Statistics)
@@ -35,7 +45,7 @@ public class StatisticsProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", StatisticsProtocol.class.getName()));
+        Log.info("{} successfully initialized.", StatisticsProtocol.class.getName());
         return localProtocol;
     }
 

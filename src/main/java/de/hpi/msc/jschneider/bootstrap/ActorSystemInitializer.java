@@ -11,7 +11,6 @@ import de.hpi.msc.jschneider.bootstrap.configuration.ConfigurationFactory;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationProtocol;
-import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRole;
 import de.hpi.msc.jschneider.utility.IdGenerator;
 import lombok.val;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +36,7 @@ public class ActorSystemInitializer
         val actorSystem = initializeActorSystem(processorId.toString(), masterCommand);
 
         val masterSystemAddress = new Address("akka", processorId.toString(), masterCommand.getHost(), masterCommand.getPort());
-        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, true);
+        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, true);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                                                                .masterAddress(masterSystemAddress)
                                                                                                                .build(), ActorRef.noSender());
@@ -53,7 +52,7 @@ public class ActorSystemInitializer
 
         val masterProcessorId = new ProcessorId(MASTER_ACTOR_SYSTEM_NAME, slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
         val masterSystemAddress = new Address("akka", masterProcessorId.toString(), slaveCommand.getMasterHost(), slaveCommand.getMasterPort());
-        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, ProcessorRole.Worker, false);
+        val processorRegistrationProtocol = ProcessorRegistrationProtocol.initialize(actorSystem, false);
         processorRegistrationProtocol.getRootActor().tell(ProcessorRegistrationMessages.RegisterAtMasterMessage.builder()
                                                                                                                .masterAddress(masterSystemAddress)
                                                                                                                .build(), ActorRef.noSender());

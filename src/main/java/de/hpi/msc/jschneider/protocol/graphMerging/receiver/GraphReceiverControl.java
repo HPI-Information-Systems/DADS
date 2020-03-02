@@ -53,7 +53,7 @@ public class GraphReceiverControl extends AbstractProtocolParticipantControl<Gra
                                       .boxed()
                                       .collect(Collectors.toSet())
                                       .size();
-        getLog().info(String.format("Received graph (#edges = %1$d, #nodes = %2$d).", numberOfEdges, numberOfNodes));
+        getLog().info("Received graph (#edges = {}, #nodes = {}).", numberOfEdges, numberOfNodes);
         trySendEvent(ProtocolType.GraphMerging, eventDispatcher -> GraphMergingEvents.GraphReceivedEvent.builder()
                                                                                                         .sender(getModel().getSelf())
                                                                                                         .receiver(eventDispatcher)

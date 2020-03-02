@@ -31,7 +31,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
-import java.util.Set;
 
 public class ProcessorRegistrationProtocol
 {
@@ -40,12 +39,12 @@ public class ProcessorRegistrationProtocol
     private static final Logger Log = LogManager.getLogger(ProcessorRegistrationProtocol.class);
     private static ProcessorRegistryModel rootActorModel;
 
-    public static Protocol initialize(ActorSystem actorSystem, ProcessorRole role, boolean isMaster)
+    public static Protocol initialize(ActorSystem actorSystem, boolean isMaster)
     {
         val localProcessor = BaseProcessor.builder()
                                           .isMaster(isMaster)
                                           .id(ProcessorId.of(actorSystem))
-                                          .protocols(initializeProtocols(actorSystem, role))
+                                          .protocols(initializeProtocols(actorSystem))
                                           .build();
 
         val localProtocol = BaseProtocol.builder()
@@ -61,48 +60,27 @@ public class ProcessorRegistrationProtocol
 
         setUpProtocols(localProcessor);
 
-        Log.info(String.format("%1$s successfully initialized.", ProcessorRegistrationProtocol.class.getName()));
+        Log.info("{} successfully initialized.", ProcessorRegistrationProtocol.class.getName());
         return localProtocol;
     }
 
-    private static Protocol[] initializeProtocols(ActorSystem actorSystem, ProcessorRole role)
+    private static Protocol[] initializeProtocols(ActorSystem actorSystem)
     {
         val protocols = new HashSet<Protocol>();
-        protocols.add(ReaperProtocol.initialize(actorSystem));
 
-        switch (role)
-        {
-            case Worker:
-            {
-                protocols.addAll(initializeWorkerProtocols(actorSystem));
-                break;
-            }
-            default:
-            {
-                Log.error(String.format("Unknown %1$s!", ProcessorRole.class.getName()));
-                break;
-            }
-        }
+        ReaperProtocol.initializeInPlace(protocols, actorSystem);
+        MessageExchangeProtocol.initializeInPlace(protocols, actorSystem);
+        SequenceSliceDistributionProtocol.initializeInPlace(protocols, actorSystem);
+        PCAProtocol.initializeInPlace(protocols, actorSystem);
+        DimensionReductionProtocol.initializeInPlace(protocols, actorSystem);
+        NodeCreationProtocol.initializeInPlace(protocols, actorSystem);
+        EdgeCreationProtocol.initializeInPlace(protocols, actorSystem);
+        GraphMergingProtocol.initializeInPlace(protocols, actorSystem);
+        ScoringProtocol.initializeInPlace(protocols, actorSystem);
+        StatisticsProtocol.initializeInPlace(protocols, actorSystem);
+        ActorPoolProtocol.initializeInPlace(protocols, actorSystem);
 
         return protocols.toArray(new Protocol[0]);
-    }
-
-    private static Set<Protocol> initializeWorkerProtocols(ActorSystem actorSystem)
-    {
-        val protocols = new HashSet<Protocol>();
-
-        protocols.add(MessageExchangeProtocol.initialize(actorSystem));
-        protocols.add(SequenceSliceDistributionProtocol.initialize(actorSystem));
-        protocols.add(PCAProtocol.initialize(actorSystem));
-        protocols.add(DimensionReductionProtocol.initialize(actorSystem));
-        protocols.add(NodeCreationProtocol.initialize(actorSystem));
-        protocols.add(EdgeCreationProtocol.initialize(actorSystem));
-        protocols.add(GraphMergingProtocol.initialize(actorSystem));
-        protocols.add(ScoringProtocol.initialize(actorSystem));
-        protocols.add(StatisticsProtocol.initialize(actorSystem));
-        protocols.add(ActorPoolProtocol.initialize(actorSystem));
-
-        return protocols;
     }
 
     private static ActorRef createRootActor(ActorSystem actorSystem, Processor localProcessor)

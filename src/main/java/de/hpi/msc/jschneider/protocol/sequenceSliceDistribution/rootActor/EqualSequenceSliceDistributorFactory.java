@@ -66,8 +66,8 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
         var sequenceReader = sequenceReaders.get(newProcessor.getId());
         if (sequenceReader != null)
         {
-            getLog().error(String.format("Unable to create new SequenceSliceDistributor for processor at %1$s which joined the cluster earlier!",
-                                         newProcessor.getId()));
+            getLog().error("Unable to create new SequenceSliceDistributor for processor at {} which joined the cluster earlier!",
+                           newProcessor.getId());
         }
         else if (sequenceReaders.size() < expectedNumberOfProcessors)
         {
@@ -85,10 +85,10 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
         val currentSubSequenceStartIndex = nextSubSequenceStartIndex;
         nextSubSequenceStartIndex += Math.max(1, reader.getSize() - (subSequenceLength - 1));
 
-        getLog().info(String.format("Creating SequenceSliceDistributor for %1$s, responsible for subsequences [%2$d, %3$d).",
-                                    sliceReceiverActorSystem,
-                                    currentSubSequenceStartIndex,
-                                    nextSequenceReaderStartIndex));
+        getLog().debug("Creating SequenceSliceDistributor for {}, responsible for subsequences [{}, {}).",
+                       sliceReceiverActorSystem,
+                       currentSubSequenceStartIndex,
+                       nextSequenceReaderStartIndex);
 
         val model = SequenceSliceDistributorModel.builder()
                                                  .sliceReceiverActorSystem(sliceReceiverActorSystem)

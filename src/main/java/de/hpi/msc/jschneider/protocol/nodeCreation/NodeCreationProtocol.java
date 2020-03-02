@@ -15,13 +15,25 @@ import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class NodeCreationProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(NodeCreationProtocol.class);
     private static final String ROOT_ACTOR_NAME = "NodeCreationRootActor";
     private static final String EVENT_DISPATCHER_NAME = "NodeCreationEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.NodeCreation)
@@ -29,7 +41,7 @@ public class NodeCreationProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", NodeCreationProtocol.class.getName()));
+        Log.info("{} successfully initialized.", NodeCreationProtocol.class.getName());
         return localProtocol;
     }
 
