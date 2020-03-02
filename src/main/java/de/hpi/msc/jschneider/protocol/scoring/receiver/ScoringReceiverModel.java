@@ -17,8 +17,6 @@ import java.util.Set;
 @SuperBuilder
 public class ScoringReceiverModel extends AbstractProtocolParticipantModel
 {
-    @Setter @Getter
-    private int subSequenceLength;
     @NonNull @Getter @Builder.Default
     private final Set<ProcessorId> runningDataTransfers = new HashSet<>();
     @Setter @Getter

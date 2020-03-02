@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolProtocol;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
@@ -23,6 +24,7 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.processorRegistry.Pr
 import de.hpi.msc.jschneider.protocol.reaper.ReaperProtocol;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringProtocol;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionProtocol;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
@@ -97,6 +99,8 @@ public class ProcessorRegistrationProtocol
         protocols.add(EdgeCreationProtocol.initialize(actorSystem));
         protocols.add(GraphMergingProtocol.initialize(actorSystem));
         protocols.add(ScoringProtocol.initialize(actorSystem));
+        protocols.add(StatisticsProtocol.initialize(actorSystem));
+        protocols.add(ActorPoolProtocol.initialize(actorSystem));
 
         return protocols;
     }

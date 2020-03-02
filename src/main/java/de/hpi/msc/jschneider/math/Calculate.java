@@ -166,18 +166,12 @@ public class Calculate
         return Math.acos(dotProduct / (lengthA * lengthB));
     }
 
-    public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection, long firstSubSequenceIndex, int numberOfSegments)
+    public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection, List<MatrixStore<Double>> intersectionPoints, long firstSubSequenceIndex)
     {
-        // TODO: parallelize execution?! --> split up reduced projection by columns
-
         assert reducedProjection.countRows() == 2 : "ReducedProjection must have 2 dimensions in column vector format!";
         assert reducedProjection.countColumns() > 1 : "ReducedProjection must have at least 2 records!";
 
-        val radiusX = Math.max(reducedProjection.aggregateRow(0L, Aggregator.MAXIMUM), Math.abs(reducedProjection.aggregateRow(0L, Aggregator.MINIMUM)));
-        val radiusY = Math.max(reducedProjection.aggregateRow(1L, Aggregator.MAXIMUM), Math.abs(reducedProjection.aggregateRow(1L, Aggregator.MINIMUM)));
-        val radiusLength = Math.sqrt(radiusX * radiusX + radiusY * radiusY);
-
-        val intersectionPoints = makeIntersectionPoints(radiusLength, numberOfSegments);
+        val numberOfSegments = intersectionPoints.size();
         val intersectionCollections = new IntersectionCollection[numberOfSegments];
         for (var i = 0; i < intersectionCollections.length; ++i)
         {
@@ -186,7 +180,7 @@ public class Calculate
                                                                .build();
         }
 
-        val nextIntersectionCreationIndex = new Counter(0L);
+        val nextIntersectionCreationIndex = new Counter(firstSubSequenceIndex * numberOfSegments);
         for (var columnIndex = 0; columnIndex < reducedProjection.countColumns() - 1; ++columnIndex)
         {
             val current = reducedProjection.sliceColumn(columnIndex);
@@ -229,7 +223,7 @@ public class Calculate
         return intersectionCollections;
     }
 
-    private static List<MatrixStore<Double>> makeIntersectionPoints(double radiusLength, int numberOfSegments)
+    public static List<MatrixStore<Double>> makeIntersectionPoints(double radiusLength, int numberOfSegments)
     {
         val intersectionPoints = new ArrayList<MatrixStore<Double>>(numberOfSegments);
         val angleStep = TWO_PI / numberOfSegments;
@@ -418,6 +412,26 @@ public class Calculate
         }
 
         return Ints.toArray(indices);
+    }
+
+    public static int minimumDistanceIndexSorted(double value, double[] possibleResults)
+    {
+        var closestIndex = 0;
+        var closestDistance = Double.MAX_VALUE;
+        for (var index = 0; index < possibleResults.length; ++index)
+        {
+            val distance = Math.abs(possibleResults[index] - value);
+
+            if (distance >= closestDistance)
+            {
+                break;
+            }
+
+            closestIndex = index;
+            closestDistance = distance;
+        }
+
+        return closestIndex;
     }
 
     public static double scottsFactor(long numberOfRecords, long numberOfDimensions)

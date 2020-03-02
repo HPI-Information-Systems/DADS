@@ -6,12 +6,14 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.val;
 import lombok.var;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +32,8 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
-                    .match(NodeCreationMessages.NodeCreationWorkerReadyMessage.class, this::onNodeCreationWorkerReady);
+                    .match(NodeCreationMessages.NodeCreationWorkerReadyMessage.class, this::onNodeCreationWorkerReady)
+                    .match(NodeCreationEvents.NodePartitionCreationCompletedEvent.class, this::onNodePartitionCreationCompleted);
     }
 
     private void onNodeCreationWorkerReady(NodeCreationMessages.NodeCreationWorkerReadyMessage message)
@@ -98,9 +101,15 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
 
     private void initializeNodeCreation(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
+        getModel().setStartTime(LocalDateTime.now());
+
         val messageTemplate = createInitializationMessage(sortedMessages);
         for (val worker : sortedMessages.stream().map(MessageExchangeMessages.MessageExchangeMessage::getSender).collect(Collectors.toList()))
         {
+            val workerProcessorId = ProcessorId.of(worker);
+            getModel().getUnfinishedWorkers().add(workerProcessorId);
+            subscribeToEvent(workerProcessorId, ProtocolType.NodeCreation, NodeCreationEvents.NodePartitionCreationCompletedEvent.class);
+
             send(messageTemplate.redirectTo(worker));
         }
     }
@@ -134,5 +143,31 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
                                                                  .intersectionSegmentResponsibilities(segmentResponsibilities)
                                                                  .subSequenceResponsibilities(subSequenceResponsibilities)
                                                                  .build();
+    }
+
+    private void onNodePartitionCreationCompleted(NodeCreationEvents.NodePartitionCreationCompletedEvent message)
+    {
+        try
+        {
+            val workerProcessorId = ProcessorId.of(message.getSender());
+            getModel().getUnfinishedWorkers().remove(workerProcessorId);
+
+            if (!getModel().getUnfinishedWorkers().isEmpty())
+            {
+                return;
+            }
+
+            getModel().setEndTime(LocalDateTime.now());
+            trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodeCreationCompletedEvent.builder()
+                                                                                                                    .sender(getModel().getSelf())
+                                                                                                                    .receiver(eventDispatcher)
+                                                                                                                    .startTime(getModel().getStartTime())
+                                                                                                                    .endTime(getModel().getEndTime())
+                                                                                                                    .build());
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 }

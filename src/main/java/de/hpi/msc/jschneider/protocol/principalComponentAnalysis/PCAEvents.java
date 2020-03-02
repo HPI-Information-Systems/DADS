@@ -8,6 +8,8 @@ import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 import org.ojalgo.matrix.store.MatrixStore;
 
+import java.time.LocalDateTime;
+
 public class PCAEvents
 {
     @NoArgsConstructor @SuperBuilder @Getter
@@ -30,6 +32,27 @@ public class PCAEvents
                             .principalComponents(getPrincipalComponents())
                             .rotation(getRotation())
                             .columnMeans(getColumnMeans())
+                            .build();
+        }
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class PrincipalComponentComputationCompletedEvent extends MessageExchangeMessages.RedirectableMessage
+    {
+        private static final long serialVersionUID = 2594365276313650559L;
+        @NonNull
+        private LocalDateTime startTime;
+        @NonNull
+        private LocalDateTime endTime;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .forwarder(getReceiver())
+                            .startTime(getStartTime())
+                            .endTime(getEndTime())
                             .build();
         }
     }

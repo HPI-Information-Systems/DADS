@@ -35,7 +35,10 @@ public class MessageExchangeProtocol
 
     private static ActorRef createRootActor(ActorSystem actorSystem)
     {
-        val model = MessageDispatcherModel.builder().build();
+        val model = MessageDispatcherModel.builder()
+                                          .schedulerProvider(actorSystem::scheduler)
+                                          .dispatcherProvider(actorSystem::dispatcher)
+                                          .build();
         val control = new MessageDispatcherControl(model);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);
@@ -43,7 +46,7 @@ public class MessageExchangeProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create();
+        val model = BaseEventDispatcherModel.create(MessageExchangeEvents.UtilizationEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);

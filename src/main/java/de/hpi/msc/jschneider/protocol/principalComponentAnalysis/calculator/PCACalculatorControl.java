@@ -11,11 +11,14 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.decomposition.QR;
 import org.ojalgo.matrix.decomposition.SingularValue;
 import org.ojalgo.matrix.store.MatrixStore;
+
+import java.time.LocalDateTime;
 
 public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCACalculatorModel>
 {
@@ -85,6 +88,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
             return;
         }
 
+        getModel().setStartTime(LocalDateTime.now());
         getLog().info("Starting PCA calculation.");
 
         val transposedColumnMeans = Calculate.transposedColumnMeans(getModel().getProjection());
@@ -123,15 +127,16 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(0);
-        getModel().getDataTransferManager().transfer(columnMeans, dataDistributor -> PCAMessages.InitializeColumnMeansTransferMessage.builder()
-                                                                                                                                     .sender(getModel().getSelf())
-                                                                                                                                     .receiver(receiverProtocol.getRootActor())
-                                                                                                                                     .operationId(dataDistributor.getOperationId())
-                                                                                                                                     .processorIndex(getModel().getMyProcessorIndex())
-                                                                                                                                     .numberOfRows(numberOfRows)
-                                                                                                                                     .minimumRecord(getModel().getMinimumRecord())
-                                                                                                                                     .maximumRecord(getModel().getMaximumRecord())
-                                                                                                                                     .build());
+        getModel().getDataTransferManager().transfer(GenericDataSource.create(columnMeans),
+                                                     (dataDistributor, operationId) -> PCAMessages.InitializeColumnMeansTransferMessage.builder()
+                                                                                                                                       .sender(dataDistributor)
+                                                                                                                                       .receiver(receiverProtocol.getRootActor())
+                                                                                                                                       .operationId(operationId)
+                                                                                                                                       .processorIndex(getModel().getMyProcessorIndex())
+                                                                                                                                       .numberOfRows(numberOfRows)
+                                                                                                                                       .minimumRecord(getModel().getMinimumRecord())
+                                                                                                                                       .maximumRecord(getModel().getMaximumRecord())
+                                                                                                                                       .build());
 
         getLog().info(String.format("Transferring PCA column means to %1$s.", receiverProtocol.getRootActor().path().root()));
     }
@@ -161,13 +166,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(receiverIndex);
-        getModel().getDataTransferManager().transfer(getModel().getLocalR(), dataDistributor -> PCAMessages.InitializeRTransferMessage.builder()
-                                                                                                                                      .sender(getModel().getSelf())
-                                                                                                                                      .receiver(receiverProtocol.getRootActor())
-                                                                                                                                      .processorIndex(getModel().getMyProcessorIndex())
-                                                                                                                                      .currentStepNumber(stepNumber)
-                                                                                                                                      .operationId(dataDistributor.getOperationId())
-                                                                                                                                      .build());
+        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getLocalR()),
+                                                     (dataDistributor, operationId) -> PCAMessages.InitializeRTransferMessage.builder()
+                                                                                                                             .sender(dataDistributor)
+                                                                                                                             .receiver(receiverProtocol.getRootActor())
+                                                                                                                             .processorIndex(getModel().getMyProcessorIndex())
+                                                                                                                             .currentStepNumber(stepNumber)
+                                                                                                                             .operationId(operationId)
+                                                                                                                             .build());
 
         getLog().info(String.format("Transferring local R (step = %1$d) to %2$s.", stepNumber, receiverProtocol.getRootActor().path().root()));
     }
@@ -205,7 +211,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                         currentStep,
                                         getModel().getMyProcessorIndex()));
             // we dont have to do anything anymore
-            // TODO: terminate self?!
+            getModel().setEndTime(LocalDateTime.now());
+
+            trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
+                                                                                                                                          .sender(getModel().getSelf())
+                                                                                                                                          .receiver(eventDispatcher)
+                                                                                                                                          .startTime(getModel().getStartTime())
+                                                                                                                                          .endTime(getModel().getEndTime())
+                                                                                                                                          .build());
             return;
         }
 
@@ -276,6 +289,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());
         val referenceVector = createReferenceVector(principalComponents, totalColumnMeans);
         val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
+
+        getModel().setEndTime(LocalDateTime.now());
+        trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
+                                                                                                                                      .sender(getModel().getSelf())
+                                                                                                                                      .receiver(eventDispatcher)
+                                                                                                                                      .startTime(getModel().getStartTime())
+                                                                                                                                      .endTime(getModel().getEndTime())
+                                                                                                                                      .build());
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
                                                                                                                           .sender(getModel().getSelf())

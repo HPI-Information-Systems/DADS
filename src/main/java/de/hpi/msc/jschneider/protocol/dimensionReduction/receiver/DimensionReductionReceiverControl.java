@@ -120,6 +120,5 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                       .build());
-        // TODO: terminate self?!
     }
 }

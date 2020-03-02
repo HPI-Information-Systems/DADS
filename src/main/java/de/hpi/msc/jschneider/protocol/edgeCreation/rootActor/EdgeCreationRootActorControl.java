@@ -23,7 +23,7 @@ public class EdgeCreationRootActorControl extends AbstractProtocolParticipantCon
     {
         return super.complementReceiveBuilder(builder)
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
-                    .match(NodeCreationMessages.NodesMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(NodeCreationMessages.InitializeNodesTransferMessage.class, message -> forward(message, getModel().getWorker()))
                     .match(EdgeCreationMessages.LastNodeMessage.class, message -> forward(message, getModel().getWorker()));
     }
 

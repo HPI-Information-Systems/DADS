@@ -55,7 +55,7 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     void subscribeToMasterEvent(ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);
 
-    void subscribeToEvent(RootActorPath actorSystem, ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);
+    void subscribeToEvent(ProcessorId processorId, ProtocolType protocolType, Class<? extends MessageExchangeMessages.RedirectableMessage> eventType);
 
     void complete(MessageExchangeMessages.MessageExchangeMessage message);
 }

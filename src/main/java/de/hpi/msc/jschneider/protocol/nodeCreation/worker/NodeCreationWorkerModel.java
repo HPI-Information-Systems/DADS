@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
@@ -12,9 +13,12 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.ojalgo.matrix.store.MatrixStore;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @SuperBuilder
 public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
@@ -40,5 +44,13 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @NonNull @Getter
     private final Map<Integer, List<double[]>> intersections = new HashMap<>();
     @NonNull @Getter
+    private final Set<IntersectionCollection[]> intersectionCollections = new HashSet<>();
+    @Setter @Getter
+    private int expectedNumberOfIntersectionCollections;
+    @NonNull @Getter
     private final Map<Integer, NodeCollection> nodeCollections = new HashMap<>();
+    @Getter @Setter
+    private LocalDateTime startTime;
+    @Getter @Setter
+    private LocalDateTime endTime;
 }

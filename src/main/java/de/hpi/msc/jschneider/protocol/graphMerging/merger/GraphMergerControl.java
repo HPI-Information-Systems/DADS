@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.merger;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -106,7 +105,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             getLog().info("================================================================================================");
             getLog().info("================================================================================================");
 
-            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("%1$s-graph.txt", ProcessorId.of(getModel().getSelf())));
+//            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("%1$s-graph.txt", ProcessorId.of(getModel().getSelf())));
 
             publishGraph(message.getWorkerSystems());
         }
@@ -125,11 +124,11 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
                     : String.format("Unable to transfer graph to %1$s, because the processor does not implement the required protocol!", workerSystem);
 
             getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getEdges().values().toArray(new GraphEdge[0])),
-                                                         dataDistributor -> GraphMergingMessages.InitializeGraphTransferMessage.builder()
-                                                                                                                               .sender(getModel().getSelf())
-                                                                                                                               .receiver(protocol.get().getRootActor())
-                                                                                                                               .operationId(dataDistributor.getOperationId())
-                                                                                                                               .build());
+                                                         (dataDistributor, operationId) -> GraphMergingMessages.InitializeGraphTransferMessage.builder()
+                                                                                                                                              .sender(dataDistributor)
+                                                                                                                                              .receiver(protocol.get().getRootActor())
+                                                                                                                                              .operationId(operationId)
+                                                                                                                                              .build());
         }
     }
 }

@@ -13,4 +13,8 @@ public class ScoringRootActorModel extends AbstractProtocolParticipantModel
     private ActorRef worker;
     @Setter @Getter
     private ActorRef receiver;
+    @Getter
+    private int queryLength;
+    @Getter
+    private int subSequenceLength;
 }
