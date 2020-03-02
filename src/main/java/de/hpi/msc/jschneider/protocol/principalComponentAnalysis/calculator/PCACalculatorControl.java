@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.decomposition.QR;
@@ -126,15 +127,16 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(0);
-        getModel().getDataTransferManager().transfer(columnMeans, dataDistributor -> PCAMessages.InitializeColumnMeansTransferMessage.builder()
-                                                                                                                                     .sender(getModel().getSelf())
-                                                                                                                                     .receiver(receiverProtocol.getRootActor())
-                                                                                                                                     .operationId(dataDistributor.getOperationId())
-                                                                                                                                     .processorIndex(getModel().getMyProcessorIndex())
-                                                                                                                                     .numberOfRows(numberOfRows)
-                                                                                                                                     .minimumRecord(getModel().getMinimumRecord())
-                                                                                                                                     .maximumRecord(getModel().getMaximumRecord())
-                                                                                                                                     .build());
+        getModel().getDataTransferManager().transfer(GenericDataSource.create(columnMeans),
+                                                     (dataDistributor, operationId) -> PCAMessages.InitializeColumnMeansTransferMessage.builder()
+                                                                                                                                       .sender(dataDistributor)
+                                                                                                                                       .receiver(receiverProtocol.getRootActor())
+                                                                                                                                       .operationId(operationId)
+                                                                                                                                       .processorIndex(getModel().getMyProcessorIndex())
+                                                                                                                                       .numberOfRows(numberOfRows)
+                                                                                                                                       .minimumRecord(getModel().getMinimumRecord())
+                                                                                                                                       .maximumRecord(getModel().getMaximumRecord())
+                                                                                                                                       .build());
 
         getLog().info(String.format("Transferring PCA column means to %1$s.", receiverProtocol.getRootActor().path().root()));
     }
@@ -164,13 +166,14 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(receiverIndex);
-        getModel().getDataTransferManager().transfer(getModel().getLocalR(), dataDistributor -> PCAMessages.InitializeRTransferMessage.builder()
-                                                                                                                                      .sender(getModel().getSelf())
-                                                                                                                                      .receiver(receiverProtocol.getRootActor())
-                                                                                                                                      .processorIndex(getModel().getMyProcessorIndex())
-                                                                                                                                      .currentStepNumber(stepNumber)
-                                                                                                                                      .operationId(dataDistributor.getOperationId())
-                                                                                                                                      .build());
+        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getLocalR()),
+                                                     (dataDistributor, operationId) -> PCAMessages.InitializeRTransferMessage.builder()
+                                                                                                                             .sender(dataDistributor)
+                                                                                                                             .receiver(receiverProtocol.getRootActor())
+                                                                                                                             .processorIndex(getModel().getMyProcessorIndex())
+                                                                                                                             .currentStepNumber(stepNumber)
+                                                                                                                             .operationId(operationId)
+                                                                                                                             .build());
 
         getLog().info(String.format("Transferring local R (step = %1$d) to %2$s.", stepNumber, receiverProtocol.getRootActor().path().root()));
     }

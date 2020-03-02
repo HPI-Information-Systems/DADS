@@ -58,7 +58,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     @Override
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
-        return builder.match(DataTransferMessages.RequestNextDataPartMessage.class, getModel().getDataTransferManager()::onRequestNextPart)
+        return builder.match(DataTransferMessages.DataTransferFinishedMessage.class, getModel().getDataTransferManager()::onDataSent)
                       .match(DataTransferMessages.DataPartMessage.class, getModel().getDataTransferManager()::onPart)
                       .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure);
     }
@@ -68,12 +68,12 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         try
         {
             getLog().warn(String.format("%1$s received back pressure!", getClass().getName()));
-            Thread.sleep(1000);
+//            Thread.sleep(1000);
         }
-        catch (InterruptedException interruptedException)
-        {
-            getLog().warn("Error while performing back pressure!", interruptedException);
-        }
+//        catch (InterruptedException interruptedException)
+//        {
+//            getLog().warn("Error while performing back pressure!", interruptedException);
+//        }
         finally
         {
             complete(message);

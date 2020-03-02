@@ -55,4 +55,31 @@ public class Graph
     {
         return edges.values().stream().flatMap(edge -> Arrays.stream(new GraphNode[]{edge.getFrom(), edge.getTo()})).collect(Collectors.toSet());
     }
+
+    public void add(Graph partition)
+    {
+        for (val subSequenceIndex : partition.getCreatedEdgesBySubSequenceIndex().keySet())
+        {
+            for (val edgeHash : partition.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex))
+            {
+                val edge = partition.getEdges().get(edgeHash);
+
+                createdEdgesBySubSequenceIndex.putIfAbsent(subSequenceIndex, new ArrayList<>());
+                createdEdgesBySubSequenceIndex.get(subSequenceIndex).add(edgeHash);
+                val existingEdge = edges.get(edgeHash);
+                if (existingEdge != null)
+                {
+                    existingEdge.incrementWeight();
+                }
+                else
+                {
+                    edges.put(edgeHash, GraphEdge.builder()
+                                                 .weight(new Counter(1L))
+                                                 .from(edge.getFrom())
+                                                 .to(edge.getTo())
+                                                 .build());
+                }
+            }
+        }
+    }
 }

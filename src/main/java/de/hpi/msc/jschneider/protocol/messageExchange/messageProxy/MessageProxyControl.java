@@ -250,23 +250,23 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void applyBackPressure(ActorRef receiver)
     {
-        if (!ProcessorId.of(receiver).equals(ProcessorId.of(getModel().getSelf())))
-        {
-            // apply back pressure only to local actors
-            return;
-        }
-
-        val queue = getOrCreateMessageQueue(receiver.path());
-        val message = MessageExchangeMessages.BackPressureMessage.builder()
-                                                                 .sender(getModel().getSelf())
-                                                                 .receiver(receiver)
-                                                                 .build();
-        val queueSize = queue.enqueueFront(message);
-        getModel().getTotalNumberOfEnqueuedMessages().increment();
-
-        if (queueSize == 1)
-        {
-            dequeueAndSend(queue);
-        }
+//        if (!ProcessorId.of(receiver).equals(ProcessorId.of(getModel().getSelf())))
+//        {
+//            // apply back pressure only to local actors
+//            return;
+//        }
+//
+//        val queue = getOrCreateMessageQueue(receiver.path());
+//        val message = MessageExchangeMessages.BackPressureMessage.builder()
+//                                                                 .sender(getModel().getSelf())
+//                                                                 .receiver(receiver)
+//                                                                 .build();
+//        val queueSize = queue.enqueueFront(message);
+//        getModel().getTotalNumberOfEnqueuedMessages().increment();
+//
+//        if (queueSize == 1)
+//        {
+//            dequeueAndSend(queue);
+//        }
     }
 }

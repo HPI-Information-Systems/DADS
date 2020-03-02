@@ -1,8 +1,6 @@
 package de.hpi.msc.jschneider.protocol.scoring.rootActor;
 
 import akka.actor.ActorRef;
-import de.hpi.msc.jschneider.SystemParameters;
-import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -32,8 +30,10 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         return super.complementReceiveBuilder(builder)
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
-                    .match(ScoringMessages.OverlappingEdgeCreationOrder.class, message -> forward(message, getModel().getWorker()))
-                    .match(ScoringMessages.QueryPathLengthMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.OverlappingEdgeCreationOrderMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.ScoringParametersMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.MinimumAndMaximumScoreMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.OverlappingPathScoresMessage.class, message -> forward(message, getModel().getWorker()))
                     .match(ScoringMessages.InitializePathScoresTransferMessage.class, message -> forward(message, getModel().getReceiver()));
     }
 
@@ -88,7 +88,7 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
     {
         try
         {
-            publishQueryPathLength(message.getSubSequenceResponsibilities().keySet());
+            publishScoringParameters(message.getSubSequenceResponsibilities().keySet());
         }
         finally
         {
@@ -96,22 +96,19 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         }
     }
 
-    private void publishQueryPathLength(Collection<ProcessorId> workerSystems)
+    private void publishScoringParameters(Collection<ProcessorId> workerSystems)
     {
-        assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master may publish the query path length!";
-
-        val queryPathLength = ((MasterCommand) SystemParameters.getCommand()).getQueryPathLength();
-
         for (val workerSystem : workerSystems)
         {
             val protocol = getProtocol(workerSystem, ProtocolType.Scoring);
             assert protocol.isPresent() : "Workers must implement the Scoring protocol!";
 
-            send(ScoringMessages.QueryPathLengthMessage.builder()
-                                                       .sender(getModel().getSelf())
-                                                       .receiver(protocol.get().getRootActor())
-                                                       .queryPathLength(queryPathLength)
-                                                       .build());
+            send(ScoringMessages.ScoringParametersMessage.builder()
+                                                         .sender(getModel().getSelf())
+                                                         .receiver(protocol.get().getRootActor())
+                                                         .queryPathLength(getModel().getQueryLength())
+                                                         .subSequenceLength(getModel().getSubSequenceLength())
+                                                         .build());
         }
     }
 }

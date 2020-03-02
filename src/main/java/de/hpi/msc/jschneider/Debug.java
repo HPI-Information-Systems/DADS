@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
-    private static final boolean ENABLED = true;
+    private static final boolean ENABLED = false;
 
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)

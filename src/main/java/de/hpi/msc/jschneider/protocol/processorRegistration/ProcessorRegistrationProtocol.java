@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolProtocol;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
@@ -99,6 +100,7 @@ public class ProcessorRegistrationProtocol
         protocols.add(GraphMergingProtocol.initialize(actorSystem));
         protocols.add(ScoringProtocol.initialize(actorSystem));
         protocols.add(StatisticsProtocol.initialize(actorSystem));
+        protocols.add(ActorPoolProtocol.initialize(actorSystem));
 
         return protocols;
     }

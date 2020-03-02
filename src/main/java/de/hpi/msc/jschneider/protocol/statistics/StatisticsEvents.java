@@ -3,7 +3,6 @@ package de.hpi.msc.jschneider.protocol.statistics;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -20,7 +19,7 @@ public class StatisticsEvents
         @NonNull
         private ProcessorId processor;
         @NonNull
-        private Class<? extends DataTransferMessages.InitializeDataTransferMessage> initializationMessageType;
+        private String initializationMessageClassName;
         @NonNull
         private ProcessorId source;
         @NonNull
@@ -38,7 +37,7 @@ public class StatisticsEvents
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .processor(getProcessor())
-                            .initializationMessageType(getInitializationMessageType())
+                            .initializationMessageClassName(getInitializationMessageClassName())
                             .source(getSource())
                             .sink(getSink())
                             .startTime(getStartTime())

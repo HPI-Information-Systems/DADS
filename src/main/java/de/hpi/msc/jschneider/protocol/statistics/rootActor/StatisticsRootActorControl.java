@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.statistics.rootActor;
 
 import com.sun.management.OperatingSystemMXBean;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -43,9 +44,12 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                     .match(NodeCreationEvents.NodeCreationCompletedEvent.class, this::onNodeCreationCompleted)
                     .match(EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class, this::onEdgePartitionCreationCompleted)
                     .match(PCAEvents.PrincipalComponentComputationCompletedEvent.class, this::onPrincipalComponentComputationCompleted)
+                    .match(ScoringEvents.PathScoringCompletedEvent.class, this::onPathScoringCompleted)
+                    .match(ScoringEvents.PathScoreNormalizationCompletedEvent.class, this::onPathScoreNormalizationCompleted)
                     .match(CreateUtilizationMeasurement.class, this::measureUtilization)
                     .match(StatisticsEvents.UtilizationEvent.class, this::onUtilization)
                     .match(MessageExchangeEvents.UtilizationEvent.class, this::onMessageExchangeUtilization)
+                    .match(ActorPoolEvents.UtilizationEvent.class, this::onActorPoolUtilization)
                     .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination);
     }
 
@@ -60,8 +64,11 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.NodeCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.EdgeCreation, EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.PrincipalComponentAnalysis, PCAEvents.PrincipalComponentComputationCompletedEvent.class);
+        subscribeToLocalEvent(ProtocolType.Scoring, ScoringEvents.PathScoringCompletedEvent.class);
+        subscribeToLocalEvent(ProtocolType.Scoring, ScoringEvents.PathScoreNormalizationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.UtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.MessageExchange, MessageExchangeEvents.UtilizationEvent.class);
+        subscribeToLocalEvent(ProtocolType.ActorPool, ActorPoolEvents.UtilizationEvent.class);
     }
 
     private void onRegistrationAcknowledged(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent message)
@@ -174,6 +181,30 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         }
     }
 
+    private void onPathScoringCompleted(ScoringEvents.PathScoringCompletedEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onPathScoreNormalizationCompleted(ScoringEvents.PathScoreNormalizationCompletedEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
     private void onUtilization(StatisticsEvents.UtilizationEvent message)
     {
         try
@@ -187,6 +218,18 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
     }
 
     private void onMessageExchangeUtilization(MessageExchangeEvents.UtilizationEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onActorPoolUtilization(ActorPoolEvents.UtilizationEvent message)
     {
         try
         {

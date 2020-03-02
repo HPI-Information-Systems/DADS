@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
-import java.util.UUID;
-
 public class DataTransferMessages
 {
     @NoArgsConstructor @SuperBuilder @Getter
@@ -15,7 +13,7 @@ public class DataTransferMessages
     {
         private static final long serialVersionUID = 7385042862954704746L;
         @NonNull
-        private String operationId;
+        private long operationId;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
@@ -23,7 +21,7 @@ public class DataTransferMessages
     {
         private static final long serialVersionUID = -4211856951220195380L;
         @NonNull
-        private String operationId;
+        private long operationId;
         @NonNull
         private byte[] part;
         @NonNull
@@ -35,6 +33,13 @@ public class DataTransferMessages
     {
         private static final long serialVersionUID = 53330389621278219L;
         @NonNull
-        private String operationId;
+        private long operationId;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class DataTransferFinishedMessage extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = -2105181322147039111L;
+        private long operationId;
     }
 }

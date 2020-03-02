@@ -7,7 +7,6 @@ import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantMo
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -45,8 +44,10 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     private List<LocalIntersection> intersectionsToMatch;
     @Setter @Getter
     private GraphNode lastNode;
-    @NonNull @Getter @Builder.Default
-    private final Graph graph = new Graph();
+    @Getter @Setter
+    private int expectedNumberOfGraphPartitions;
+    @NonNull @Getter
+    private final Map<Long, Graph> graphPartitions = new HashMap<>();
     @Setter @Getter
     private LocalDateTime startTime;
     @Setter @Getter
