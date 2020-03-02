@@ -30,9 +30,10 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         return super.complementReceiveBuilder(builder)
                     .match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                     .match(NodeCreationEvents.ResponsibilitiesReceivedEvent.class, this::onResponsibilitiesReceived)
-                    .match(ScoringMessages.OverlappingEdgeCreationOrder.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.OverlappingEdgeCreationOrderMessage.class, message -> forward(message, getModel().getWorker()))
                     .match(ScoringMessages.ScoringParametersMessage.class, message -> forward(message, getModel().getWorker()))
                     .match(ScoringMessages.MinimumAndMaximumScoreMessage.class, message -> forward(message, getModel().getWorker()))
+                    .match(ScoringMessages.OverlappingPathScoresMessage.class, message -> forward(message, getModel().getWorker()))
                     .match(ScoringMessages.InitializePathScoresTransferMessage.class, message -> forward(message, getModel().getReceiver()));
     }
 

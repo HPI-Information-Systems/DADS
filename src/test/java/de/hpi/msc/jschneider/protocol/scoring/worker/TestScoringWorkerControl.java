@@ -115,7 +115,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         messageInterface.apply(localGraphPartitionCreatedEvent);
         assertThat(control.getModel().getEdgeCreationOrder()).isEqualTo(sortedEdgeCreationOrder);
 
-        val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrder.class);
+        val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrderMessage.class);
         assertThat(overlappingEdgeCreationOrder.getReceiver()).isEqualTo(remoteProcessor.getProtocolRootActor(ProtocolType.Scoring).ref());
         assertThat(overlappingEdgeCreationOrder.getOverlappingEdgeCreationOrder().length).isEqualTo(49);
         assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
@@ -153,7 +153,7 @@ public class TestScoringWorkerControl extends ProtocolTestCase
         messageInterface.apply(localGraphPartitionCreatedEvent);
         assertThat(control.getModel().getEdgeCreationOrder()).isEqualTo(sortedEdgeCreationOrder);
 
-        val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrder.class);
+        val overlappingEdgeCreationOrder = localProcessor.getProtocolRootActor(ProtocolType.MessageExchange).expectMsgClass(ScoringMessages.OverlappingEdgeCreationOrderMessage.class);
         assertThat(overlappingEdgeCreationOrder.getReceiver().path().root()).isEqualTo(remoteActor.ref().path().root());
         assertThatMessageIsCompleted(localGraphPartitionCreatedEvent);
 

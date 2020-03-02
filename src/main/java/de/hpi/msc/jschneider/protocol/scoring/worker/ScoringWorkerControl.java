@@ -51,7 +51,8 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                     .match(GraphMergingEvents.GraphReceivedEvent.class, this::onGraphReceived)
                     .match(ScoringMessages.ScoringParametersMessage.class, this::onScoringParameters)
                     .match(ScoringMessages.MinimumAndMaximumScoreMessage.class, this::onMinimumAndMaximum)
-                    .match(ScoringMessages.OverlappingEdgeCreationOrder.class, this::onOverlappingEdgeCreationOrder);
+                    .match(ScoringMessages.OverlappingEdgeCreationOrderMessage.class, this::onOverlappingEdgeCreationOrder)
+                    .match(ScoringMessages.OverlappingPathScoresMessage.class, this::onOverlappingPathScores);
     }
 
     private void onResponsibilitiesReceived(NodeCreationEvents.ResponsibilitiesReceivedEvent message)
@@ -78,6 +79,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         assert myResponsibilities != null : "We are not responsible for any sub sequences!";
 
         getModel().setWaitForRemoteEdgeCreationOrder(myResponsibilities.getFrom() > 0L);
+        getModel().setWaitForRemotePathScores(myResponsibilities.getFrom() > 0L);
 
         val nextProcessor = subSequenceResponsibilities.entrySet()
                                                        .stream()
@@ -149,11 +151,11 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             overlappingEdgeCreationOrder[edgeCreationOrderIndex] = Ints.toArray(getModel().getEdgeCreationOrder().get(edgeCreationOrderOffset + edgeCreationOrderIndex));
         }
 
-        send(ScoringMessages.OverlappingEdgeCreationOrder.builder()
-                                                         .sender(getModel().getSelf())
-                                                         .receiver(getModel().getProcessorResponsibleForNextSubSequences())
-                                                         .overlappingEdgeCreationOrder(overlappingEdgeCreationOrder)
-                                                         .build());
+        send(ScoringMessages.OverlappingEdgeCreationOrderMessage.builder()
+                                                                .sender(getModel().getSelf())
+                                                                .receiver(getModel().getProcessorResponsibleForNextSubSequences())
+                                                                .overlappingEdgeCreationOrder(overlappingEdgeCreationOrder)
+                                                                .build());
     }
 
     private boolean isReadyToSendEdgeCreationOrderToPreviousResponsibleProcessor()
@@ -164,7 +166,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                && getModel().getQueryPathLength() > 0;
     }
 
-    private void onOverlappingEdgeCreationOrder(ScoringMessages.OverlappingEdgeCreationOrder message)
+    private void onOverlappingEdgeCreationOrder(ScoringMessages.OverlappingEdgeCreationOrderMessage message)
     {
         try
         {
@@ -248,6 +250,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                                                                      .endTime(endTime)
                                                                                                      .build());
 
+        sendLastPathScoresToNextResponsibleActor();
         publishMinimumAndMaximumScore(minScore, maxScore);
     }
 
@@ -264,6 +267,39 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                               .minimumScore(minScore)
                                                               .maximumScore(maxScore)
                                                               .build());
+        }
+    }
+
+    private void sendLastPathScoresToNextResponsibleActor()
+    {
+        if (getModel().getProcessorResponsibleForNextSubSequences() == null)
+        {
+            return;
+        }
+
+        val scores = getModel().getPathScores().subList(getModel().getPathScores().size() - (getModel().getSubSequenceLength() - 1), getModel().getPathScores().size() - 1);
+        assert scores.size() == getModel().getSubSequenceLength() - 1 : "Unexpected number of path scores selected!";
+
+        send(ScoringMessages.OverlappingPathScoresMessage.builder()
+                                                         .sender(getModel().getSelf())
+                                                         .receiver(getModel().getProcessorResponsibleForNextSubSequences())
+                                                         .overlappingPathScores(scores)
+                                                         .build());
+    }
+
+    private void onOverlappingPathScores(ScoringMessages.OverlappingPathScoresMessage message)
+    {
+        try
+        {
+            assert getModel().isWaitForRemotePathScores() : "No overlapping path scores expected!";
+            assert getModel().getOverlappingPathScores().isEmpty() : "Overlapping path scores were received already!";
+
+            getModel().getOverlappingPathScores().addAll(message.getOverlappingPathScores());
+            calculateRunningMean();
+        }
+        finally
+        {
+            complete(message);
         }
     }
 
@@ -363,10 +399,20 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         val minScore = getModel().getGlobalMaximumScore() * -1.0d;
         val maxScore = getModel().getGlobalMinimumScore() * -1.0d;
         val scoreRange = maxScore - minScore;
-        val normalizedScores = new double[getModel().getPathScores().size()];
+        val normalizedScores = new double[getModel().getPathScores().size() + getModel().getOverlappingPathScores().size()];
         for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
         {
-            normalizedScores[scoreIndex] = (-getModel().getPathScores().get(scoreIndex) - minScore) / scoreRange;
+            var score = 0.0d;
+            if (scoreIndex < getModel().getOverlappingPathScores().size())
+            {
+                score = getModel().getOverlappingPathScores().get(scoreIndex);
+            }
+            else
+            {
+                score = getModel().getPathScores().get(scoreIndex - getModel().getOverlappingPathScores().size());
+            }
+
+            normalizedScores[scoreIndex] = (-score - minScore) / scoreRange;
         }
 
         var runningMean = 0.0d;
@@ -405,6 +451,11 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
     private boolean isReadyToCalculateRunningMean()
     {
         if (!getModel().getMissingMinimumAndMaximumValueSenders().isEmpty())
+        {
+            return false;
+        }
+
+        if (getModel().isWaitForRemotePathScores() && getModel().getOverlappingPathScores().isEmpty())
         {
             return false;
         }

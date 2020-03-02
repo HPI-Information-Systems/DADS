@@ -93,10 +93,6 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         }
 
         assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master processor can store the results!";
-        trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.ReadyForTerminationEvent.builder()
-                                                                                                    .sender(getModel().getSelf())
-                                                                                                    .receiver(eventDispatcher)
-                                                                                                    .build());
 
         val filePath = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath();
         val writer = ClearSequenceWriter.fromFile(filePath.toFile());
@@ -110,14 +106,18 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
             writer.write(scores);
             numberOfPathScores.increment(scores.length);
         }
-
-        getLog().info("================================================================================================");
-        getLog().info("================================================================================================");
-        getLog().info(String.format("$1%d results written to %2$s.", numberOfPathScores.get(), filePath.toString()));
-        getLog().info("================================================================================================");
-        getLog().info("================================================================================================");
-
         writer.close();
+
+        getLog().info("================================================================================================");
+        getLog().info("================================================================================================");
+        getLog().info(String.format("%1$d results written to %2$s.", numberOfPathScores.get(), filePath.toString()));
+        getLog().info("================================================================================================");
+        getLog().info("================================================================================================");
+
+        trySendEvent(ProtocolType.Scoring, eventDispatcher -> ScoringEvents.ReadyForTerminationEvent.builder()
+                                                                                                    .sender(getModel().getSelf())
+                                                                                                    .receiver(eventDispatcher)
+                                                                                                    .build());
     }
 
     private boolean isReadyToStoreResults()

@@ -25,6 +25,10 @@ public class ScoringWorkerModel extends AbstractProtocolParticipantModel
     private final Set<ProcessorId> missingMinimumAndMaximumValueSenders = new HashSet<>();
     @Setter @Getter @Builder.Default
     private boolean waitForRemoteEdgeCreationOrder = true;
+    @Setter @Getter @Builder.Default
+    private boolean waitForRemotePathScores = true;
+    @NonNull @Getter
+    private final List<Double> overlappingPathScores = new ArrayList<>();
     @Setter @Getter
     private List<List<Integer>> edgeCreationOrder;
     @Setter @Getter
