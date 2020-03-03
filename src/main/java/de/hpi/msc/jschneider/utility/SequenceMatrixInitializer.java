@@ -4,7 +4,6 @@ import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.math.SequenceMatrix;
 import lombok.val;
 import lombok.var;
-import org.ojalgo.matrix.store.MatrixStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +56,7 @@ public class SequenceMatrixInitializer
         return data.isEmpty();
     }
 
-    public MatrixStore<Double> create()
+    public SequenceMatrix create()
     {
         val matrix = new SequenceMatrix(sequenceLength - convolutionSize, Doubles.toArray(data));
         data.clear();

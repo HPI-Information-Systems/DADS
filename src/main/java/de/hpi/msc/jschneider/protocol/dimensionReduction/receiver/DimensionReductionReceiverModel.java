@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.receiver;
 
+import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import org.ojalgo.matrix.store.MatrixStore;
 public class DimensionReductionReceiverModel extends AbstractProtocolParticipantModel
 {
     @Setter @Getter
-    private MatrixStore<Double> projection;
+    private SequenceMatrix projection;
     @Setter @Getter
     private long firstSubSequenceIndex;
     @Setter @Getter

@@ -1,12 +1,12 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
-import org.ojalgo.matrix.store.MatrixStore;
 
 import java.time.LocalDateTime;
 
@@ -20,7 +20,8 @@ public class SequenceSliceDistributionEvents
         private boolean isLastSubSequenceChunk;
         private double minimumRecord;
         private double maximumRecord;
-        private MatrixStore<Double> projection;
+        @NonNull
+        private SequenceMatrix projection;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
