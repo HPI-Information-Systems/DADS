@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.Serialize;
@@ -13,6 +14,7 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 import lombok.var;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +54,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                .whenFinished(this::whenFinished)
                                                                                .addSink(getModel().getSequenceWriter()));
 
+        getModel().setStartTime(LocalDateTime.now());
         getLog().debug("Start receiving sequence slice from {}.", message.getSender().path());
     }
 
@@ -128,6 +131,18 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
     private void whenFinished(DataReceiver receiver)
     {
         val projection = getModel().getProjectionInitializer().create();
+
+        getModel().setEndTime(LocalDateTime.now());
+
+        if (StatisticsProtocol.IS_ENABLED)
+        {
+            trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent.builder()
+                                                                                                                                                    .sender(getModel().getSelf())
+                                                                                                                                                    .receiver(eventDispatcher)
+                                                                                                                                                    .startTime(getModel().getStartTime())
+                                                                                                                                                    .endTime(getModel().getEndTime())
+                                                                                                                                                    .build());
+        }
 
         getLog().info("Local projection ({} x {}) for sub sequences [{}, {}) created (isLastSubSequenceChunk = {}).",
                       projection.countRows(),

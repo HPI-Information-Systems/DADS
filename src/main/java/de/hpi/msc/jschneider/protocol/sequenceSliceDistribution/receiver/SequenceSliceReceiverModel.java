@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @SuperBuilder
@@ -37,4 +38,8 @@ public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
     private List<Double> rawSubSequence;
     @NonNull @Getter @Builder.Default
     private SequenceWriter sequenceWriter = BinaryDirectoryWriter.fromDirectory(Paths.get(SystemParameters.getWorkingDirectory().toString(), "sequence-slices/").toFile());
+    @Setter @Getter
+    private LocalDateTime startTime;
+    @Setter @Getter
+    private LocalDateTime endTime;
 }
