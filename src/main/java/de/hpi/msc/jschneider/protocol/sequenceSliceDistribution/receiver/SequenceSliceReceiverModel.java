@@ -4,7 +4,7 @@ import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.fileHandling.writing.BinaryDirectoryWriter;
 import de.hpi.msc.jschneider.fileHandling.writing.SequenceWriter;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.SequenceMatrixInitializer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -31,7 +31,7 @@ public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
     @Builder.Default @Getter @Setter
     private double maximumRecord = Double.MIN_VALUE;
     @Setter @Getter
-    private MatrixInitializer projectionInitializer;
+    private SequenceMatrixInitializer projectionInitializer;
     @Setter @Getter @Builder.Default
     private double[] unusedRecords = new double[0];
     @Setter @Getter
