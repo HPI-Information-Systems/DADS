@@ -25,26 +25,22 @@ public class SequenceMatrixInitializer
     public SequenceMatrixInitializer append(double[] dataPart)
     {
         unusedData.addAll(Doubles.asList(dataPart));
-        if (isFirstDataPart() && unusedData.size() < convolutionSize)
-        {
-            return this;
-        }
 
-        if (isFirstDataPart())
+        while (unusedData.size() > convolutionSize)
         {
-            for (var convolutionIndex = 0; convolutionIndex < convolutionSize; ++convolutionIndex)
+            if (isFirstDataPart())
             {
-                convolutionSum += unusedData.get(convolutionIndex);
+                for (var convolutionIndex = 0; convolutionIndex < convolutionSize; ++convolutionIndex)
+                {
+                    convolutionSum += unusedData.get(convolutionIndex);
+                }
             }
-            data.add(convolutionSum);
-            convolutionSum -= unusedData.remove(0);
-        }
+            else
+            {
+                convolutionSum += unusedData.get(convolutionSize - 1);
+            }
 
-        while (unusedData.size() >= convolutionSize && unusedData.size() >= sequenceLength)
-        {
-            convolutionSum += unusedData.get(convolutionSize - 1);
             data.add(convolutionSum);
-
             convolutionSum -= unusedData.remove(0);
         }
 

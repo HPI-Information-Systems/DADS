@@ -118,14 +118,19 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     private NodeCreationMessages.InitializeNodeCreationMessage createInitializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
         val numberOfProcessors = sortedMessages.size();
-        val numberOfSamplesPerProcessor = (int) Math.ceil(getModel().getTotalNumberOfIntersectionSegments() / (double) numberOfProcessors);
+        val numberOfSamplesPerProcessor = (int) Math.floor(getModel().getTotalNumberOfIntersectionSegments() / (double) numberOfProcessors);
 
         val segmentResponsibilities = new HashMap<ActorRef, Int32Range>();
         val subSequenceResponsibilities = new HashMap<ActorRef, Int64Range>();
         var currentSampleStart = 0;
         for (val message : sortedMessages)
         {
-            val end = Math.min(getModel().getTotalNumberOfIntersectionSegments(), currentSampleStart + numberOfSamplesPerProcessor);
+            var end = Math.min(getModel().getTotalNumberOfIntersectionSegments(), currentSampleStart + numberOfSamplesPerProcessor);
+            if (segmentResponsibilities.size() == numberOfProcessors - 1)
+            {
+                // last responsibility
+                end = getModel().getTotalNumberOfIntersectionSegments();
+            }
             val sampleRange = Int32Range.builder()
                                         .from(currentSampleStart)
                                         .to(end)

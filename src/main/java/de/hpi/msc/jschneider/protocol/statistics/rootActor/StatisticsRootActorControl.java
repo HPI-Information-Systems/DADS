@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -46,10 +47,11 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
                     .match(NodeCreationEvents.NodeCreationCompletedEvent.class, this::onNodeCreationCompleted)
                     .match(EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class, this::onEdgePartitionCreationCompleted)
                     .match(PCAEvents.PrincipalComponentComputationCompletedEvent.class, this::onPrincipalComponentComputationCompleted)
+                    .match(DimensionReductionEvents.DimensionReductionCompletedEvent.class, this::onDimensionReductionCompleted)
                     .match(ScoringEvents.PathScoringCompletedEvent.class, this::onPathScoringCompleted)
                     .match(ScoringEvents.PathScoreNormalizationCompletedEvent.class, this::onPathScoreNormalizationCompleted)
                     .match(CreateUtilizationMeasurement.class, this::measureUtilization)
-                    .match(StatisticsEvents.UtilizationEvent.class, this::onUtilization)
+                    .match(StatisticsEvents.MachineUtilizationEvent.class, this::onUtilization)
                     .match(MessageExchangeEvents.UtilizationEvent.class, this::onMessageExchangeUtilization)
                     .match(ActorPoolEvents.UtilizationEvent.class, this::onActorPoolUtilization)
                     .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination);
@@ -63,13 +65,14 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.DataTransferCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.SequenceSliceDistribution, SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent.class);
+        subscribeToLocalEvent(ProtocolType.DimensionReduction, DimensionReductionEvents.DimensionReductionCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.NodePartitionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.NodeCreation, NodeCreationEvents.NodeCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.EdgeCreation, EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.PrincipalComponentAnalysis, PCAEvents.PrincipalComponentComputationCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.Scoring, ScoringEvents.PathScoringCompletedEvent.class);
         subscribeToLocalEvent(ProtocolType.Scoring, ScoringEvents.PathScoreNormalizationCompletedEvent.class);
-        subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.UtilizationEvent.class);
+        subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.MachineUtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.MessageExchange, MessageExchangeEvents.UtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.ActorPool, ActorPoolEvents.UtilizationEvent.class);
     }
@@ -112,16 +115,18 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
 
     private void measureUtilization(CreateUtilizationMeasurement message)
     {
-        val memoryUsage = getModel().getMemoryBean().getHeapMemoryUsage();
+        val heapUsage = getModel().getMemoryBean().getHeapMemoryUsage();
+        val stackUsage = getModel().getMemoryBean().getNonHeapMemoryUsage();
 
-        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.UtilizationEvent.builder()
-                                                                                                  .sender(getModel().getSelf())
-                                                                                                  .receiver(eventDispatcher)
-                                                                                                  .dateTime(LocalDateTime.now())
-                                                                                                  .maximumMemoryInBytes(memoryUsage.getMax())
-                                                                                                  .usedMemoryInBytes(memoryUsage.getUsed())
-                                                                                                  .cpuUtilization(getModel().getOsBean().getProcessCpuLoad())
-                                                                                                  .build());
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.MachineUtilizationEvent.builder()
+                                                                                                         .sender(getModel().getSelf())
+                                                                                                         .receiver(eventDispatcher)
+                                                                                                         .dateTime(LocalDateTime.now())
+                                                                                                         .maximumMemoryInBytes(heapUsage.getMax())
+                                                                                                         .usedHeapInBytes(heapUsage.getUsed())
+                                                                                                         .usedStackInBytes(stackUsage.getUsed())
+                                                                                                         .cpuUtilization(getModel().getOsBean().getProcessCpuLoad())
+                                                                                                         .build());
     }
 
     private void onDataTransferCompleted(StatisticsEvents.DataTransferCompletedEvent message)
@@ -196,6 +201,18 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         }
     }
 
+    private void onDimensionReductionCompleted(DimensionReductionEvents.DimensionReductionCompletedEvent message)
+    {
+        try
+        {
+            getModel().getStatisticsLog().log(this, message);
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
     private void onPathScoringCompleted(ScoringEvents.PathScoringCompletedEvent message)
     {
         try
@@ -220,7 +237,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         }
     }
 
-    private void onUtilization(StatisticsEvents.UtilizationEvent message)
+    private void onUtilization(StatisticsEvents.MachineUtilizationEvent message)
     {
         try
         {

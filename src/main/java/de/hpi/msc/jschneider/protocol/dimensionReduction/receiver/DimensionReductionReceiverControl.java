@@ -5,9 +5,12 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionMessages;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import lombok.val;
+
+import java.time.LocalDateTime;
 
 public class DimensionReductionReceiverControl extends AbstractProtocolParticipantControl<DimensionReductionReceiverModel>
 {
@@ -106,9 +109,23 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
             return;
         }
 
+        val startTime = LocalDateTime.now();
+
         val reducedProjection = getModel().getProjection().subtractColumnBased(getModel().getColumnMeans()).multiply(getModel().getPrincipalComponents());
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
         val projection2d = rotatedProjection.logical().row(0, 1).get();
+
+        val endTime = LocalDateTime.now();
+
+        if (StatisticsProtocol.IS_ENABLED)
+        {
+            trySendEvent(ProtocolType.DimensionReduction, eventDispatcher -> DimensionReductionEvents.DimensionReductionCompletedEvent.builder()
+                                                                                                                                      .sender(getModel().getSelf())
+                                                                                                                                      .receiver(eventDispatcher)
+                                                                                                                                      .startTime(startTime)
+                                                                                                                                      .endTime(endTime)
+                                                                                                                                      .build());
+        }
 
         trySendEvent(ProtocolType.DimensionReduction, eventDispatcher ->
                 DimensionReductionEvents.ReducedProjectionCreatedEvent.builder()

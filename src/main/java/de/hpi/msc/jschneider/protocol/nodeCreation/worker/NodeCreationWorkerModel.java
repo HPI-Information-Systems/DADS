@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.Getter;
@@ -33,6 +34,8 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     private Map<ActorRef, Int32Range> intersectionSegmentResponsibilities;
     @Setter @Getter
     private Map<ActorRef, Int64Range> subSequenceResponsibilities;
+    @Setter @Getter
+    private Set<ProcessorId> participants;
     @Setter @Getter
     private double maximumValue;
     @Setter @Getter

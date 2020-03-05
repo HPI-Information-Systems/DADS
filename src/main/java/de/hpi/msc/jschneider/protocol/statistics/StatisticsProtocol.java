@@ -63,7 +63,7 @@ public class StatisticsProtocol
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
         val model = BaseEventDispatcherModel.create(StatisticsEvents.DataTransferCompletedEvent.class,
-                                                    StatisticsEvents.UtilizationEvent.class);
+                                                    StatisticsEvents.MachineUtilizationEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

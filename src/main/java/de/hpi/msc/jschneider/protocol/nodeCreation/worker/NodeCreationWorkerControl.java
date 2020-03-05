@@ -101,6 +101,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         try
         {
+            getLog().info("Received intersection segment responsibilities: [{}, {})",
+                          message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()).getFrom(),
+                          message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()).getTo());
+
             getModel().setIntersectionSegmentResponsibilities(message.getIntersectionSegmentResponsibilities());
             getModel().setSubSequenceResponsibilities(message.getSubSequenceResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
@@ -110,6 +114,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             val transformedSubSequenceResponsibilities = message.getSubSequenceResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
             val transformedSegmentResponsibilities = message.getIntersectionSegmentResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
 
+            getModel().setParticipants(transformedSubSequenceResponsibilities.keySet());
             trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                                                        .sender(getModel().getSelf())
                                                                                                                        .receiver(eventDispatcher)
@@ -371,7 +376,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                               .intersectionSegment(intersectionSegment)
                                                               .intersections(getModel().getIntersections().get(intersectionSegment))
                                                               .densitySamples(getModel().getDensitySamples())
-                                                              .participants(getModel().getIntersectionSegmentResponsibilities().keySet().stream().map(ProcessorId::of).collect(Collectors.toSet()))
+                                                              .participants(getModel().getParticipants())
                                                               .build());
     }
 
@@ -381,7 +386,11 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             getModel().getNodeCollections().put(message.getNodeCollection().getIntersectionSegment(), message.getNodeCollection());
 
-            if (getModel().getNodeCollections().size() != getModel().getNumberOfIntersectionSegments())
+            getLog().info("Received NodeCollection ({} / {}).",
+                          getModel().getNodeCollections().size(),
+                          getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf()).length());
+
+            if (getModel().getNodeCollections().size() != getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf()).length())
             {
                 return;
             }

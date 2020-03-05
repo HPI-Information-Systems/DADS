@@ -15,6 +15,8 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
 import lombok.val;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -94,6 +96,8 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master processor can store the results!";
 
+        val startTime = LocalDateTime.now();
+
         val filePath = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath();
         val writer = ClearSequenceWriter.fromFile(filePath.toFile());
         val numberOfPathScores = new Counter(0L);
@@ -108,9 +112,11 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         }
         writer.close();
 
+        val endTime = LocalDateTime.now();
+
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
-        getLog().info("{} results written to {}.", numberOfPathScores.get(), filePath.toString());
+        getLog().info("{} results written to {} in {}.", numberOfPathScores.get(), filePath.toString(), Duration.between(startTime, endTime));
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 

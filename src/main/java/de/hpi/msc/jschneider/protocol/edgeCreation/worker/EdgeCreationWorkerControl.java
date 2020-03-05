@@ -143,9 +143,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
 //        Debug.print(getModel().getIntersectionsToMatch().toArray(new LocalIntersection[0]), String.format("%1$s-intersection-creation-order.txt", ProcessorId.of(getModel().getSelf())));
 
-        getLog().debug("{} intersections enqueued in {}.",
-                       allIntersections.size(),
-                       Duration.between(startTime, endTime));
+        getLog().info("{} intersections enqueued in {}.",
+                      allIntersections.size(),
+                      Duration.between(startTime, endTime));
 
         createGraphPartitions();
     }

@@ -48,13 +48,14 @@ public class StatisticsEvents
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
-    public static class UtilizationEvent extends MessageExchangeMessages.RedirectableMessage
+    public static class MachineUtilizationEvent extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 8203555156785547843L;
         @NonNull
         private LocalDateTime dateTime;
         private long maximumMemoryInBytes;
-        private long usedMemoryInBytes;
+        private long usedHeapInBytes;
+        private long usedStackInBytes;
         private double cpuUtilization;
 
         @Override
@@ -65,7 +66,8 @@ public class StatisticsEvents
                             .forwarder(getReceiver())
                             .dateTime(getDateTime())
                             .maximumMemoryInBytes(getMaximumMemoryInBytes())
-                            .usedMemoryInBytes(getUsedMemoryInBytes())
+                            .usedHeapInBytes(getUsedHeapInBytes())
+                            .usedStackInBytes(getUsedStackInBytes())
                             .cpuUtilization(getCpuUtilization())
                             .build();
         }

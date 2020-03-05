@@ -13,6 +13,8 @@ public class GraphEdge
     private GraphNode to;
     @Builder.Default
     private Counter weight = new Counter(1L);
+    private String key;
+    private String thisAsString;
 
     public long getWeight()
     {
@@ -31,7 +33,11 @@ public class GraphEdge
 
     public String getKey()
     {
-        return String.format("%1$s -> %2$s", from, to);
+        if (key == null)
+        {
+            key = from + " -> " + to;
+        }
+        return key;
     }
 
     @Override
@@ -59,6 +65,10 @@ public class GraphEdge
     @Override
     public String toString()
     {
-        return String.format("%1$s -[%2$d]-> %3$s", from, weight.get(), to);
+        if (thisAsString == null)
+        {
+            thisAsString = from + " -[" + weight.get() + "]-> " + to;
+        }
+        return thisAsString;
     }
 }

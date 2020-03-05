@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.statistics.rootActor;
 
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
+import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -145,6 +146,15 @@ public class StatisticsLog
                                Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
+    public void log(StatisticsRootActorControl control, DimensionReductionEvents.DimensionReductionCompletedEvent event)
+    {
+        tryWrite(String.format("DimensionReductionCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
+                               ProcessorId.of(event.getSender()),
+                               event.getStartTime().format(DATE_FORMAT),
+                               event.getEndTime().format(DATE_FORMAT),
+                               Duration.between(event.getStartTime(), event.getEndTime())));
+    }
+
     public void log(StatisticsRootActorControl control, ScoringEvents.PathScoringCompletedEvent event)
     {
         tryWrite(String.format("PathScoringCompleted { Processor = %1$s; StartTime = %2$s; EndTime = %3$s; Duration = %4$s; }",
@@ -163,14 +173,14 @@ public class StatisticsLog
                                Duration.between(event.getStartTime(), event.getEndTime())));
     }
 
-    public void log(StatisticsRootActorControl control, StatisticsEvents.UtilizationEvent event)
+    public void log(StatisticsRootActorControl control, StatisticsEvents.MachineUtilizationEvent event)
     {
-        tryWrite(String.format("Utilization { Processor = %1$s; DateTime = %2$s; MaximumMemory = %3$d; FreeMemory = %4$d; UsedMemory = %5$d; CPULoad = %6$f; }",
+        tryWrite(String.format("MachineUtilization { Processor = %1$s; DateTime = %2$s; MaximumMemory = %3$d; UsedHeap = %4$d; UsedStack = %5$d; CPULoad = %6$f; }",
                                ProcessorId.of(event.getSender()),
                                event.getDateTime().format(DATE_FORMAT),
                                event.getMaximumMemoryInBytes(),
-                               event.getMaximumMemoryInBytes() - event.getUsedMemoryInBytes(),
-                               event.getUsedMemoryInBytes(),
+                               event.getUsedHeapInBytes(),
+                               event.getUsedStackInBytes(),
                                event.getCpuUtilization()));
     }
 

@@ -37,8 +37,6 @@ public class GaussianKernelDensity
 
     public double[] evaluate(double[] points)
     {
-//        assert points.length < numberOfSamples : "More points than initial data samples!";
-
         val results = new double[points.length];
         val scaledPoints = Arrays.stream(points).map(point -> point * whitening).toArray();
 
