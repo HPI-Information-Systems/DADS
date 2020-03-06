@@ -75,10 +75,10 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
         val edges = Serialize.toGraphEdges(message.getPart());
         val summedEdgeWeights = Arrays.stream(edges).mapToLong(GraphEdge::getWeight).sum();
 
-        getLog().info(String.format("Received graph edges (#edges = %1$d, tot. edge weight = %2$d) from %3$s",
-                                    edges.length,
-                                    summedEdgeWeights,
-                                    message.getSender().path().root()));
+        getLog().info("Received graph edges (#edges = {}, tot. edge weight = {}) from {}.",
+                      edges.length,
+                      summedEdgeWeights,
+                      message.getSender().path().root());
 
         send(GraphMergingMessages.EdgesReceivedMessage.builder()
                                                       .sender(getModel().getSelf())

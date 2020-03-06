@@ -119,7 +119,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
         try
         {
             getModel().getClusterProcessors().put(message.getProcessor().getId(), message.getProcessor());
-            getLog().info(String.format("%1$s just joined.", message.getProcessor().getId()));
+            getLog().info("{} just joined.", message.getProcessor().getId());
 
             if (!getModel().getLocalProcessor().isMaster())
             {
@@ -144,7 +144,7 @@ public class ProcessorRegistryControl extends AbstractProtocolParticipantControl
 
         if (getModel().getRegistrationMessages().size() > getModel().getExpectedNumberOfProcessors())
         {
-            getLog().warn(String.format("Received registration from unexpected processor (id = %1$s).", processorId));
+            getLog().warn("Received registration from unexpected processor (id = {}).", processorId);
             return;
         }
 

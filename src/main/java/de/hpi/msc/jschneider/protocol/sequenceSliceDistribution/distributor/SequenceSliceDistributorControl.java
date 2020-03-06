@@ -22,14 +22,14 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         val protocol = getProtocol(getModel().getSliceReceiverActorSystem(), ProtocolType.SequenceSliceDistribution);
         if (!protocol.isPresent())
         {
-            getLog().error(String.format("Unable to initialize slice part transfer to %1$s, because the receiver does not provide the SequenceSliceDistribution protocol!",
-                                         getModel().getSliceReceiverActorSystem()));
+            getLog().error("Unable to initialize slice part transfer to {}, because the receiver does not provide the SequenceSliceDistribution protocol!",
+                           getModel().getSliceReceiverActorSystem());
             return;
         }
 
         getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializationMessageFactory);
 
-        getLog().info(String.format("Starting sequence slice transfer to %1$s.", getModel().getSliceReceiverActorSystem()));
+        getLog().debug("Starting sequence slice transfer to {}.", getModel().getSliceReceiverActorSystem());
     }
 
     @Override

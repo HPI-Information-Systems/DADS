@@ -15,13 +15,25 @@ import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class PCAProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(PCAProtocol.class);
     private static final String ROOT_ACTOR_NAME = "PrincipalComponentAnalysisRootActor";
     private static final String EVENT_DISPATCHER_NAME = "PrincipalComponentAnalysisEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.PrincipalComponentAnalysis)
@@ -29,7 +41,7 @@ public class PCAProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", PCAProtocol.class.getName()));
+        Log.info("{} successfully initialized.", PCAProtocol.class.getName());
         return localProtocol;
     }
 
@@ -43,8 +55,7 @@ public class PCAProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(PCAEvents.PrincipalComponentsCreatedEvent.class,
-                                                    PCAEvents.PrincipalComponentComputationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(PCAEvents.PrincipalComponentsCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

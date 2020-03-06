@@ -2,20 +2,25 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import com.google.common.primitives.Doubles;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
+import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.DensityEstimatorControl;
+import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.DensityEstimatorModel;
+import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.DensityCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionWorkFactory;
-import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractor;
-import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractorMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
@@ -29,6 +34,7 @@ import org.ojalgo.function.aggregator.Aggregator;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -49,7 +55,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                     .match(NodeCreationMessages.InitializeNodeCreationMessage.class, this::onInitializeNodeCreation)
                     .match(NodeCreationMessages.ReducedSubSequenceMessage.class, this::onReducedSubSequence)
                     .match(NodeCreationMessages.InitializeIntersectionsTransferMessage.class, this::acceptIntersectionsTransfer)
-                    .match(NodeExtractorMessages.NodeCollectionCreatedMessage.class, this::onNodeCollectionCreated)
+                    .match(DensityCalculatorMessages.NodeCollectionCreatedMessage.class, this::onNodeCollectionCreated)
                     .match(IntersectionCalculatorMessages.IntersectionsCalculatedMessage.class, this::onIntersectionsCalculated);
     }
 
@@ -100,6 +106,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         try
         {
+            getLog().info("Received intersection segment responsibilities: [{}, {})",
+                          message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()).getFrom(),
+                          message.getIntersectionSegmentResponsibilities().get(getModel().getSelf()).getTo());
+
             getModel().setIntersectionSegmentResponsibilities(message.getIntersectionSegmentResponsibilities());
             getModel().setSubSequenceResponsibilities(message.getSubSequenceResponsibilities());
             getModel().setMaximumValue(message.getMaximumValue());
@@ -109,6 +119,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             val transformedSubSequenceResponsibilities = message.getSubSequenceResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
             val transformedSegmentResponsibilities = message.getIntersectionSegmentResponsibilities().entrySet().stream().collect(Collectors.toMap(e -> ProcessorId.of(e.getKey()), Map.Entry::getValue));
 
+            getModel().setParticipants(transformedSubSequenceResponsibilities.keySet());
             trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.ResponsibilitiesReceivedEvent.builder()
                                                                                                                        .sender(getModel().getSelf())
                                                                                                                        .receiver(eventDispatcher)
@@ -157,7 +168,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        getLog().error(String.format("Unable to find responsible actor for subsequence index %1$d!", subSequenceIndexToSend));
+        getLog().error("Unable to find responsible actor for subsequence index {}!", subSequenceIndexToSend);
     }
 
     private void onReducedSubSequence(NodeCreationMessages.ReducedSubSequenceMessage message)
@@ -184,7 +195,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        getModel().setStartTime(LocalDateTime.now());
+        getModel().setIntersectionCalculationStartTime(LocalDateTime.now());
 
         var projection = getModel().getReducedProjection();
         var firstSubSequenceIndex = getModel().getFirstSubSequenceIndex();
@@ -215,23 +226,19 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         if (getModel().getReducedProjection() == null)
         {
-//            getLog().info("Unable to start calculating intersections: ReducedProjection == null.");
             return false;
         }
 
         if (getModel().getIntersectionSegmentResponsibilities() == null)
         {
-//            getLog().info("Unable to start calculating intersections: IntersectionSegmentResponsibilities == null.");
             return false;
         }
 
         if (getModel().getFirstSubSequenceIndex() > 0L && getModel().getReducedSubSequenceMessage() == null)
         {
-//            getLog().info("Unable to start calculating intersections: ReducedSubSequenceMessage == null.");
             return false;
         }
 
-//        getLog().info("Ready to start calculating intersections!");
         return true;
     }
 
@@ -241,9 +248,9 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             getModel().getIntersectionCollections().add(message.getIntersectionCollections());
 
-            getLog().info(String.format("Received IntersectionCollections (%1$d / %2$d).",
-                                        getModel().getIntersectionCollections().size(),
-                                        getModel().getExpectedNumberOfIntersectionCollections()));
+            getLog().info("Received IntersectionCollections ({} / {}).",
+                          getModel().getIntersectionCollections().size(),
+                          getModel().getExpectedNumberOfIntersectionCollections());
 
             if (getModel().getIntersectionCollections().size() < getModel().getExpectedNumberOfIntersectionCollections())
             {
@@ -251,6 +258,15 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             }
 
             val intersectionCollections = combineIntersectionCollections();
+            getModel().setIntersectionCalculationEndTime(LocalDateTime.now());
+
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.IntersectionsCreatedEvent.builder()
+                                                                                                               .sender(getModel().getSelf())
+                                                                                                               .receiver(eventDispatcher)
+                                                                                                               .startTime(getModel().getIntersectionCalculationStartTime())
+                                                                                                               .endTime(getModel().getIntersectionCalculationEndTime())
+                                                                                                               .build());
+
 //            Debug.print(intersectionCollections, String.format("%1$s-intersection-collections.txt", ProcessorId.of(getModel().getSelf())));
 
             for (val intersectionCollection : intersectionCollections)
@@ -360,41 +376,68 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        val actorPool = getLocalProtocol(ProtocolType.ActorPool);
-        assert actorPool.isPresent() : "ActorPooling is not supported!";
+        if (getModel().getNodeExtractionStartTime() == null)
+        {
+            getModel().setNodeExtractionStartTime(LocalDateTime.now());
+        }
 
-        send(NodeExtractorMessages.CreateNodeCollectionMessage.builder()
-                                                              .sender(getModel().getSelf())
-                                                              .receiver(actorPool.get().getRootActor())
-                                                              .consumer(new NodeExtractor())
-                                                              .intersectionSegment(intersectionSegment)
-                                                              .intersections(getModel().getIntersections().get(intersectionSegment))
-                                                              .densitySamples(getModel().getDensitySamples())
-                                                              .participants(getModel().getIntersectionSegmentResponsibilities().keySet().stream().map(ProcessorId::of).collect(Collectors.toSet()))
-                                                              .build());
+        val intersections = combineIntersections(intersectionList);
+        val model = DensityEstimatorModel.builder()
+                                         .supervisor(getModel().getSelf())
+                                         .intersectionSegment(intersectionSegment)
+                                         .participants(getModel().getParticipants())
+                                         .samples(intersections)
+                                         .pointsToEvaluate(getModel().getDensitySamples())
+                                         .build();
+        val control = new DensityEstimatorControl(model);
+        val estimator = trySpawnChild(ProtocolParticipant.props(control), "DensityEstimator");
+        if (!estimator.isPresent())
+        {
+            getLog().error("Unable to create new DensityEstimator!");
+        }
     }
 
-    private void onNodeCollectionCreated(NodeExtractorMessages.NodeCollectionCreatedMessage message)
+
+    private double[] combineIntersections(List<double[]> intersectionParts)
+    {
+        val numberOfIntersections = intersectionParts.stream().mapToInt(intersections -> intersections.length).sum();
+        val intersections = new double[numberOfIntersections];
+        var startIndex = 0;
+        for (var i = 0; startIndex < intersections.length; ++i)
+        {
+            val part = intersectionParts.get(i);
+            System.arraycopy(part, 0, intersections, startIndex, part.length);
+            startIndex += part.length;
+        }
+
+        return intersections;
+    }
+
+    private void onNodeCollectionCreated(DensityCalculatorMessages.NodeCollectionCreatedMessage message)
     {
         try
         {
             getModel().getNodeCollections().put(message.getNodeCollection().getIntersectionSegment(), message.getNodeCollection());
 
-            if (getModel().getNodeCollections().size() != getModel().getNumberOfIntersectionSegments())
+            getLog().info("Received NodeCollection ({} / {}).",
+                          getModel().getNodeCollections().size(),
+                          getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf()).length());
+
+            if (getModel().getNodeCollections().size() != getModel().getIntersectionSegmentResponsibilities().get(getModel().getSelf()).length())
             {
                 return;
             }
 
-            getModel().setEndTime(LocalDateTime.now());
+            getModel().setNodeExtractionEndTime(LocalDateTime.now());
 
-            trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodePartitionCreationCompletedEvent.builder()
-                                                                                                                             .sender(getModel().getSelf())
-                                                                                                                             .receiver(eventDispatcher)
-                                                                                                                             .startTime(getModel().getStartTime())
-                                                                                                                             .endTime(getModel().getEndTime())
-                                                                                                                             .build());
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.NodesExtractedEvent.builder()
+                                                                                                         .sender(getModel().getSelf())
+                                                                                                         .receiver(eventDispatcher)
+                                                                                                         .startTime(getModel().getNodeExtractionStartTime())
+                                                                                                         .endTime(getModel().getNodeExtractionEndTime())
+                                                                                                         .build());
 
-//            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
+            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }
         finally
         {

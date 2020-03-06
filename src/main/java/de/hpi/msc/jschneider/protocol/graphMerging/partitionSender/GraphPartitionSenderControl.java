@@ -49,7 +49,7 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
 
     private void initializeEdgePartitionTransfer(EdgeCreationEvents.LocalGraphPartitionCreatedEvent message, ActorRef receiver)
     {
-        getLog().info(String.format("Start transferring edge partition to %1$s.", receiver.path().root()));
+        getLog().info("Start transferring edge partition to {}.", receiver.path().root());
 
         val edges = message.getGraphPartition().getEdges().values().toArray(new GraphEdge[0]);
 //        val edges = Arrays.stream(message.getGraphPartition())

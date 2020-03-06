@@ -9,12 +9,15 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
 import lombok.val;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -94,6 +97,8 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master processor can store the results!";
 
+        val startTime = LocalDateTime.now();
+
         val filePath = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath();
         val writer = ClearSequenceWriter.fromFile(filePath.toFile());
         val numberOfPathScores = new Counter(0L);
@@ -108,9 +113,18 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         }
         writer.close();
 
+        val endTime = LocalDateTime.now();
+
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ResultsPersistedEvent.builder()
+                                                                                                       .sender(getModel().getSelf())
+                                                                                                       .receiver(eventDispatcher)
+                                                                                                       .startTime(startTime)
+                                                                                                       .endTime(endTime)
+                                                                                                       .build());
+
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
-        getLog().info(String.format("%1$d results written to %2$s.", numberOfPathScores.get(), filePath.toString()));
+        getLog().info("{} results written to {} in {}.", numberOfPathScores.get(), filePath.toString(), Duration.between(startTime, endTime));
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 

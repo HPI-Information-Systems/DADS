@@ -82,17 +82,16 @@ public class DataDistributorControl extends AbstractProtocolParticipantControl<D
                                                                  .operationId(getModel().getOperationId())
                                                                  .build());
 
-            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
-                                                                                                                .sender(getModel().getSelf())
-                                                                                                                .receiver(eventDispatcher)
-                                                                                                                .processor(ProcessorId.of(getModel().getSelf()))
-                                                                                                                .initializationMessageClassName(getModel().getInitializationMessage().getClass().getName())
-                                                                                                                .source(ProcessorId.of(getModel().getSelf()))
-                                                                                                                .sink(ProcessorId.of(getModel().getInitializationMessage().getReceiver()))
-                                                                                                                .startTime(getModel().getStartTime())
-                                                                                                                .endTime(getModel().getEndTime())
-                                                                                                                .transferredBytes(getModel().getTransferredBytes().get())
-                                                                                                                .build());
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferredEvent.builder()
+                                                                                                          .sender(getModel().getSelf())
+                                                                                                          .receiver(eventDispatcher)
+                                                                                                          .initializationMessageClassName(getModel().getInitializationMessage().getClass().getName())
+                                                                                                          .source(ProcessorId.of(getModel().getSelf()))
+                                                                                                          .sink(ProcessorId.of(getModel().getInitializationMessage().getReceiver()))
+                                                                                                          .startTime(getModel().getStartTime())
+                                                                                                          .endTime(getModel().getEndTime())
+                                                                                                          .transferredBytes(getModel().getTransferredBytes().get())
+                                                                                                          .build());
         }
     }
 }

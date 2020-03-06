@@ -22,12 +22,12 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
-    private static final boolean ENABLED = false;
+    private static final boolean IS_ENABLED = false;
 
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -54,7 +54,7 @@ public class Debug
     @SneakyThrows
     public static void print(GraphEdge[] edges, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -78,7 +78,7 @@ public class Debug
     @SneakyThrows
     public static void print(GraphNode[] nodes, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -100,7 +100,7 @@ public class Debug
     @SneakyThrows
     public static void print(IntersectionCollection[] intersectionCollections, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -131,7 +131,7 @@ public class Debug
     @SneakyThrows
     public static void print(NodeCollection[] nodeCollections, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -165,7 +165,7 @@ public class Debug
     @SneakyThrows
     public static void print(Graph graph, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -191,7 +191,7 @@ public class Debug
     @SneakyThrows
     public static void print(List<List<Integer>> edgeCreationOrder, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -219,7 +219,7 @@ public class Debug
     @SneakyThrows
     public static void print(LocalIntersection[] localIntersections, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -247,7 +247,7 @@ public class Debug
     @SneakyThrows
     public static void print(double[] values, String fileName)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }
@@ -265,7 +265,7 @@ public class Debug
 
     public static void printProgress(int iteration, int totalIterations, String title)
     {
-        if (!ENABLED)
+        if (!IS_ENABLED)
         {
             return;
         }

@@ -56,7 +56,7 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
                 return;
             }
 
-            getLog().info(String.format("Initializing PCA calculation with %1$d participants.", getModel().getNumberOfParticipants()));
+            getLog().info("Initializing PCA calculation with {} participants.", getModel().getNumberOfParticipants());
             initializeCalculation();
         }
         finally

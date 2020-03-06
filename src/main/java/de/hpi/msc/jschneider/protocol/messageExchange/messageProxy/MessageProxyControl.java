@@ -4,11 +4,11 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
@@ -46,18 +46,16 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     {
         super.preStart();
 
-        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        if (StatisticsProtocol.IS_ENABLED)
         {
-            return;
-        }
-
-        if (getModel().getNumberOfProcessors() <= 1)
-        {
-            subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
-        }
-        else
-        {
-            initializeUtilizationMeasurements();
+            if (getModel().getNumberOfProcessors() <= 1)
+            {
+                subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
+            }
+            else
+            {
+                initializeUtilizationMeasurements();
+            }
         }
     }
 
@@ -133,17 +131,17 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         val finalLargestMessageQueueSize = largestMessageQueueSize;
         val finalLargestMessageQueueReceiver = largestMessageQueueReceiver;
 
-        trySendEvent(ProtocolType.MessageExchange, eventDispatcher -> MessageExchangeEvents.UtilizationEvent.builder()
-                                                                                                            .sender(getModel().getSelf())
-                                                                                                            .receiver(eventDispatcher)
-                                                                                                            .dateTime(LocalDateTime.now())
-                                                                                                            .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageDispatcher()))
-                                                                                                            .totalNumberOfEnqueuedMessages(totalEnqueuedMessages.get())
-                                                                                                            .totalNumberOfUnacknowledgedMessages(totalUnacknowledgedMessages.get())
-                                                                                                            .largestMessageQueueSize(finalLargestMessageQueueSize)
-                                                                                                            .largestMessageQueueReceiver(finalLargestMessageQueueReceiver)
-                                                                                                            .averageMessageQueueSize(averageQueueSize)
-                                                                                                            .build());
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.MessageExchangeUtilizationEvent.builder()
+                                                                                                                 .sender(getModel().getSelf())
+                                                                                                                 .receiver(eventDispatcher)
+                                                                                                                 .dateTime(LocalDateTime.now())
+                                                                                                                 .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageDispatcher()))
+                                                                                                                 .totalNumberOfEnqueuedMessages(totalEnqueuedMessages.get())
+                                                                                                                 .totalNumberOfUnacknowledgedMessages(totalUnacknowledgedMessages.get())
+                                                                                                                 .largestMessageQueueSize(finalLargestMessageQueueSize)
+                                                                                                                 .largestMessageQueueReceiver(finalLargestMessageQueueReceiver)
+                                                                                                                 .averageMessageQueueSize(averageQueueSize)
+                                                                                                                 .build());
     }
 
     private void onReadyForTermination(ScoringEvents.ReadyForTerminationEvent message)
@@ -166,15 +164,15 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         val senderQueue = getModel().getMessageQueues().get(message.getSender().path());
         if (senderQueue == null)
         {
-            getLog().error(String.format("Unable to get message queue for %1$s in order to complete earlier message!",
-                                         message.getSender().path()));
+            getLog().error("Unable to get message queue for {} in order to complete earlier message!",
+                           message.getSender().path());
             return;
         }
         else if (!senderQueue.tryAcknowledge(message.getCompletedMessageId()))
         {
-            getLog().error(String.format("Unexpected message completion for a message we have never seen before! (sender = %1$s, receiver = %2$s)",
-                                         message.getSender().path(),
-                                         message.getReceiver().path()));
+            getLog().error("Unexpected message completion for a message we have never seen before! (sender = {}, receiver = {})",
+                           message.getSender().path(),
+                           message.getReceiver().path());
             return;
         }
 

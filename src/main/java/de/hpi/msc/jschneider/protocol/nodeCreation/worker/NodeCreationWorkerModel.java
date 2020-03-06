@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.Getter;
@@ -34,6 +35,8 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private Map<ActorRef, Int64Range> subSequenceResponsibilities;
     @Setter @Getter
+    private Set<ProcessorId> participants;
+    @Setter @Getter
     private double maximumValue;
     @Setter @Getter
     private int numberOfIntersectionSegments;
@@ -50,7 +53,11 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @NonNull @Getter
     private final Map<Integer, NodeCollection> nodeCollections = new HashMap<>();
     @Getter @Setter
-    private LocalDateTime startTime;
+    private LocalDateTime intersectionCalculationStartTime;
+    @Setter @Getter
+    private LocalDateTime intersectionCalculationEndTime;
     @Getter @Setter
-    private LocalDateTime endTime;
+    private LocalDateTime nodeExtractionStartTime;
+    @Getter @Setter
+    private LocalDateTime nodeExtractionEndTime;
 }

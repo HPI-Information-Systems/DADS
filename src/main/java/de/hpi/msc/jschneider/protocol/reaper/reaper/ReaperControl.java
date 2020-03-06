@@ -4,6 +4,7 @@ import akka.actor.Terminated;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
@@ -39,15 +40,15 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
         {
             if (message.getSender().path().root() != getModel().getSelf().path().root())
             {
-                getLog().error(String.format("Actor of remote system (%1$s) wants to be watched!", message.getSender().path().root()));
+                getLog().error("Actor of remote system ({}) wants to be watched!", ProcessorId.of(message.getSender()));
                 return;
             }
 
             if (tryWatch(message.getSender()))
             {
-                getLog().debug(String.format("%1$s is now watching %2$d actors.",
-                                             getClass().getName(),
-                                             getModel().getWatchedActors().size()));
+                getLog().debug("{} is now watching {} actors.",
+                               getClass().getName(),
+                               getModel().getWatchedActors().size());
             }
         }
         finally

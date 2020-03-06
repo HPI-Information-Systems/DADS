@@ -27,7 +27,6 @@ public class GraphPartitionCreator implements WorkConsumer
         for (var intersectionsIndex = 0; intersectionsIndex < message.getIntersections().size(); ++intersectionsIndex)
         {
             val intersection = message.getIntersections().get(intersectionsIndex);
-            assert intersection.getSubSequenceIndex() >= nextSubSequenceIndex.get() : "Unexpected sub sequence index!";
 
             while (intersection.getSubSequenceIndex() > nextSubSequenceIndex.get())
             {

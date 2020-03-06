@@ -15,13 +15,25 @@ import lombok.val;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class EdgeCreationProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(EdgeCreationProtocol.class);
     private static final String ROOT_ACTOR_NAME = "EdgeCreationRootActor";
     private static final String EVENT_DISPATCHER_NAME = "EdgeCreationEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.EdgeCreation)
@@ -29,7 +41,7 @@ public class EdgeCreationProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", EdgeCreationProtocol.class.getName()));
+        Log.info("{} successfully initialized.", EdgeCreationProtocol.class.getName());
         return localProtocol;
     }
 
@@ -43,8 +55,7 @@ public class EdgeCreationProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class,
-                                                    EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

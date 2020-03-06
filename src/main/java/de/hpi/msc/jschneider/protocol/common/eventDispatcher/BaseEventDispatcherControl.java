@@ -29,16 +29,16 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
             val subscribers = getModel().getEventSubscribers().get(message.getEventType());
             if (subscribers == null)
             {
-                getLog().error(String.format("%1$s tried to subscribe to %2$s, which is not supported by this %3$s!",
-                                             message.getSender(),
-                                             message.getEventType().getName(),
-                                             getClass().getName()));
+                getLog().error("{} tried to subscribe to {}, which is not supported by this {}!",
+                               message.getSender(),
+                               message.getEventType().getName(),
+                               getClass().getName());
                 return;
             }
 
             if (subscribers.add(message.getSender()))
             {
-                getLog().debug(String.format("%1$s just subscribed to %2$s.", message.getSender().path(), message.getEventType().getName()));
+                getLog().debug("{} just subscribed to {}.", message.getSender().path(), message.getEventType().getName());
             }
         }
         finally
@@ -54,16 +54,16 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
             val subscribers = getModel().getEventSubscribers().get(message.getEventType());
             if (subscribers == null)
             {
-                getLog().error(String.format("%1$s tried to unsubscribe from %2$s, which is not supported by this %3$s!",
-                                             message.getSender(),
-                                             message.getEventType().getName(),
-                                             getClass().getName()));
+                getLog().error("{} tried to unsubscribe from {}, which is not supported by this {}!",
+                               message.getSender(),
+                               message.getEventType().getName(),
+                               getClass().getName());
                 return;
             }
 
             if (subscribers.remove(message.getSender()))
             {
-                getLog().debug(String.format("%1$s just unsubscribed from %2$s.", message.getSender().path(), message.getEventType().getName()));
+                getLog().debug("{} just unsubscribed from {}.", message.getSender().path(), message.getEventType().getName());
             }
         }
         finally
@@ -79,14 +79,14 @@ public class BaseEventDispatcherControl<TModel extends EventDispatcherModel> ext
             val subscribers = getModel().getEventSubscribers().get(message.getClass());
             if (subscribers == null)
             {
-                getLog().error(String.format("%1$s tried to dispatch %2$s, which is not supported by this %3$s!",
-                                             message.getSender(),
-                                             message.getClass().getName(),
-                                             getClass().getName()));
+                getLog().error("{} tried to dispatch {}, which is not supported by this {}!",
+                               message.getSender(),
+                               message.getClass().getName(),
+                               getClass().getName());
                 return;
             }
 
-            getLog().debug(String.format("Dispatching %1$s to %2$d subscribers.", message.getClass().getName(), subscribers.size()));
+            getLog().debug("Dispatching {} to {} subscribers.", message.getClass().getName(), subscribers.size());
 
             for (val subscriber : subscribers)
             {

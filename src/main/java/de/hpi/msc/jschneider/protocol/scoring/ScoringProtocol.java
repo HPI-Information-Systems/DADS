@@ -18,13 +18,25 @@ import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class ScoringProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(ScoringProtocol.class);
     private static final String ROOT_ACTOR_NAME = "ScoringRootActor";
     private static final String EVENT_DISPATCHER_NAME = "ScoringEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.Scoring)
@@ -32,7 +44,7 @@ public class ScoringProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", ScoringProtocol.class.getName()));
+        Log.info("{} successfully initialized.", ScoringProtocol.class.getName());
         return localProtocol;
     }
 
@@ -58,9 +70,7 @@ public class ScoringProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(ScoringEvents.ReadyForTerminationEvent.class,
-                                                    ScoringEvents.PathScoringCompletedEvent.class,
-                                                    ScoringEvents.PathScoreNormalizationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(ScoringEvents.ReadyForTerminationEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

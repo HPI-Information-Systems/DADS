@@ -12,6 +12,7 @@ import de.hpi.msc.jschneider.protocol.edgeCreation.worker.graphPartitionCreator.
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
@@ -98,7 +99,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         val protocol = getProtocol(nextResponsibleProcessorId.get(), ProtocolType.EdgeCreation);
         assert protocol.isPresent() : "The next responsible processor must also implement the edge creation protocol!";
 
-        getLog().info(String.format("Next responsible processor (for edge creation) is %1$s.", nextResponsibleProcessorId));
+        getLog().debug("Next responsible processor (for edge creation) is {}.", nextResponsibleProcessorId);
         getModel().setNextResponsibleProcessor(protocol.get().getRootActor());
     }
 
@@ -142,13 +143,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
 //        Debug.print(getModel().getIntersectionsToMatch().toArray(new LocalIntersection[0]), String.format("%1$s-intersection-creation-order.txt", ProcessorId.of(getModel().getSelf())));
 
-        getLog().info(String.format("%1$d intersections enqueued in %2$s.",
-                                    allIntersections.size(),
-                                    Duration.between(startTime, endTime)));
-
-        getModel().setInitialNumberOfIntersectionsToMatch(allIntersections.size());
-        getModel().setProgressLogInterval(allIntersections.size() / 10000);
-        getModel().setNextProgressLog(allIntersections.size());
+        getLog().info("{} intersections enqueued in {}.",
+                      allIntersections.size(),
+                      Duration.between(startTime, endTime));
 
         createGraphPartitions();
     }
@@ -218,7 +215,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        getLog().info(String.format("Sending last node to %1$s for edge creation.", ProcessorId.of(getModel().getNextResponsibleProcessor())));
+        getLog().debug("Sending last node to {} for edge creation.", ProcessorId.of(getModel().getNextResponsibleProcessor()));
 
         send(EdgeCreationMessages.LastNodeMessage.builder()
                                                  .sender(getModel().getSelf())
@@ -250,7 +247,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         {
             assert getModel().getLastNode() == null : "Already received last node!";
 
-            getLog().info(String.format("Received last node from %1$s.", ProcessorId.of(message.getSender())));
+            getLog().debug("Received last node from {}.", ProcessorId.of(message.getSender()));
 
             getModel().setLastNode(message.getLastNode());
             createGraphPartitions();
@@ -312,9 +309,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         try
         {
             getModel().getGraphPartitions().put(message.getFirstIntersectionCreationIndex(), message.getGraphPartition());
-            getLog().info(String.format("Received GraphPartition (%1$d / %2$d).",
-                                        getModel().getGraphPartitions().size(),
-                                        getModel().getExpectedNumberOfGraphPartitions()));
+            getLog().info("Received GraphPartition ({} / {}).",
+                          getModel().getGraphPartitions().size(),
+                          getModel().getExpectedNumberOfGraphPartitions());
 
             if (getModel().getGraphPartitions().size() != getModel().getExpectedNumberOfGraphPartitions())
             {
@@ -334,12 +331,12 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                 graph.add(graphPartition);
             }
 
-            trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
-                                                                                                                             .sender(getModel().getSelf())
-                                                                                                                             .receiver(eventDispatcher)
-                                                                                                                             .startTime(getModel().getStartTime())
-                                                                                                                             .endTime(getModel().getEndTime())
-                                                                                                                             .build());
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.EdgePartitionCreatedEvent.builder()
+                                                                                                               .sender(getModel().getSelf())
+                                                                                                               .receiver(eventDispatcher)
+                                                                                                               .startTime(getModel().getStartTime())
+                                                                                                               .endTime(getModel().getEndTime())
+                                                                                                               .build());
 
             trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                                          .sender(getModel().getSelf())

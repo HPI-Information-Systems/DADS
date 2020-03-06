@@ -20,13 +20,25 @@ import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
+
 public class SequenceSliceDistributionProtocol
 {
+    public static final boolean IS_ENABLED = true;
+
     private static final Logger Log = LogManager.getLogger(SequenceSliceDistributionProtocol.class);
     private static final String ROOT_ACTOR_NAME = "SequenceSliceDistributionRootActor";
     private static final String EVENT_DISPATCHER_NAME = "SequenceSliceDistributionEventDispatcher";
 
-    public static Protocol initialize(ActorSystem actorSystem)
+    public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
+    {
+        if (IS_ENABLED)
+        {
+            localProtocols.add(initialize(actorSystem));
+        }
+    }
+
+    private static Protocol initialize(ActorSystem actorSystem)
     {
         val localProtocol = BaseProtocol.builder()
                                         .type(ProtocolType.SequenceSliceDistribution)
@@ -34,7 +46,7 @@ public class SequenceSliceDistributionProtocol
                                         .eventDispatcher(createEventDispatcher(actorSystem))
                                         .build();
 
-        Log.info(String.format("%1$s successfully initialized.", SequenceSliceDistributionProtocol.class.getName()));
+        Log.info("{} successfully initialized.", SequenceSliceDistributionProtocol.class.getName());
         return localProtocol;
     }
 

@@ -10,6 +10,7 @@ public class GraphNode
 {
     private int intersectionSegment;
     private int index;
+    private String thisAsString;
 
     @Override
     public int hashCode()
@@ -36,6 +37,10 @@ public class GraphNode
     @Override
     public String toString()
     {
-        return String.format("{%1$d_%2$d}", intersectionSegment, index);
+        if (thisAsString == null)
+        {
+            thisAsString = "{" + intersectionSegment + "_" + index + "}";
+        }
+        return thisAsString;
     }
 }

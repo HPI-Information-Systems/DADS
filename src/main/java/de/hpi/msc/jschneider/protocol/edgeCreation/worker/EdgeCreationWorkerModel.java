@@ -35,12 +35,6 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Getter
     private final Map<Integer, double[]> nodesInSegment = new HashMap<>();
     @Setter @Getter
-    private int initialNumberOfIntersectionsToMatch;
-    @Setter @Getter
-    private int progressLogInterval;
-    @Setter @Getter
-    private int nextProgressLog;
-    @Setter @Getter
     private List<LocalIntersection> intersectionsToMatch;
     @Setter @Getter
     private GraphNode lastNode;

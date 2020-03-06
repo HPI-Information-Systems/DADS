@@ -101,17 +101,16 @@ public class DataReceiver
             finished = true;
             onFinished.invoke(this);
 
-            control.trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
-                                                                                                                        .sender(control.getModel().getSelf())
-                                                                                                                        .receiver(eventDispatcher)
-                                                                                                                        .processor(ProcessorId.of(control.getModel().getSelf()))
-                                                                                                                        .startTime(startTime)
-                                                                                                                        .endTime(endTime)
-                                                                                                                        .initializationMessageClassName(initializationMessage.getClass().getName())
-                                                                                                                        .source(ProcessorId.of(message.getSender()))
-                                                                                                                        .sink(ProcessorId.of(control.getModel().getSelf()))
-                                                                                                                        .transferredBytes(transferredBytes.get())
-                                                                                                                        .build());
+            control.trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferredEvent.builder()
+                                                                                                                  .sender(control.getModel().getSelf())
+                                                                                                                  .receiver(eventDispatcher)
+                                                                                                                  .startTime(startTime)
+                                                                                                                  .endTime(endTime)
+                                                                                                                  .initializationMessageClassName(initializationMessage.getClass().getName())
+                                                                                                                  .source(ProcessorId.of(message.getSender()))
+                                                                                                                  .sink(ProcessorId.of(control.getModel().getSelf()))
+                                                                                                                  .transferredBytes(transferredBytes.get())
+                                                                                                                  .build());
         }
     }
 }

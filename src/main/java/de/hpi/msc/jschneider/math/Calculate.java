@@ -134,7 +134,7 @@ public class Calculate
                 .create();
     }
 
-    public static MatrixStore<Double> transposedColumnMeans(MatrixStore<Double> input)
+    public static MatrixStore<Double> transposedColumnMeans(SequenceMatrix input)
     {
         val numberOfRows = input.countRows();
         val factor = 1.0d / numberOfRows;
@@ -142,16 +142,14 @@ public class Calculate
         return e.multiply(input);
     }
 
-    public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input)
+    public static MatrixStore<Double> columnCenteredDataMatrix(SequenceMatrix input)
     {
         return columnCenteredDataMatrix(input, transposedColumnMeans(input));
     }
 
-    public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input, MatrixStore<Double> transposedColumnMeans)
+    public static SequenceMatrix columnCenteredDataMatrix(SequenceMatrix input, MatrixStore<Double> transposedColumnMeans)
     {
-        val numberOfRows = input.countRows();
-        val e = makeFilledRowVector(numberOfRows, 1.0d).transpose();
-        return input.subtract(e.multiply(transposedColumnMeans));
+        return input.subtractColumnBased(transposedColumnMeans);
     }
 
     public static double angleBetween(MatrixStore<Double> a, MatrixStore<Double> b)
