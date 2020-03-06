@@ -69,8 +69,7 @@ public class SequenceSliceDistributionProtocol
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
         val model = BaseEventDispatcherModel.create(SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.class,
-                                                    SequenceSliceDistributionEvents.ProjectionCreatedEvent.class,
-                                                    SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent.class);
+                                                    SequenceSliceDistributionEvents.ProjectionCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

@@ -5,7 +5,7 @@ class PCACreatedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "PrincipalComponentComputationCompleted"
+        return "PCACreated"
 
     @property
     def fill_color(self) -> str:

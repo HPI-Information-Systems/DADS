@@ -5,7 +5,7 @@ class EdgePartitionCreatedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "EdgePartitionCreationCompleted"
+        return "EdgePartitionCreated"
 
     @property
     def fill_color(self) -> str:

@@ -58,7 +58,7 @@ public class MessageExchangeProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(MessageExchangeEvents.UtilizationEvent.class);
+        val model = BaseEventDispatcherModel.create();
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
 
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);

@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.actorPool.rootActor;
 
-import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolEvents;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerControl;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerModel;
@@ -10,6 +9,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.val;
@@ -109,14 +109,14 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
 
     private void measureUtilization(CreateUtilizationMeasurement message)
     {
-        trySendEvent(ProtocolType.ActorPool, eventDispatcher -> ActorPoolEvents.UtilizationEvent.builder()
-                                                                                                .sender(getModel().getSelf())
-                                                                                                .receiver(eventDispatcher)
-                                                                                                .dateTime(LocalDateTime.now())
-                                                                                                .numberOfWorkers(getModel().getMaximumNumberOfWorkers())
-                                                                                                .numberOfAvailableWorkers(getModel().getWorkers().size())
-                                                                                                .workQueueSize(getModel().getWorkMessages().size())
-                                                                                                .build());
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ActorPoolUtilizationEvent.builder()
+                                                                                                           .sender(getModel().getSelf())
+                                                                                                           .receiver(eventDispatcher)
+                                                                                                           .dateTime(LocalDateTime.now())
+                                                                                                           .numberOfWorkers(getModel().getMaximumNumberOfWorkers())
+                                                                                                           .numberOfAvailableWorkers(getModel().getWorkers().size())
+                                                                                                           .workQueueSize(getModel().getWorkMessages().size())
+                                                                                                           .build());
     }
 
     private void onReadyForTermination(ScoringEvents.ReadyForTerminationEvent message)

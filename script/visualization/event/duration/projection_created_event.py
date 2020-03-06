@@ -5,7 +5,7 @@ class ProjectionCreatedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "ProjectionCreationCompleted"
+        return "ProjectionCreated"
 
     @property
     def fill_color(self) -> str:

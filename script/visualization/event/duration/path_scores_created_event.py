@@ -5,7 +5,7 @@ class PathScoresCreatedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "PathScoringCompleted"
+        return "PathScoresCreated"
 
     @property
     def fill_color(self) -> str:

@@ -5,7 +5,7 @@ class DataTransferredEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "DataTransferCompleted"
+        return "DataTransferred"
 
     @property
     def simplified_name(self) -> str:

@@ -9,6 +9,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
@@ -113,6 +114,13 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         writer.close();
 
         val endTime = LocalDateTime.now();
+
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ResultsPersistedEvent.builder()
+                                                                                                       .sender(getModel().getSelf())
+                                                                                                       .receiver(eventDispatcher)
+                                                                                                       .startTime(startTime)
+                                                                                                       .endTime(endTime)
+                                                                                                       .build());
 
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");

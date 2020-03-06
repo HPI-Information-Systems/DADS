@@ -53,7 +53,11 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @NonNull @Getter
     private final Map<Integer, NodeCollection> nodeCollections = new HashMap<>();
     @Getter @Setter
-    private LocalDateTime startTime;
+    private LocalDateTime intersectionCalculationStartTime;
+    @Setter @Getter
+    private LocalDateTime intersectionCalculationEndTime;
     @Getter @Setter
-    private LocalDateTime endTime;
+    private LocalDateTime nodeExtractionStartTime;
+    @Getter @Setter
+    private LocalDateTime nodeExtractionEndTime;
 }

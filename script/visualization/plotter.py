@@ -16,7 +16,8 @@ class Plotter:
     @staticmethod
     def _create_figure() -> plotly.subplots:
         figure: plotly.subplots = make_subplots(rows=1, cols=2,
-                                                subplot_titles=("CPU & Memory Utilization", "Data Transferred",))
+                                                subplot_titles=("CPU & Memory Utilization", "Data Transferred",),
+                                                specs=[[{"secondary_y": False}, {"secondary_y": True}]])
 
         return figure
 
@@ -25,11 +26,12 @@ class Plotter:
         return [ProjectionCreatedEvent.event_identifier(),
                 PCACreatedEvent.event_identifier(),
                 DimensionReductionCreatedEvent.event_identifier(),
-                NodePartitionCreatedEvent.event_identifier(),
-                # NodesCreatedEvent.event_identifier(),
+                IntersectionsCreatedEvent.event_identifier(),
+                NodesExtractedEvent.event_identifier(),
                 EdgePartitionCreatedEvent.event_identifier(),
                 PathScoresCreatedEvent.event_identifier(),
-                NormalizedPathScoresCreatedEvent.event_identifier()]
+                PathScoresNormalizedEvent.event_identifier(),
+                ResultsPersistedEvent.event_identifier()]
 
     def __init__(self, processor: str,
                  events: Dict[str, List[StatisticsEvent]],
@@ -65,7 +67,6 @@ class Plotter:
                 "orientation": "h",
             }
         })
-        # self._figure.update_shapes({"yref": "paper"})
         self._figure.show()
 
     def _create_process_step_shapes(self) -> None:
@@ -224,8 +225,14 @@ class Plotter:
 
         bytes_received: List[int] = [0]
         bytes_sent: List[int] = [0]
-        self_transferred: List[int] = [0]
-        hover_texts: List[str] = [""]
+        bytes_self: List[int] = [0]
+        data_hover_texts: List[str] = [""]
+
+        rate_receive: List[float] = [0.0]
+        rate_send: List[float] = [0.0]
+        rate_hover_texts: List[str] = [""]
+        mibs_per_seconds: float = 1.0 / (1024**2 * self._measurement_interval)
+
         x_values: List[float] = [0.0]
         time_interval: float = (self._end_time - self._start_time).total_seconds()
         measurement_point: float = self._measurement_interval
@@ -252,15 +259,24 @@ class Plotter:
                 elif event.receiver == self._processor:
                     received += int(data_transferred_interpolated)
 
-            bytes_received.append(bytes_received[-1] + received)
-            bytes_sent.append(bytes_sent[-1] + sent)
-            self_transferred.append(self_transferred[-1] + loopback)
-            hover_texts.append("Total: {:.3f} MiB<br>Self: {:.3f} MiB<br>Sent: {:.3f} MiB<br>Recv: {:.3f} MiB".format(
-                (bytes_received[-1] + bytes_sent[-1] + self_transferred[-1]) / float(1024 ** 2),
-                self_transferred[-1] / float(1024 ** 2),
-                bytes_sent[-1] / float(1024 ** 2),
-                bytes_received[-1] / float(1024 ** 2),
+            bytes_received.append(bytes_received[-1] + received / 1024**2)
+            bytes_sent.append(bytes_sent[-1] + sent / 1024**2)
+            bytes_self.append(bytes_self[-1] + loopback / 1024**2)
+            data_hover_texts.append("Total: {:.3f} MiB<br>Self: {:.3f} MiB<br>Sent: {:.3f} MiB<br>Recv: {:.3f} MiB".format(
+                bytes_received[-1] + bytes_sent[-1] + bytes_self[-1],
+                bytes_self[-1],
+                bytes_sent[-1],
+                bytes_received[-1],
             ))
+
+            rate_receive.append(received * mibs_per_seconds)
+            rate_send.append(sent * mibs_per_seconds)
+            rate_hover_texts.append("Total: {:.3f} MiB/s<br>end: {:.3f} MiB/S<br>Recv: {:.3f} MiB/s".format(
+                rate_receive[-1] + rate_send[-1],
+                rate_send[-1],
+                rate_receive[-1]
+            ))
+
             x_values.append(measurement_point)
             measurement_point += self._measurement_interval
 
@@ -271,9 +287,18 @@ class Plotter:
             mode="lines",
             showlegend=True,
             name="Received",
-            hovertext=hover_texts,
+            hovertext=data_hover_texts,
             stackgroup="data-transferred"
         ), row=1, col=2)
+        self._figure.add_trace(go.Scatter(
+            x=x_values,
+            y=rate_receive,
+            mode="lines",
+            showlegend=True,
+            name="Receive Rate",
+            hovertext=rate_hover_texts,
+            stackgroup="data-rate",
+        ), row=1, col=2, secondary_y=True)
 
         # Sent
         self._figure.add_trace(go.Scatter(
@@ -282,18 +307,27 @@ class Plotter:
             mode="lines",
             showlegend=True,
             name="Sent",
-            hovertext=hover_texts,
+            hovertext=data_hover_texts,
             stackgroup="data-transferred"
         ), row=1, col=2)
+        self._figure.add_trace(go.Scatter(
+            x=x_values,
+            y=rate_send,
+            mode="lines",
+            showlegend=True,
+            name="Send Rate",
+            hovertext=rate_hover_texts,
+            stackgroup="data-rate",
+        ), row=1, col=2, secondary_y=True)
 
         # Self Transferred
         self._figure.add_trace(go.Scatter(
             x=x_values,
-            y=self_transferred,
+            y=bytes_self,
             mode="lines",
             showlegend=True,
             name="Self Transfer",
-            hovertext=hover_texts,
+            hovertext=data_hover_texts,
             stackgroup="data-transferred"
         ), row=1, col=2)
 
@@ -328,9 +362,9 @@ class Plotter:
                 if len(sent_events) > 0:
                     sent_start: float = (sent_events[0].start_time - self._start_time).total_seconds()
                     sent_end: float = (sent_events[-1].end_time - self._start_time).total_seconds()
-                    data_sent: int = sum((x.transferred_bytes for x in sent_events))
-                    data_send_rate: float = data_sent / (sent_end - sent_start)
-                    text += "<br>Sent: {:.3f} MiB ({:.3f} MiB/s)".format(data_sent / float(1024 ** 2),
+                    sent: int = sum((x.transferred_bytes for x in sent_events))
+                    data_send_rate: float = sent / (sent_end - sent_start)
+                    text += "<br>Sent: {:.3f} MiB ({:.3f} MiB/s)".format(sent / float(1024 ** 2),
                                                                          data_send_rate / float(1024 ** 2))
 
                 receive_events: List[DataTransferredEvent] = list(
@@ -338,15 +372,15 @@ class Plotter:
                 if len(receive_events) > 0:
                     receive_start: float = (receive_events[0].start_time - self._start_time).total_seconds()
                     receive_end: float = (receive_events[-1].end_time - self._start_time).total_seconds()
-                    data_received: int = sum((x.transferred_bytes for x in receive_events))
-                    data_receive_rate: float = data_received / (receive_end - receive_start)
-                    text += "<br>Recv: {:.3f} MiB ({:.3f} MiB/s)".format(data_received / float(1024 ** 2),
+                    received: int = sum((x.transferred_bytes for x in receive_events))
+                    data_receive_rate: float = received / (receive_end - receive_start)
+                    text += "<br>Recv: {:.3f} MiB ({:.3f} MiB/s)".format(received / float(1024 ** 2),
                                                                          data_receive_rate / float(1024 ** 2))
 
                 self._figure.add_annotation({
                     "x": x_values[closest_measurement_index],
                     "y": bytes_sent[closest_measurement_index] + bytes_received[closest_measurement_index] +
-                         self_transferred[closest_measurement_index],
+                         bytes_self[closest_measurement_index],
                     "xref": "x2",
                     "yref": "y2",
                     "ax": 0,
@@ -366,7 +400,14 @@ class Plotter:
             "rangemode": "nonnegative",
         })
         self._figure["layout"]["yaxis2"].update({
-            "title": "Data (byte)",
+            "title": "Data (MiB)",
+            "rangemode": "nonnegative",
+        })
+        self._figure["layout"]["yaxis3"].update({
+            "overlaying": "y1",
+            "side": "right",
+            "anchor": "x2",
+            "title": "Data Rate (MiB/s)",
             "rangemode": "nonnegative",
         })
 

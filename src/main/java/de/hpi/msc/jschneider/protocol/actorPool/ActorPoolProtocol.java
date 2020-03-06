@@ -59,7 +59,7 @@ public class ActorPoolProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(ActorPoolEvents.UtilizationEvent.class);
+        val model = BaseEventDispatcherModel.create();
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

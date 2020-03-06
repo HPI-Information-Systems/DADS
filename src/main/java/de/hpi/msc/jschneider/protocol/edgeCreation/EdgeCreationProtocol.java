@@ -55,8 +55,7 @@ public class EdgeCreationProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class,
-                                                    EdgeCreationEvents.EdgePartitionCreationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(EdgeCreationEvents.LocalGraphPartitionCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

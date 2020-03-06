@@ -12,7 +12,7 @@ import de.hpi.msc.jschneider.protocol.edgeCreation.worker.graphPartitionCreator.
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
-import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
@@ -331,15 +331,12 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                 graph.add(graphPartition);
             }
 
-            if (StatisticsProtocol.IS_ENABLED)
-            {
-                trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.EdgePartitionCreationCompletedEvent.builder()
-                                                                                                                                 .sender(getModel().getSelf())
-                                                                                                                                 .receiver(eventDispatcher)
-                                                                                                                                 .startTime(getModel().getStartTime())
-                                                                                                                                 .endTime(getModel().getEndTime())
-                                                                                                                                 .build());
-            }
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.EdgePartitionCreatedEvent.builder()
+                                                                                                               .sender(getModel().getSelf())
+                                                                                                               .receiver(eventDispatcher)
+                                                                                                               .startTime(getModel().getStartTime())
+                                                                                                               .endTime(getModel().getEndTime())
+                                                                                                               .build());
 
             trySendEvent(ProtocolType.EdgeCreation, eventDispatcher -> EdgeCreationEvents.LocalGraphPartitionCreatedEvent.builder()
                                                                                                                          .sender(getModel().getSelf())

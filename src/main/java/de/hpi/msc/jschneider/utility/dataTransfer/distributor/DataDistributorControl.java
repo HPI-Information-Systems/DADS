@@ -5,7 +5,6 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
-import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
@@ -83,20 +82,16 @@ public class DataDistributorControl extends AbstractProtocolParticipantControl<D
                                                                  .operationId(getModel().getOperationId())
                                                                  .build());
 
-            if (StatisticsProtocol.IS_ENABLED)
-            {
-                trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferCompletedEvent.builder()
-                                                                                                                    .sender(getModel().getSelf())
-                                                                                                                    .receiver(eventDispatcher)
-                                                                                                                    .processor(ProcessorId.of(getModel().getSelf()))
-                                                                                                                    .initializationMessageClassName(getModel().getInitializationMessage().getClass().getName())
-                                                                                                                    .source(ProcessorId.of(getModel().getSelf()))
-                                                                                                                    .sink(ProcessorId.of(getModel().getInitializationMessage().getReceiver()))
-                                                                                                                    .startTime(getModel().getStartTime())
-                                                                                                                    .endTime(getModel().getEndTime())
-                                                                                                                    .transferredBytes(getModel().getTransferredBytes().get())
-                                                                                                                    .build());
-            }
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.DataTransferredEvent.builder()
+                                                                                                          .sender(getModel().getSelf())
+                                                                                                          .receiver(eventDispatcher)
+                                                                                                          .initializationMessageClassName(getModel().getInitializationMessage().getClass().getName())
+                                                                                                          .source(ProcessorId.of(getModel().getSelf()))
+                                                                                                          .sink(ProcessorId.of(getModel().getInitializationMessage().getReceiver()))
+                                                                                                          .startTime(getModel().getStartTime())
+                                                                                                          .endTime(getModel().getEndTime())
+                                                                                                          .transferredBytes(getModel().getTransferredBytes().get())
+                                                                                                          .build());
         }
     }
 }

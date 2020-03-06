@@ -20,7 +20,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.D
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionWorkFactory;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
-import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
@@ -195,7 +195,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        getModel().setStartTime(LocalDateTime.now());
+        getModel().setIntersectionCalculationStartTime(LocalDateTime.now());
 
         var projection = getModel().getReducedProjection();
         var firstSubSequenceIndex = getModel().getFirstSubSequenceIndex();
@@ -226,23 +226,19 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         if (getModel().getReducedProjection() == null)
         {
-//            getLog().info("Unable to start calculating intersections: ReducedProjection == null.");
             return false;
         }
 
         if (getModel().getIntersectionSegmentResponsibilities() == null)
         {
-//            getLog().info("Unable to start calculating intersections: IntersectionSegmentResponsibilities == null.");
             return false;
         }
 
         if (getModel().getFirstSubSequenceIndex() > 0L && getModel().getReducedSubSequenceMessage() == null)
         {
-//            getLog().info("Unable to start calculating intersections: ReducedSubSequenceMessage == null.");
             return false;
         }
 
-//        getLog().info("Ready to start calculating intersections!");
         return true;
     }
 
@@ -262,6 +258,15 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             }
 
             val intersectionCollections = combineIntersectionCollections();
+            getModel().setIntersectionCalculationEndTime(LocalDateTime.now());
+
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.IntersectionsCreatedEvent.builder()
+                                                                                                               .sender(getModel().getSelf())
+                                                                                                               .receiver(eventDispatcher)
+                                                                                                               .startTime(getModel().getIntersectionCalculationStartTime())
+                                                                                                               .endTime(getModel().getIntersectionCalculationEndTime())
+                                                                                                               .build());
+
 //            Debug.print(intersectionCollections, String.format("%1$s-intersection-collections.txt", ProcessorId.of(getModel().getSelf())));
 
             for (val intersectionCollection : intersectionCollections)
@@ -371,6 +376,11 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
+        if (getModel().getNodeExtractionStartTime() == null)
+        {
+            getModel().setNodeExtractionStartTime(LocalDateTime.now());
+        }
+
         val intersections = combineIntersections(intersectionList);
         val model = DensityEstimatorModel.builder()
                                          .supervisor(getModel().getSelf())
@@ -418,17 +428,14 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                 return;
             }
 
-            getModel().setEndTime(LocalDateTime.now());
+            getModel().setNodeExtractionEndTime(LocalDateTime.now());
 
-            if (StatisticsProtocol.IS_ENABLED)
-            {
-                trySendEvent(ProtocolType.NodeCreation, eventDispatcher -> NodeCreationEvents.NodePartitionCreationCompletedEvent.builder()
-                                                                                                                                 .sender(getModel().getSelf())
-                                                                                                                                 .receiver(eventDispatcher)
-                                                                                                                                 .startTime(getModel().getStartTime())
-                                                                                                                                 .endTime(getModel().getEndTime())
-                                                                                                                                 .build());
-            }
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.NodesExtractedEvent.builder()
+                                                                                                         .sender(getModel().getSelf())
+                                                                                                         .receiver(eventDispatcher)
+                                                                                                         .startTime(getModel().getNodeExtractionStartTime())
+                                                                                                         .endTime(getModel().getNodeExtractionEndTime())
+                                                                                                         .build());
 
             Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }

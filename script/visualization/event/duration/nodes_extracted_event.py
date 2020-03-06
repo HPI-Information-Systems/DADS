@@ -1,11 +1,11 @@
 from event.base.duration_event import DurationEvent
 
 
-class NodePartitionCreatedEvent(DurationEvent):
+class NodesExtractedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "NodePartitionCreationCompleted"
+        return "NodesExtracted"
 
     @property
     def fill_color(self) -> str:
@@ -13,4 +13,4 @@ class NodePartitionCreatedEvent(DurationEvent):
 
     @property
     def simplified_name(self) -> str:
-        return "NP"
+        return "NE"

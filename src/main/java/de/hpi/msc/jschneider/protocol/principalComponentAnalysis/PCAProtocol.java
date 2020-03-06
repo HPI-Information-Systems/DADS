@@ -55,8 +55,7 @@ public class PCAProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(PCAEvents.PrincipalComponentsCreatedEvent.class,
-                                                    PCAEvents.PrincipalComponentComputationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(PCAEvents.PrincipalComponentsCreatedEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

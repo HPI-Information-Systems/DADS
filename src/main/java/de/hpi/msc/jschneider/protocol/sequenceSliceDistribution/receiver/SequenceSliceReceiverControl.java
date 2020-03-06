@@ -5,7 +5,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
-import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.SequenceMatrixInitializer;
 import de.hpi.msc.jschneider.utility.Serialize;
@@ -76,15 +76,12 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
 
         getModel().setEndTime(LocalDateTime.now());
 
-        if (StatisticsProtocol.IS_ENABLED)
-        {
-            trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.ProjectionCreationCompletedEvent.builder()
-                                                                                                                                                    .sender(getModel().getSelf())
-                                                                                                                                                    .receiver(eventDispatcher)
-                                                                                                                                                    .startTime(getModel().getStartTime())
-                                                                                                                                                    .endTime(getModel().getEndTime())
-                                                                                                                                                    .build());
-        }
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ProjectionCreatedEvent.builder()
+                                                                                                        .sender(getModel().getSelf())
+                                                                                                        .receiver(eventDispatcher)
+                                                                                                        .startTime(getModel().getStartTime())
+                                                                                                        .endTime(getModel().getEndTime())
+                                                                                                        .build());
 
         getLog().info("Local projection ({} x {}) for sub sequences [{}, {}) created (isLastSubSequenceChunk = {}).",
                       projection.countRows(),

@@ -5,7 +5,7 @@ class DimensionReductionCreatedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "DimensionReductionCompleted"
+        return "DimensionReductionCreated"
 
     @property
     def fill_color(self) -> str:

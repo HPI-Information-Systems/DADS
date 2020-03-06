@@ -1,16 +1,16 @@
 from event.base.duration_event import DurationEvent
 
 
-class NodesCreatedEvent(DurationEvent):
+class PathScoresNormalizedEvent(DurationEvent):
 
     @staticmethod
     def event_identifier() -> str:
-        return "NodeCreationCompleted"
+        return "PathScoresNormalized"
 
     @property
     def fill_color(self) -> str:
-        return "#b71c1c"  # Red
+        return "#006064"  # Cyan
 
     @property
     def simplified_name(self) -> str:
-        return "N"
+        return "NPS"

@@ -70,9 +70,7 @@ public class ScoringProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(ScoringEvents.ReadyForTerminationEvent.class,
-                                                    ScoringEvents.PathScoringCompletedEvent.class,
-                                                    ScoringEvents.PathScoreNormalizationCompletedEvent.class);
+        val model = BaseEventDispatcherModel.create(ScoringEvents.ReadyForTerminationEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

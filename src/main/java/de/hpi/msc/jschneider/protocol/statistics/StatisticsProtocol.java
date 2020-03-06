@@ -18,11 +18,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 public class StatisticsProtocol
 {
     public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(250);
+    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS");
     public static final boolean IS_ENABLED = true;
 
     private static final Logger Log = LogManager.getLogger(StatisticsProtocol.class);
@@ -62,8 +64,19 @@ public class StatisticsProtocol
 
     private static ActorRef createEventDispatcher(ActorSystem actorSystem)
     {
-        val model = BaseEventDispatcherModel.create(StatisticsEvents.DataTransferCompletedEvent.class,
-                                                    StatisticsEvents.MachineUtilizationEvent.class);
+        val model = BaseEventDispatcherModel.create(StatisticsEvents.DataTransferredEvent.class,
+                                                    StatisticsEvents.ProjectionCreatedEvent.class,
+                                                    StatisticsEvents.PCACreatedEvent.class,
+                                                    StatisticsEvents.DimensionReductionCreatedEvent.class,
+                                                    StatisticsEvents.IntersectionsCreatedEvent.class,
+                                                    StatisticsEvents.NodesExtractedEvent.class,
+                                                    StatisticsEvents.EdgePartitionCreatedEvent.class,
+                                                    StatisticsEvents.PathScoresCreatedEvent.class,
+                                                    StatisticsEvents.PathScoresNormalizedEvent.class,
+                                                    StatisticsEvents.ResultsPersistedEvent.class,
+                                                    StatisticsEvents.MachineUtilizationEvent.class,
+                                                    StatisticsEvents.MessageExchangeUtilizationEvent.class,
+                                                    StatisticsEvents.ActorPoolUtilizationEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

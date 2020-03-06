@@ -4,11 +4,11 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
-import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeEvents;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
@@ -131,17 +131,17 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         val finalLargestMessageQueueSize = largestMessageQueueSize;
         val finalLargestMessageQueueReceiver = largestMessageQueueReceiver;
 
-        trySendEvent(ProtocolType.MessageExchange, eventDispatcher -> MessageExchangeEvents.UtilizationEvent.builder()
-                                                                                                            .sender(getModel().getSelf())
-                                                                                                            .receiver(eventDispatcher)
-                                                                                                            .dateTime(LocalDateTime.now())
-                                                                                                            .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageDispatcher()))
-                                                                                                            .totalNumberOfEnqueuedMessages(totalEnqueuedMessages.get())
-                                                                                                            .totalNumberOfUnacknowledgedMessages(totalUnacknowledgedMessages.get())
-                                                                                                            .largestMessageQueueSize(finalLargestMessageQueueSize)
-                                                                                                            .largestMessageQueueReceiver(finalLargestMessageQueueReceiver)
-                                                                                                            .averageMessageQueueSize(averageQueueSize)
-                                                                                                            .build());
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.MessageExchangeUtilizationEvent.builder()
+                                                                                                                 .sender(getModel().getSelf())
+                                                                                                                 .receiver(eventDispatcher)
+                                                                                                                 .dateTime(LocalDateTime.now())
+                                                                                                                 .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageDispatcher()))
+                                                                                                                 .totalNumberOfEnqueuedMessages(totalEnqueuedMessages.get())
+                                                                                                                 .totalNumberOfUnacknowledgedMessages(totalUnacknowledgedMessages.get())
+                                                                                                                 .largestMessageQueueSize(finalLargestMessageQueueSize)
+                                                                                                                 .largestMessageQueueReceiver(finalLargestMessageQueueReceiver)
+                                                                                                                 .averageMessageQueueSize(averageQueueSize)
+                                                                                                                 .build());
     }
 
     private void onReadyForTermination(ScoringEvents.ReadyForTerminationEvent message)

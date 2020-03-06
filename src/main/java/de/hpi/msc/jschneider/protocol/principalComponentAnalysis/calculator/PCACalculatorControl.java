@@ -8,7 +8,7 @@ import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAEvents;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
-import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
@@ -214,15 +214,12 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
             // we dont have to do anything anymore
             getModel().setEndTime(LocalDateTime.now());
 
-            if (StatisticsProtocol.IS_ENABLED)
-            {
-                trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
-                                                                                                                                              .sender(getModel().getSelf())
-                                                                                                                                              .receiver(eventDispatcher)
-                                                                                                                                              .startTime(getModel().getStartTime())
-                                                                                                                                              .endTime(getModel().getEndTime())
-                                                                                                                                              .build());
-            }
+            trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.PCACreatedEvent.builder()
+                                                                                                     .sender(getModel().getSelf())
+                                                                                                     .receiver(eventDispatcher)
+                                                                                                     .startTime(getModel().getStartTime())
+                                                                                                     .endTime(getModel().getEndTime())
+                                                                                                     .build());
             return;
         }
 
@@ -296,15 +293,12 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
 
         getModel().setEndTime(LocalDateTime.now());
 
-        if (StatisticsProtocol.IS_ENABLED)
-        {
-            trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentComputationCompletedEvent.builder()
-                                                                                                                                          .sender(getModel().getSelf())
-                                                                                                                                          .receiver(eventDispatcher)
-                                                                                                                                          .startTime(getModel().getStartTime())
-                                                                                                                                          .endTime(getModel().getEndTime())
-                                                                                                                                          .build());
-        }
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.PCACreatedEvent.builder()
+                                                                                                 .sender(getModel().getSelf())
+                                                                                                 .receiver(eventDispatcher)
+                                                                                                 .startTime(getModel().getStartTime())
+                                                                                                 .endTime(getModel().getEndTime())
+                                                                                                 .build());
 
         trySendEvent(ProtocolType.PrincipalComponentAnalysis, eventDispatcher -> PCAEvents.PrincipalComponentsCreatedEvent.builder()
                                                                                                                           .sender(getModel().getSelf())
