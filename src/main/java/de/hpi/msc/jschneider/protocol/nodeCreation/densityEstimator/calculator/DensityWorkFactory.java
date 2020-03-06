@@ -1,0 +1,66 @@
+package de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator;
+
+import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
+import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
+import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkFactory;
+import lombok.SneakyThrows;
+import lombok.val;
+
+import java.util.concurrent.Callable;
+
+public class DensityWorkFactory implements WorkFactory
+{
+    private static final double CHUNK_SIZE = 0.05;
+
+    private final ActorRef supervisor;
+    private final double[] samples;
+    private final double[] pointsToEvaluate;
+    private final double weight;
+    private final Callable<WorkConsumer> workConsumerFactory;
+    private double nextChunkStart = 0.0d;
+
+    public DensityWorkFactory(ActorRef supervisor, double[] samples, double[] pointsToEvaluate, double weight)
+    {
+        this.supervisor = supervisor;
+        this.samples = samples;
+        this.pointsToEvaluate = pointsToEvaluate;
+        this.weight = weight;
+
+        workConsumerFactory = pointsToEvaluate.length >= samples.length
+                              ? MorePointsThanSamplesCalculator::new
+                              : LessPointsThanSamplesCalculator::new;
+    }
+
+    public int expectedNumberOfCalculations()
+    {
+        return (int) Math.ceil(1.0d / CHUNK_SIZE);
+    }
+
+    @Override
+    public boolean hasNext()
+    {
+        return nextChunkStart < 1.0d;
+    }
+
+    @SneakyThrows
+    @Override
+    public ActorPoolMessages.WorkMessage next(ActorRef worker)
+    {
+        val chunkEndFraction = Math.min(1.0d, nextChunkStart + CHUNK_SIZE);
+
+        val message = DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage.builder()
+                                                                                   .sender(supervisor)
+                                                                                   .receiver(worker)
+                                                                                   .consumer(workConsumerFactory.call())
+                                                                                   .samples(samples)
+                                                                                   .pointsToEvaluate(pointsToEvaluate)
+                                                                                   .weight(weight)
+                                                                                   .startFraction(nextChunkStart)
+                                                                                   .endFraction(chunkEndFraction)
+                                                                                   .build();
+
+        nextChunkStart += CHUNK_SIZE;
+        return message;
+    }
+}

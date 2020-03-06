@@ -2,19 +2,23 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
 import com.google.common.primitives.Doubles;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.Intersection;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
+import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.DensityEstimatorControl;
+import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.DensityEstimatorModel;
+import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.DensityCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.worker.intersectionCalculator.IntersectionWorkFactory;
-import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractor;
-import de.hpi.msc.jschneider.protocol.nodeCreation.worker.nodeExtractor.NodeExtractorMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
@@ -30,6 +34,7 @@ import org.ojalgo.function.aggregator.Aggregator;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -50,7 +55,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                     .match(NodeCreationMessages.InitializeNodeCreationMessage.class, this::onInitializeNodeCreation)
                     .match(NodeCreationMessages.ReducedSubSequenceMessage.class, this::onReducedSubSequence)
                     .match(NodeCreationMessages.InitializeIntersectionsTransferMessage.class, this::acceptIntersectionsTransfer)
-                    .match(NodeExtractorMessages.NodeCollectionCreatedMessage.class, this::onNodeCollectionCreated)
+                    .match(DensityCalculatorMessages.NodeCollectionCreatedMessage.class, this::onNodeCollectionCreated)
                     .match(IntersectionCalculatorMessages.IntersectionsCalculatedMessage.class, this::onIntersectionsCalculated);
     }
 
@@ -366,21 +371,39 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             return;
         }
 
-        val actorPool = getLocalProtocol(ProtocolType.ActorPool);
-        assert actorPool.isPresent() : "ActorPooling is not supported!";
-
-        send(NodeExtractorMessages.CreateNodeCollectionMessage.builder()
-                                                              .sender(getModel().getSelf())
-                                                              .receiver(actorPool.get().getRootActor())
-                                                              .consumer(new NodeExtractor())
-                                                              .intersectionSegment(intersectionSegment)
-                                                              .intersections(getModel().getIntersections().get(intersectionSegment))
-                                                              .densitySamples(getModel().getDensitySamples())
-                                                              .participants(getModel().getParticipants())
-                                                              .build());
+        val intersections = combineIntersections(intersectionList);
+        val model = DensityEstimatorModel.builder()
+                                         .supervisor(getModel().getSelf())
+                                         .intersectionSegment(intersectionSegment)
+                                         .participants(getModel().getParticipants())
+                                         .samples(intersections)
+                                         .pointsToEvaluate(getModel().getDensitySamples())
+                                         .build();
+        val control = new DensityEstimatorControl(model);
+        val estimator = trySpawnChild(ProtocolParticipant.props(control), "DensityEstimator");
+        if (!estimator.isPresent())
+        {
+            getLog().error("Unable to create new DensityEstimator!");
+        }
     }
 
-    private void onNodeCollectionCreated(NodeExtractorMessages.NodeCollectionCreatedMessage message)
+
+    private double[] combineIntersections(List<double[]> intersectionParts)
+    {
+        val numberOfIntersections = intersectionParts.stream().mapToInt(intersections -> intersections.length).sum();
+        val intersections = new double[numberOfIntersections];
+        var startIndex = 0;
+        for (var i = 0; startIndex < intersections.length; ++i)
+        {
+            val part = intersectionParts.get(i);
+            System.arraycopy(part, 0, intersections, startIndex, part.length);
+            startIndex += part.length;
+        }
+
+        return intersections;
+    }
+
+    private void onNodeCollectionCreated(DensityCalculatorMessages.NodeCollectionCreatedMessage message)
     {
         try
         {
@@ -407,7 +430,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                                                  .build());
             }
 
-//            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
+            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }
         finally
         {
