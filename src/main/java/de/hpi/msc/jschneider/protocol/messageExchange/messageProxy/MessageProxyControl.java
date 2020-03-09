@@ -46,7 +46,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     {
         super.preStart();
 
-        if (StatisticsProtocol.IS_ENABLED)
+        if (getLocalProtocol(ProtocolType.Statistics).isPresent())
         {
             if (getModel().getNumberOfProcessors() <= 1)
             {

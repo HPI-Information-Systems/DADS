@@ -51,7 +51,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
             spawnWorker();
         }
 
-        if (StatisticsProtocol.IS_ENABLED)
+        if (getLocalProtocol(ProtocolType.Statistics).isPresent())
         {
             subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
         }

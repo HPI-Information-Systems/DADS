@@ -25,7 +25,6 @@ public class StatisticsProtocol
 {
     public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(250);
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS");
-    public static final boolean IS_ENABLED = true;
 
     private static final Logger Log = LogManager.getLogger(StatisticsProtocol.class);
     private static final String ROOT_ACTOR_NAME = "StatisticsRootActor";
@@ -33,10 +32,17 @@ public class StatisticsProtocol
 
     public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
     {
-        if (IS_ENABLED)
+        if (SystemParameters.getCommand().isDisableStatistics())
         {
-            localProtocols.add(initialize(actorSystem));
+            return;
         }
+
+        if (SystemParameters.getCommand().getStatisticsFile() == null)
+        {
+            throw new IllegalArgumentException("Missing parameter: StatisticsOutput!");
+        }
+
+        localProtocols.add(initialize(actorSystem));
     }
 
     private static Protocol initialize(ActorSystem actorSystem)
