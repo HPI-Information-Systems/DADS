@@ -30,9 +30,9 @@ public class GenericDataSource<TData> implements DataSource
         this.serializer = serializer;
     }
 
-    public static GenericDataSource<double[]> create(double[] data)
+    public static DataSource create(double[] data)
     {
-        return new GenericDataSource<>(data, d -> (long) d.length, Double.BYTES, Serialize::toBytes);
+        return new DoublesDataSource(data);
     }
 
     public static GenericDataSource<Access1D<Double>> create(Access1D<Double> data)

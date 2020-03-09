@@ -297,6 +297,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                 result[collection.getIntersectionSegment()].getIntersections().addAll(collection.getIntersections());
             }
         }
+        getModel().getIntersectionCollections().clear();
 
         return result;
     }
