@@ -23,10 +23,10 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
@@ -202,10 +202,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         if (getModel().getFirstSubSequenceIndex() > 0L)
         {
             firstSubSequenceIndex -= 1;
-            projection = (new MatrixInitializer(getModel().getReducedProjection().countRows())
-                                  .appendRow(new double[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
+            projection = (new RowMatrixBuilder(getModel().getReducedProjection().countRows())
+                                  .append(new double[]{getModel().getReducedSubSequenceMessage().getSubSequenceX(), getModel().getReducedSubSequenceMessage().getSubSequenceY()})
                                   .append(getModel().getReducedProjection().transpose())
-                                  .create()
+                                  .build()
                                   .transpose());
         }
 

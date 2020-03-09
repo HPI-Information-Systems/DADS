@@ -10,9 +10,9 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.decomposition.QR;
@@ -238,7 +238,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                 return;
             }
             getModel().getRemoteRsByProcessStep().remove(currentStep - 1);
-            dataMatrix = MatrixInitializer.concat(dataMatrix, remoteR);
+            dataMatrix = RowMatrixBuilder.concat(dataMatrix, remoteR);
         }
 
         calculateAndTransferR(dataMatrix);
@@ -275,7 +275,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         getLog().info("Finalizing PCA calculation.");
 
         val totalColumnMeans = totalColumnMeans();
-        val matrixInitializer = new MatrixInitializer(getModel().getProjection().countColumns());
+        val matrixInitializer = new RowMatrixBuilder(getModel().getProjection().countColumns());
         for (var processorIndex = 0; processorIndex < getModel().getProcessorIndices().size(); ++processorIndex)
         {
             val diff = getTransposedColumnMeans(processorIndex).subtract(totalColumnMeans);
@@ -284,7 +284,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         matrixInitializer.append(getModel().getLocalR());
 
         val qrDecomposition = QR.PRIMITIVE.make();
-        qrDecomposition.compute(matrixInitializer.create());
+        qrDecomposition.compute(matrixInitializer.build());
         val svd = SingularValue.PRIMITIVE.make();
         svd.compute(qrDecomposition.getR());
         val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());

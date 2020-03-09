@@ -1,7 +1,7 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.sink;
 
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.Serialize;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import junit.framework.TestCase;
 import lombok.val;
 import org.ojalgo.type.context.NumberContext;
@@ -15,7 +15,7 @@ public class TestPrimitiveMatrixSink extends TestCase
 {
     public void testClose()
     {
-        val expectedMatrix = (new MatrixInitializer(3L)
+        val expectedMatrix = (new RowMatrixBuilder(3L)
                                       .appendRow(new double[]{0.0d, 1.0d, 2.0d})
                                       .appendRow(new double[]{3.0d, 4.0d, 5.0d})
                                       .appendRow(new double[]{6.0d, 7.0d, 8.0d})

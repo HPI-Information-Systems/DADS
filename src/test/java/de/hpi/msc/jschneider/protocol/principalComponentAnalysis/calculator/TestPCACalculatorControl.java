@@ -6,7 +6,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.store.MatrixStore;
@@ -74,7 +74,7 @@ public class TestPCACalculatorControl extends ProtocolTestCase
 
     private MatrixStore<Double> simpleMatrix()
     {
-        return (new MatrixInitializer(3))
+        return (new RowMatrixBuilder(3))
                 .appendRow(new double[]{0.0d, 1.0d, 2.0d})
                 .appendRow(new double[]{3.0d, 4.0d, 5.0d})
                 .appendRow(new double[]{6.0d, 7.0d, 8.0d})

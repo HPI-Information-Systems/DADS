@@ -7,9 +7,9 @@ import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import scala.PartialFunction;
@@ -65,7 +65,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThat(control.getModel().getFirstSubSequenceIndex()).isEqualTo(10L);
         assertThat(control.getModel().getSubSequenceLength()).isEqualTo(10);
         assertThat(control.getModel().getConvolutionSize()).isEqualTo(3);
-        assertThat(control.getModel().getProjectionInitializer()).isNotNull();
+        assertThat(control.getModel().getProjectionBuilder()).isNotNull();
 
         val parametersReceivedEvent = expectEvent(SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.class);
         assertThat(parametersReceivedEvent.getSubSequenceLength()).isEqualTo(control.getModel().getSubSequenceLength());
@@ -226,7 +226,7 @@ public class TestSequenceSliceReceiverControl extends ProtocolTestCase
         assertThat(projectionCreated.getProjection().countColumns()).isEqualTo(slidingWindowWidth);
         assertThat(projectionCreated.getProjection().countRows()).isEqualTo(slicePart.length - (subSequenceLength - 1));
 
-        val expectedProjection = (new MatrixInitializer(2L)
+        val expectedProjection = (new RowMatrixBuilder(2L)
                                           .appendRow(new double[]{0.0d + 1.0d + 2.0d, 1.0d + 2.0d + 3.0d})
                                           .appendRow(new double[]{1.0d + 2.0d + 3.0d, 2.0d + 3.0d + 4.0d})
                                           .appendRow(new double[]{2.0d + 3.0d + 4.0d, 3.0d + 4.0d + 5.0d})

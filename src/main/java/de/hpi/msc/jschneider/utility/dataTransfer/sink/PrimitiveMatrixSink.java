@@ -1,9 +1,9 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.sink;
 
 import de.hpi.msc.jschneider.utility.Int64Range;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataSink;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.SneakyThrows;
 import lombok.val;
 import lombok.var;
@@ -49,7 +49,7 @@ public class PrimitiveMatrixSink implements DataSink
     {
         assert numberOfColumns <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE columns per row!";
 
-        val initializer = new MatrixInitializer(numberOfColumns);
+        val initializer = new RowMatrixBuilder(numberOfColumns);
         val totalNumberOfEntries = parts.stream().mapToLong(part -> (long) part.length).sum();
         val numberOfRows = totalNumberOfEntries / (double) numberOfColumns;
 
@@ -62,11 +62,11 @@ public class PrimitiveMatrixSink implements DataSink
             {
                 row[columnIndex] = getValueAtIndex((long) (rowIndex + columnIndex * numberOfRows));
             }
-            initializer.appendRow(row);
+            initializer.append(row);
         }
 
         parts.clear();
-        return initializer.create();
+        return initializer.build();
     }
 
     @SneakyThrows

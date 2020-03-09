@@ -17,10 +17,10 @@ import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import junit.framework.TestCase;
 import lombok.val;
 import lombok.var;
@@ -158,7 +158,7 @@ public abstract class BaseTestCase extends TestCase
 
     protected MatrixStore<Double> createMatrix(long rows, long columns)
     {
-        val matrixInitializer = new MatrixInitializer(columns);
+        val matrixInitializer = new RowMatrixBuilder(columns);
         val random = new Random();
 
         for (var rowIndex = 0L; rowIndex < rows; ++rowIndex)
@@ -172,7 +172,7 @@ public abstract class BaseTestCase extends TestCase
             matrixInitializer.appendRow(row);
         }
 
-        return matrixInitializer.create();
+        return matrixInitializer.build();
     }
 
     protected PrimitiveMatrixSink performDataTransfer(TestProbe dataReceiver, PartialFunction<Object, BoxedUnit> dataReceiverMessageInterface,

@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.utility;
+package de.hpi.msc.jschneider.utility.matrix;
 
 import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.math.SequenceMatrix;
@@ -8,7 +8,7 @@ import lombok.var;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SequenceMatrixInitializer
+public class SequenceMatrixBuilder implements MatrixBuilder
 {
     private final int sequenceLength;
     private final int convolutionSize;
@@ -16,13 +16,13 @@ public class SequenceMatrixInitializer
     private final List<Double> unusedData = new ArrayList<>();
     private double convolutionSum = 0.0d;
 
-    public SequenceMatrixInitializer(int sequenceLength, int convolutionSize)
+    public SequenceMatrixBuilder(int sequenceLength, int convolutionSize)
     {
         this.sequenceLength = sequenceLength;
         this.convolutionSize = convolutionSize;
     }
 
-    public SequenceMatrixInitializer append(double[] dataPart)
+    public SequenceMatrixBuilder append(double[] dataPart)
     {
         unusedData.addAll(Doubles.asList(dataPart));
 
@@ -52,7 +52,7 @@ public class SequenceMatrixInitializer
         return data.isEmpty();
     }
 
-    public SequenceMatrix create()
+    public SequenceMatrix build()
     {
         val matrix = new SequenceMatrix(sequenceLength - convolutionSize, Doubles.toArray(data));
         data.clear();

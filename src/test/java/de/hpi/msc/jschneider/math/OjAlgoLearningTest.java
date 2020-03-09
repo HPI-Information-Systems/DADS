@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.math;
 
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import junit.framework.TestCase;
 import lombok.val;
 import org.ojalgo.matrix.decomposition.QR;
@@ -11,7 +11,7 @@ public class OjAlgoLearningTest extends TestCase
 {
     public void testQRDecomposition()
     {
-        val input = (new MatrixInitializer(3)
+        val input = (new RowMatrixBuilder(3)
                              .appendRow(new double[]{0.0d, 1.0d, 2.0d})
                              .appendRow(new double[]{3.0d, 4.0d, 5.0d})
                              .appendRow(new double[]{6.0d, 7.0d, 8.0d})
@@ -28,7 +28,7 @@ public class OjAlgoLearningTest extends TestCase
 
     public void testAccessOrder()
     {
-        val matrix = (new MatrixInitializer(3)
+        val matrix = (new RowMatrixBuilder(3)
                               .appendRow(new double[]{0.0d, 1.0d, 2.0d})
                               .appendRow(new double[]{3.0d, 4.0d, 5.0d})
                               .appendRow(new double[]{6.0d, 7.0d, 8.0d})

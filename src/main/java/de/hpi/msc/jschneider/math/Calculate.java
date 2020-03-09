@@ -3,7 +3,7 @@ package de.hpi.msc.jschneider.math;
 import com.google.common.primitives.Ints;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.utility.Counter;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
@@ -68,42 +68,6 @@ public class Calculate
         return range;
     }
 
-    public static MatrixStore<Double> makeRotationX(double angle)
-    {
-        val cos = Math.cos(angle);
-        val sin = Math.sin(angle);
-
-        return (new MatrixInitializer(3L)
-                        .appendRow(new double[]{1.0d, 0.0d, 0.0d})
-                        .appendRow(new double[]{0.0d, cos, -sin})
-                        .appendRow(new double[]{0.0d, sin, cos})
-                        .create());
-    }
-
-    public static MatrixStore<Double> makeRotationY(double angle)
-    {
-        val cos = Math.cos(angle);
-        val sin = Math.sin(angle);
-
-        return (new MatrixInitializer(3L)
-                        .appendRow(new double[]{cos, 0.0d, sin})
-                        .appendRow(new double[]{0.0d, 1.0d, 0.0d})
-                        .appendRow(new double[]{-sin, 0.0d, cos})
-                        .create());
-    }
-
-    public static MatrixStore<Double> makeRotationZ(double angle)
-    {
-        val cos = Math.cos(angle);
-        val sin = Math.sin(angle);
-
-        return (new MatrixInitializer(3L)
-                        .appendRow(new double[]{cos, -sin, 0.0d})
-                        .appendRow(new double[]{sin, cos, 0.0d})
-                        .appendRow(new double[]{0.0d, 0.0d, 1.0d})
-                        .create());
-    }
-
     public static MatrixStore<Double> rotation(MatrixStore<Double> referenceVector, MatrixStore<Double> unitVector)
     {
         val vec1 = toColumnVector(referenceVector).multiply(1.0d / Math.sqrt(referenceVector.aggregateAll(Aggregator.SUM2)));
@@ -116,25 +80,25 @@ public class Calculate
         val crossLength = Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
         val dot = vec1.dot(vec2);
         val identity = MatrixStore.PRIMITIVE.makeIdentity(3).get();
-        val k = (new MatrixInitializer(3))
-                .appendRow(new double[]{0.0f, -cross.get(2), cross.get(1)})
-                .appendRow(new double[]{cross.get(2), 0.0f, -cross.get(0)})
-                .appendRow(new double[]{-cross.get(1), cross.get(0), 0.0f})
-                .create();
+        val k = (new RowMatrixBuilder(3))
+                .append(new double[]{0.0f, -cross.get(2), cross.get(1)})
+                .append(new double[]{cross.get(2), 0.0f, -cross.get(0)})
+                .append(new double[]{-cross.get(1), cross.get(0), 0.0f})
+                .build();
 
         return identity.add(k).add(k.multiply(k.multiply((1 - dot) / (crossLength * crossLength))));
     }
 
     private static MatrixStore<Double> cross(MatrixStore<Double> a, MatrixStore<Double> b)
     {
-        return (new MatrixInitializer(1))
-                .appendRow(new double[]{a.get(1) * b.get(2) - a.get(2) * b.get(1)})
-                .appendRow(new double[]{a.get(2) * b.get(0) - a.get(0) * b.get(2)})
-                .appendRow(new double[]{a.get(0) * b.get(1) - a.get(1) * b.get(0)})
-                .create();
+        return (new RowMatrixBuilder(1))
+                .append(new double[]{a.get(1) * b.get(2) - a.get(2) * b.get(1)})
+                .append(new double[]{a.get(2) * b.get(0) - a.get(0) * b.get(2)})
+                .append(new double[]{a.get(0) * b.get(1) - a.get(1) * b.get(0)})
+                .build();
     }
 
-    public static MatrixStore<Double> transposedColumnMeans(SequenceMatrix input)
+    public static MatrixStore<Double> transposedColumnMeans(MatrixStore<Double> input)
     {
         val numberOfRows = input.countRows();
         val factor = 1.0d / numberOfRows;
@@ -142,14 +106,21 @@ public class Calculate
         return e.multiply(input);
     }
 
-    public static MatrixStore<Double> columnCenteredDataMatrix(SequenceMatrix input)
+    public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input)
     {
         return columnCenteredDataMatrix(input, transposedColumnMeans(input));
     }
 
-    public static SequenceMatrix columnCenteredDataMatrix(SequenceMatrix input, MatrixStore<Double> transposedColumnMeans)
+    public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input, MatrixStore<Double> transposedColumnMeans)
     {
-        return input.subtractColumnBased(transposedColumnMeans);
+        if (input instanceof SequenceMatrix)
+        {
+            return ((SequenceMatrix) input).subtractColumnBased(transposedColumnMeans);
+        }
+
+        val numberOfRows = input.countRows();
+        val e = makeFilledRowVector(numberOfRows, 1.0d).transpose();
+        return input.subtract(e.multiply(transposedColumnMeans));
     }
 
     public static double angleBetween(MatrixStore<Double> a, MatrixStore<Double> b)

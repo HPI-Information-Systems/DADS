@@ -16,6 +16,7 @@ public abstract class AbstractCommand
     protected static final int DEFAULT_PORT = 7788;
     private static final boolean DEFAULT_DISABLE_MESSAGE_EXCHANGE = false;
     private static final boolean DEFAULT_DISABLE_STATISTICS = false;
+    private static final boolean DEFAULT_DISABLE_SEQUENCE_MATRIX = false;
 
     @Parameter(names = "--host", description = "host address of THIS actor system", required = true)
     private String host;
@@ -40,4 +41,7 @@ public abstract class AbstractCommand
 
     @Parameter(names = "--no-statistics", description = "disables the Statistics protocol", required = false)
     private boolean disableStatistics = DEFAULT_DISABLE_STATISTICS;
+
+    @Parameter(names = "--no-sequence-matrix", description = "disables the SequenceMatrix optimization", required = false)
+    private boolean disableSequenceMatrix = DEFAULT_DISABLE_SEQUENCE_MATRIX;
 }

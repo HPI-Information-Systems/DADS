@@ -8,7 +8,7 @@ import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator.PCAC
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator.PCACalculatorModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.data.DataProcessors;
@@ -96,9 +96,9 @@ public class PCAIntegrationTest extends BaseTestCase
         // create projections
         val masterProjection = createMatrix(100, 5);
         val slaveProjection = createMatrix(100, 5);
-        val projection = (new MatrixInitializer(masterProjection.countColumns()).append(masterProjection)
-                                                                                .append(slaveProjection)
-                                                                                .create());
+        val projection = (new RowMatrixBuilder(masterProjection.countColumns()).append(masterProjection)
+                                                                               .append(slaveProjection)
+                                                                               .build());
         val projectionMin = projection.aggregateAll(Aggregator.MINIMUM);
         val projectionMax = projection.aggregateAll(Aggregator.MAXIMUM);
 

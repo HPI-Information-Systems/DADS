@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.utility;
 
 import com.google.common.primitives.Bytes;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import junit.framework.TestCase;
 import lombok.val;
 import lombok.var;
@@ -27,7 +28,7 @@ public class TestSerialize extends TestCase
 
     public void testAccess1DToBytes()
     {
-        val matrix = (new MatrixInitializer(3L)
+        val matrix = (new RowMatrixBuilder(3L)
                               .appendRow(new double[]{0.0d, 1.0d, 2.0d})
                               .appendRow(new double[]{3.0d, 4.0d, 5.0d})
                               .appendRow(new double[]{6.0d, 7.0d, 8.0d})

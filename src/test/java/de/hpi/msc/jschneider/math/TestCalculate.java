@@ -1,6 +1,6 @@
 //package de.hpi.msc.jschneider.math;
 //
-//import de.hpi.msc.jschneider.utility.MatrixInitializer;
+//import de.hpi.msc.jschneider.utility.matrix.MatrixInitializer;
 //import junit.framework.TestCase;
 //import lombok.val;
 //import lombok.var;

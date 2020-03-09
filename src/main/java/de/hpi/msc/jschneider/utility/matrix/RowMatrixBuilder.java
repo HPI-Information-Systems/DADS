@@ -1,4 +1,4 @@
-package de.hpi.msc.jschneider.utility;
+package de.hpi.msc.jschneider.utility.matrix;
 
 import lombok.val;
 import org.ojalgo.array.Primitive64Array;
@@ -9,7 +9,7 @@ import org.ojalgo.structure.Access2D;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MatrixInitializer
+public class RowMatrixBuilder implements MatrixBuilder
 {
     private final List<Primitive64Array> rows = new ArrayList<>();
     private final long columns;
@@ -18,18 +18,18 @@ public class MatrixInitializer
     {
         assert first.countColumns() == second.countColumns() : "First and second matrix must have same amount of columns for concat!";
 
-        return (new MatrixInitializer(first.countColumns()))
+        return (new RowMatrixBuilder(first.countColumns()))
                 .append(first)
                 .append(second)
-                .create();
+                .build();
     }
 
-    public MatrixInitializer(long columns)
+    public RowMatrixBuilder(long columns)
     {
         this.columns = columns;
     }
 
-    public MatrixInitializer appendRow(double[] row)
+    public RowMatrixBuilder append(double[] row)
     {
         assert row.length == columns : "Row must have the same amount of columns for append!";
 
@@ -37,19 +37,19 @@ public class MatrixInitializer
         return this;
     }
 
-    public MatrixInitializer append(Access2D<Double> matrix)
+    public RowMatrixBuilder append(Access2D<Double> matrix)
     {
         assert matrix.countColumns() == columns : "Matrix must have the same amount of columns for append!";
 
         for (val row : matrix.rows())
         {
-            appendRow(row.toRawCopy1D());
+            append(row.toRawCopy1D());
         }
 
         return this;
     }
 
-    public MatrixStore<Double> create()
+    public MatrixStore<Double> build()
     {
         val result = PrimitiveMatrix.FACTORY.rows(rows.toArray(new Primitive64Array[0]));
         rows.clear();
