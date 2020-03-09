@@ -4,12 +4,14 @@ import akka.actor.Terminated;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.heartbeat.HeartbeatEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import lombok.val;
 
 public class ReaperControl extends AbstractProtocolParticipantControl<ReaperModel>
 {
@@ -26,7 +28,8 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
                     .match(ReaperMessages.WatchMeMessage.class, this::onWatchMe)
                     .match(Terminated.class, this::onTerminated)
                     .match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
-                    .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination);
+                    .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination)
+                    .match(HeartbeatEvents.HeartbeatPanicEvent.class, this::onHeartbeatPanic);
     }
 
     private void onSetUp(CommonMessages.SetUpProtocolMessage message)
@@ -77,6 +80,11 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
         try
         {
             subscribeToMasterEvent(ProtocolType.Scoring, ScoringEvents.ReadyForTerminationEvent.class);
+
+            for (val participant : getModel().getProcessors())
+            {
+                subscribeToEvent(participant.getId(), ProtocolType.Heartbeat, HeartbeatEvents.HeartbeatPanicEvent.class);
+            }
         }
         finally
         {
@@ -89,6 +97,19 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
         try
         {
             getLog().info("Received ready for termination event.");
+            tryTerminateActorSystem();
+        }
+        finally
+        {
+            complete(message);
+        }
+    }
+
+    private void onHeartbeatPanic(HeartbeatEvents.HeartbeatPanicEvent message)
+    {
+        try
+        {
+            getLog().error("{} GOT A HEARTBEAT-PANIC! SHUTTING DOWN!", ProcessorId.of(message.getSender()));
             tryTerminateActorSystem();
         }
         finally

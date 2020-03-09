@@ -14,4 +14,5 @@ public enum ProtocolType
     Scoring,
     Statistics,
     ActorPool,
+    Heartbeat,
 }

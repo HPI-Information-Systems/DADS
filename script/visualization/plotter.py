@@ -17,6 +17,7 @@ class Plotter:
     def _create_figure() -> plotly.subplots:
         figure: plotly.subplots = make_subplots(rows=1, cols=2,
                                                 subplot_titles=("CPU & Memory Utilization", "Data Transferred",),
+                                                horizontal_spacing=0.05,
                                                 specs=[[{"secondary_y": False}, {"secondary_y": True}]])
 
         return figure
@@ -42,6 +43,7 @@ class Plotter:
         self._processor: str = processor
         self._events: Dict[str, List[StatisticsEvent]] = events
         self._start_time, self._end_time = self._extract_start_and_end_time()
+        self._x_axis_range: List[float] = [0.0, (self._end_time - self._start_time).total_seconds()]
         self._figure: plotly.subplots = Plotter._create_figure()
         self._process_step_shapes: List[Dict[str, Any]] = []
         self._process_step_annotations: List[Dict[str, Any]] = []
@@ -213,6 +215,7 @@ class Plotter:
         self._figure["layout"]["xaxis1"].update({
             "title": "Time (s)",
             "rangemode": "nonnegative",
+            "range": self._x_axis_range,
         })
         self._figure["layout"]["yaxis1"].update({
             "title": "Utilization (%)",
@@ -398,6 +401,7 @@ class Plotter:
         self._figure["layout"]["xaxis2"].update({
             "title": "Time (s)",
             "rangemode": "nonnegative",
+            "range": self._x_axis_range,
         })
         self._figure["layout"]["yaxis2"].update({
             "title": "Data (MiB)",

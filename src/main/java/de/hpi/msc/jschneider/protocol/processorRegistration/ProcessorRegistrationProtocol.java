@@ -16,6 +16,7 @@ import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMode
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionProtocol;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationProtocol;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingProtocol;
+import de.hpi.msc.jschneider.protocol.heartbeat.HeartbeatProtocol;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeProtocol;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationProtocol;
 import de.hpi.msc.jschneider.protocol.principalComponentAnalysis.PCAProtocol;
@@ -79,6 +80,7 @@ public class ProcessorRegistrationProtocol
         ScoringProtocol.initializeInPlace(protocols, actorSystem);
         StatisticsProtocol.initializeInPlace(protocols, actorSystem);
         ActorPoolProtocol.initializeInPlace(protocols, actorSystem);
+        HeartbeatProtocol.initializeInPlace(protocols, actorSystem);
 
         return protocols.toArray(new Protocol[0]);
     }
