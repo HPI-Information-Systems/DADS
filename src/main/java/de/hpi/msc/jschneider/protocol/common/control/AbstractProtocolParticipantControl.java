@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
+import akka.actor.Terminated;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
@@ -60,7 +61,8 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         return builder.match(DataTransferMessages.DataTransferFinishedMessage.class, getModel().getDataTransferManager()::onDataSent)
                       .match(DataTransferMessages.DataPartMessage.class, getModel().getDataTransferManager()::onPart)
-                      .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure);
+                      .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure)
+                      .match(Terminated.class, this::onTerminated);
     }
 
     protected void onBackPressure(MessageExchangeMessages.BackPressureMessage message)
@@ -78,6 +80,11 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         {
             complete(message);
         }
+    }
+
+    protected void onTerminated(Terminated message)
+    {
+        getModel().getChildActors().remove(message.getActor());
     }
 
     @Override
