@@ -30,9 +30,6 @@ public abstract class AbstractCommand
     @Parameter(names = "--workers", description = "number of workers to spawn")
     private int numberOfWorkers = DEFAULT_NUMBER_OF_WORKERS;
 
-    @Parameter(names = "--working-dir", description = "working directory", required = true, converter = StringToPathConverter.class, validateValueWith = DirectoryValidator.class)
-    private Path workingDirectory;
-
     @Parameter(names = "--statistics-output", description = "file to store statistics in", required = false, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
     private Path statisticsFile;
 

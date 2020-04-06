@@ -84,6 +84,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
 
     protected void onTerminated(Terminated message)
     {
+        tryUnwatch(message.getActor());
         getModel().getChildActors().remove(message.getActor());
     }
 

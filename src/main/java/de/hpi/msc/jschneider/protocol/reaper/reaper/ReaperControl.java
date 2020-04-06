@@ -60,12 +60,10 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
         }
     }
 
-    private void onTerminated(Terminated message)
+    @Override
+    protected void onTerminated(Terminated message)
     {
-        if (!tryUnwatch(message.getActor()))
-        {
-            return;
-        }
+        super.onTerminated(message);
 
         if (!getModel().getWatchedActors().isEmpty())
         {

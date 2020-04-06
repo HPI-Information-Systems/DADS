@@ -36,8 +36,6 @@ public class SequenceSliceReceiverModel extends AbstractProtocolParticipantModel
     private double[] unusedRecords = new double[0];
     @Setter @Getter
     private List<Double> rawSubSequence;
-    @NonNull @Getter @Builder.Default
-    private SequenceWriter sequenceWriter = BinaryDirectoryWriter.fromDirectory(Paths.get(SystemParameters.getWorkingDirectory().toString(), "sequence-slices/").toFile());
     @Setter @Getter
     private LocalDateTime startTime;
     @Setter @Getter

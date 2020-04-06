@@ -38,11 +38,6 @@ public class SystemParameters
         return command.getNumberOfWorkers();
     }
 
-    public static Path getWorkingDirectory()
-    {
-        return command.getWorkingDirectory();
-    }
-
     public static long getMaximumMessageSize()
     {
         return configuration.getBytes("akka.remote.maximum-payload-bytes");

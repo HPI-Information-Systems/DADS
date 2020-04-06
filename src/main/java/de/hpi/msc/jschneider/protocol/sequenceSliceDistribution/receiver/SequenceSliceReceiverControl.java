@@ -54,8 +54,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
 
         getModel().getDataTransferManager().accept(message,
                                                    dataReceiver -> dataReceiver.whenDataPartReceived(this::onSlicePart)
-                                                                               .whenFinished(this::whenFinished)
-                                                                               .addSink(getModel().getSequenceWriter()));
+                                                                               .whenFinished(this::whenFinished));
 
         getModel().setStartTime(LocalDateTime.now());
         getLog().debug("Start receiving sequence slice from {}.", message.getSender().path());
