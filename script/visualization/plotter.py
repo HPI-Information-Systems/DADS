@@ -69,7 +69,7 @@ class Plotter:
                 "orientation": "h",
             }
         })
-        self._figure.show()
+        self._figure.write_html(f"plots/{self._processor}.html")
 
     def _create_process_step_shapes(self) -> None:
         if not self._show_process_steps:
