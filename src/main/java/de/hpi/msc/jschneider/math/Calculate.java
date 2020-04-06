@@ -7,7 +7,7 @@ import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;
-import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access1D;
 
@@ -46,14 +46,14 @@ public class Calculate
 
     public static MatrixStore<Double> makeFilledRowVector(long length, double value)
     {
-        val matrix = PrimitiveMatrix.FACTORY.rows(DoubleStream.generate(() -> value).limit(length).toArray());
-        return MatrixStore.PRIMITIVE.makeWrapper(matrix).get();
+        val matrix = Primitive64Matrix.FACTORY.rows(DoubleStream.generate(() -> value).limit(length).toArray());
+        return MatrixStore.PRIMITIVE64.makeWrapper(matrix).get();
     }
 
     public static MatrixStore<Double> makeRowVector(double... values)
     {
-        val matrix = PrimitiveMatrix.FACTORY.rows(values);
-        return MatrixStore.PRIMITIVE.makeWrapper(matrix).get();
+        val matrix = Primitive64Matrix.FACTORY.rows(values);
+        return MatrixStore.PRIMITIVE64.makeWrapper(matrix).get();
     }
 
     public static double[] makeRange(double start, double end, int numberOfSteps)
@@ -79,7 +79,7 @@ public class Calculate
         val cross = cross(vec1, vec2);
         val crossLength = Math.sqrt(cross.aggregateAll(Aggregator.SUM2));
         val dot = vec1.dot(vec2);
-        val identity = MatrixStore.PRIMITIVE.makeIdentity(3).get();
+        val identity = MatrixStore.PRIMITIVE64.makeIdentity(3).get();
         val k = (new RowMatrixBuilder(3))
                 .append(new double[]{0.0f, -cross.get(2), cross.get(1)})
                 .append(new double[]{cross.get(2), 0.0f, -cross.get(0)})

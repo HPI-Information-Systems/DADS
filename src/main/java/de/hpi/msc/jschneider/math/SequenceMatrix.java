@@ -4,7 +4,7 @@ import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.matrix.store.PhysicalStore;
-import org.ojalgo.matrix.store.PrimitiveDenseStore;
+import org.ojalgo.matrix.store.Primitive64Store;
 
 public class SequenceMatrix implements MatrixStore<Double>
 {
@@ -20,9 +20,9 @@ public class SequenceMatrix implements MatrixStore<Double>
     }
 
     @Override
-    public PhysicalStore.Factory<Double, PrimitiveDenseStore> physical()
+    public PhysicalStore.Factory<Double, Primitive64Store> physical()
     {
-        return PrimitiveDenseStore.FACTORY;
+        return Primitive64Store.FACTORY;
     }
 
     @Override

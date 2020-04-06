@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.utility.matrix;
 
 import lombok.val;
 import org.ojalgo.array.Primitive64Array;
-import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.structure.Access2D;
 
@@ -51,9 +51,9 @@ public class RowMatrixBuilder implements MatrixBuilder
 
     public MatrixStore<Double> build()
     {
-        val result = PrimitiveMatrix.FACTORY.rows(rows.toArray(new Primitive64Array[0]));
+        val result = Primitive64Matrix.FACTORY.rows(rows.toArray(new Primitive64Array[0]));
         rows.clear();
 
-        return MatrixStore.PRIMITIVE.makeWrapper(result).get();
+        return MatrixStore.PRIMITIVE64.makeWrapper(result).get();
     }
 }
