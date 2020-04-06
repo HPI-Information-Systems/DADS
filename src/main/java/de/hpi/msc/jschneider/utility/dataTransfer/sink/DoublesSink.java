@@ -10,7 +10,12 @@ import java.util.List;
 
 public class DoublesSink implements DataSink
 {
-    private final List<Double> doubles = new ArrayList<>();
+    private final List<Double> doubles;
+
+    public DoublesSink(int numberOfElements)
+    {
+        doubles = new ArrayList<>(Math.max(numberOfElements, 1024));
+    }
 
     @Override
     public void write(byte[] part)

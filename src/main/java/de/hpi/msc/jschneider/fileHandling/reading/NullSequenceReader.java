@@ -43,6 +43,12 @@ public class NullSequenceReader implements SequenceReader
     }
 
     @Override
+    public int numberOfElements()
+    {
+        return 0;
+    }
+
+    @Override
     public byte[] read(int maximumPartSize)
     {
         return new byte[0];

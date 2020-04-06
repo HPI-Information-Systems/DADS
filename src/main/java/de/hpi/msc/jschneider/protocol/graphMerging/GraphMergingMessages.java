@@ -24,6 +24,7 @@ public class GraphMergingMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
+                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }
@@ -55,6 +56,7 @@ public class GraphMergingMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
+                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }

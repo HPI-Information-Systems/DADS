@@ -349,7 +349,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                    dataReceiver ->
                                                    {
                                                        dataReceiver.setState(message.getIntersectionSegment());
-                                                       return dataReceiver.addSink(new DoublesSink())
+                                                       return dataReceiver.addSink(new DoublesSink(message.getNumberOfElements()))
                                                                           .whenFinished(this::onIntersectionsTransferFinished);
                                                    });
     }

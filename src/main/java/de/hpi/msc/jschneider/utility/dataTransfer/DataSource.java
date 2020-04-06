@@ -6,5 +6,7 @@ public interface DataSource
 
     int elementSizeInBytes();
 
+    int numberOfElements();
+
     byte[] read(int maximumPartSize);
 }

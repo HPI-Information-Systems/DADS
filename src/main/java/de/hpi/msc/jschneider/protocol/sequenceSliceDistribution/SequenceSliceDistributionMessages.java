@@ -25,6 +25,7 @@ public class SequenceSliceDistributionMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
+                            .numberOfElements(getNumberOfElements())
                             .subSequenceLength(getSubSequenceLength())
                             .convolutionSize(getConvolutionSize())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())

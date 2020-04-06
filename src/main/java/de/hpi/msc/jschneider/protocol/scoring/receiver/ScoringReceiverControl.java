@@ -67,7 +67,7 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            val sink = new DoublesSink();
+            val sink = new DoublesSink(message.getNumberOfElements());
             dataReceiver.setState(ProcessorId.of(message.getSender()));
             return dataReceiver.addSink(sink)
                                .whenFinished(this::onPathScoresTransferFinished);

@@ -63,6 +63,12 @@ public class GenericDataSource<TData> implements DataSource
     }
 
     @Override
+    public int numberOfElements()
+    {
+        return dataSizeProvider.apply(data).intValue();
+    }
+
+    @Override
     public byte[] read(int maximumPartSize)
     {
         assert maximumPartSize > -1 : "Length < 0!";

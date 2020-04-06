@@ -149,6 +149,12 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
+    public int numberOfElements()
+    {
+        return (int) maximumPosition;
+    }
+
+    @Override
     public byte[] read(int maximumPartSize)
     {
         val values = read(currentPosition, (long) Math.floor(maximumPartSize / (double) elementSizeInBytes()));

@@ -32,6 +32,12 @@ public class DoublesDataSource implements DataSource
     }
 
     @Override
+    public int numberOfElements()
+    {
+        return data.length;
+    }
+
+    @Override
     public byte[] read(int maximumPartSize)
     {
         assert maximumPartSize > -1 : "Length < 0!";

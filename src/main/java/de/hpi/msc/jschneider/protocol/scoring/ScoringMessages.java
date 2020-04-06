@@ -97,6 +97,7 @@ public class ScoringMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
+                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }

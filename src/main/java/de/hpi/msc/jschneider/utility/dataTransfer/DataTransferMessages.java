@@ -14,6 +14,7 @@ public class DataTransferMessages
         private static final long serialVersionUID = 7385042862954704746L;
         @NonNull
         private long operationId;
+        private int numberOfElements;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
