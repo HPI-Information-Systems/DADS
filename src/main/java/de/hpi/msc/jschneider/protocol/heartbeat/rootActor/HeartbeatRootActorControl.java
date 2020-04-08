@@ -126,10 +126,10 @@ public class HeartbeatRootActorControl extends AbstractProtocolParticipantContro
             }
 
             getLog().error("{} does not send heartbeats anymore!", participant);
-            trySendEvent(ProtocolType.Statistics, eventDispatcher -> HeartbeatEvents.HeartbeatPanicEvent.builder()
-                                                                                                        .sender(getModel().getSelf())
-                                                                                                        .receiver(eventDispatcher)
-                                                                                                        .build());
+            trySendEvent(ProtocolType.Heartbeat, eventDispatcher -> HeartbeatEvents.HeartbeatPanicEvent.builder()
+                                                                                                       .sender(getModel().getSelf())
+                                                                                                       .receiver(eventDispatcher)
+                                                                                                       .build());
             break;
         }
     }
