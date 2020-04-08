@@ -274,7 +274,7 @@ class Plotter:
 
             rate_receive.append(received * mibs_per_seconds)
             rate_send.append(sent * mibs_per_seconds)
-            rate_hover_texts.append("Total: {:.3f} MiB/s<br>end: {:.3f} MiB/S<br>Recv: {:.3f} MiB/s".format(
+            rate_hover_texts.append("Total: {:.3f} MiB/s<br>Send: {:.3f} MiB/S<br>Recv: {:.3f} MiB/s".format(
                 rate_receive[-1] + rate_send[-1],
                 rate_send[-1],
                 rate_receive[-1]
@@ -355,8 +355,12 @@ class Plotter:
                 if len(self_events) > 0:
                     self_start: float = (self_events[0].start_time - self._start_time).total_seconds()
                     self_end: float = (self_events[-1].end_time - self._start_time).total_seconds()
+                    self_duration: float = self_end - self_start
+                    if self_duration == 0:
+                        self_duration = 1.0
+
                     data_self: int = sum((x.transferred_bytes for x in self_events))
-                    data_self_rate: float = data_self / (self_end - self_start)
+                    data_self_rate: float = data_self / self_duration
                     text += "<br>Self: {:.3f} MiB ({:.3f} MiB/s)".format(data_self / float(1024 ** 2),
                                                                          data_self_rate / float(1024 ** 2))
 
@@ -365,8 +369,12 @@ class Plotter:
                 if len(sent_events) > 0:
                     sent_start: float = (sent_events[0].start_time - self._start_time).total_seconds()
                     sent_end: float = (sent_events[-1].end_time - self._start_time).total_seconds()
+                    sent_duration: float = sent_end - sent_start
+                    if sent_duration == 0:
+                        sent_duration = 1.0
+
                     sent: int = sum((x.transferred_bytes for x in sent_events))
-                    data_send_rate: float = sent / (sent_end - sent_start)
+                    data_send_rate: float = sent / sent_duration
                     text += "<br>Sent: {:.3f} MiB ({:.3f} MiB/s)".format(sent / float(1024 ** 2),
                                                                          data_send_rate / float(1024 ** 2))
 
@@ -375,8 +383,12 @@ class Plotter:
                 if len(receive_events) > 0:
                     receive_start: float = (receive_events[0].start_time - self._start_time).total_seconds()
                     receive_end: float = (receive_events[-1].end_time - self._start_time).total_seconds()
+                    receive_duration: float = receive_end - receive_start
+                    if receive_duration == 0:
+                        receive_duration = 1.0
+
                     received: int = sum((x.transferred_bytes for x in receive_events))
-                    data_receive_rate: float = received / (receive_end - receive_start)
+                    data_receive_rate: float = received / receive_duration
                     text += "<br>Recv: {:.3f} MiB ({:.3f} MiB/s)".format(received / float(1024 ** 2),
                                                                          data_receive_rate / float(1024 ** 2))
 

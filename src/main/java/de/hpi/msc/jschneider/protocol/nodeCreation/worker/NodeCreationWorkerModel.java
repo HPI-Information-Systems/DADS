@@ -6,6 +6,7 @@ import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.Getter;
@@ -48,6 +49,8 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     private final Map<Integer, List<double[]>> intersections = new HashMap<>();
     @NonNull @Getter
     private final Set<IntersectionCollection[]> intersectionCollections = new HashSet<>();
+    @NonNull @Getter
+    private final Counter totalNumberOfIntersections = new Counter(0L);
     @Setter @Getter
     private int expectedNumberOfIntersectionCollections;
     @NonNull @Getter

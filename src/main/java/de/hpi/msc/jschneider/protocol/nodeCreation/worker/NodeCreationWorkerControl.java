@@ -33,6 +33,7 @@ import org.ojalgo.function.aggregator.Aggregator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -247,6 +248,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
         try
         {
             getModel().getIntersectionCollections().add(message.getIntersectionCollections());
+            getModel().getTotalNumberOfIntersections().increment(Arrays.stream(message.getIntersectionCollections()).mapToLong(collection -> collection.getIntersections().size64()).sum());
 
             getLog().info("Received IntersectionCollections ({} / {}).",
                           getModel().getIntersectionCollections().size(),
@@ -283,11 +285,10 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     private IntersectionCollection[] combineIntersectionCollections()
     {
         val result = new IntersectionCollection[getModel().getNumberOfIntersectionSegments()];
+        val averageNumberOfIntersections = (long) Math.ceil(getModel().getTotalNumberOfIntersections().get() / (double) getModel().getNumberOfIntersectionSegments());
         for (var intersectionSegment = 0; intersectionSegment < result.length; ++intersectionSegment)
         {
-            result[intersectionSegment] = IntersectionCollection.builder()
-                                                                .intersectionSegment(intersectionSegment)
-                                                                .build();
+            result[intersectionSegment] = new IntersectionCollection(intersectionSegment, averageNumberOfIntersections);
         }
 
         for (var collections : getModel().getIntersectionCollections())

@@ -29,6 +29,8 @@ public class Calculate
 
     private static final double TWO_PI = 2 * Math.PI;
 
+    private static final MatrixStore<Double> ORIGIN_2D = makeRowVector(0.0d, 0.0d);
+
     public static boolean isSame(Number a, Number b)
     {
         return Math.abs(a.doubleValue() - b.doubleValue()) <= FLOATING_POINT_TOLERANCE;
@@ -142,11 +144,10 @@ public class Calculate
 
         val numberOfSegments = intersectionPoints.size();
         val intersectionCollections = new IntersectionCollection[numberOfSegments];
+        val estimatedNumberOfIntersectionsPerSegment = (long) Math.ceil(reducedProjection.countColumns() * 0.25d);
         for (var i = 0; i < intersectionCollections.length; ++i)
         {
-            intersectionCollections[i] = IntersectionCollection.builder()
-                                                               .intersectionSegment(i)
-                                                               .build();
+            intersectionCollections[i] = new IntersectionCollection(i, estimatedNumberOfIntersectionsPerSegment);
         }
 
         val nextIntersectionCreationIndex = new Counter(firstSubSequenceIndex * numberOfSegments);
@@ -154,24 +155,6 @@ public class Calculate
         {
             val current = reducedProjection.sliceColumn(columnIndex);
             val next = reducedProjection.sliceColumn(columnIndex + 1);
-
-//            var intersectionFound = false;
-//            for (var intersectionSegment = 0; intersectionSegment < numberOfSegments; ++intersectionSegment)
-//            {
-//                val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
-//                                                            firstSubSequenceIndex + columnIndex,
-//                                                            current,
-//                                                            next);
-//                if (!intersection.isPresent())
-//                {
-//                    continue;
-//                }
-//
-//                intersectionFound = true;
-//                intersectionCollections[intersectionSegment].getIntersections().add(intersection.get());
-//            }
-//
-//            assert intersectionFound : "Every pair of sub sequences must have an intersection somewhere!";
 
             for (val intersectionSegment : intersectionSegmentsToCheck(current, next, numberOfSegments))
             {
@@ -260,10 +243,8 @@ public class Calculate
                                                                    Access1D<Double> current,
                                                                    Access1D<Double> next)
     {
-        val origin = makeRowVector(0.0d, 0.0d);
-
-        val line1StartX = origin.get(0);
-        val line1StartY = origin.get(1);
+        val line1StartX = ORIGIN_2D.get(0);
+        val line1StartY = ORIGIN_2D.get(1);
         val line1EndX = intersectionPoint.get(0);
         val line1EndY = intersectionPoint.get(1);
         val line1DiffX = line1StartX - line1EndX;
@@ -295,7 +276,7 @@ public class Calculate
         val line2MinX = Math.min(line2StartX, line2EndX);
         val line2MinY = Math.min(line2StartY, line2EndY);
 
-        val line1Det = determinant(origin, intersectionPoint);
+        val line1Det = determinant(ORIGIN_2D, intersectionPoint);
         val line2Det = determinant(current, next);
         val determinants = makeRowVector(line1Det, line2Det);
 
@@ -324,7 +305,7 @@ public class Calculate
 
         val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
-                                       .intersectionDistance(distance(origin, intersection))
+                                       .intersectionDistance(length2D(intersection))
                                        .subSequenceIndex(subSequenceIndex)
                                        .creationIndex(intersectionCreationIndex)
                                        .build());
@@ -335,9 +316,9 @@ public class Calculate
         return a.get(0) * b.get(1) - b.get(0) * a.get(1);
     }
 
-    private static double distance(Access1D<Double> a, Access1D<Double> b)
+    private static double length2D(Access1D<Double> point)
     {
-        return Math.sqrt(Math.pow(a.get(0) - b.get(0), 2) + Math.pow(a.get(1) - b.get(1), 2));
+        return Math.sqrt(point.get(0) * point.get(0) + point.get(1) * point.get(1));
     }
 
     private static MatrixStore<Double> toColumnVector(MatrixStore<Double> input)
