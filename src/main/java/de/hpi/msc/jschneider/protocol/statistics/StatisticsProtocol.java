@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class StatisticsProtocol
 {
-    public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(250);
+    public static final Duration MEASUREMENT_INTERVAL = Duration.ofMillis(50);
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS");
 
     private static final Logger Log = LogManager.getLogger(StatisticsProtocol.class);

@@ -14,6 +14,8 @@ import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import lombok.val;
 import lombok.var;
 
@@ -24,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 public class ScoringWorkerControl extends AbstractProtocolParticipantControl<ScoringWorkerModel>
 {
@@ -399,38 +402,34 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         val minScore = getModel().getGlobalMaximumScore() * -1.0d;
         val maxScore = getModel().getGlobalMinimumScore() * -1.0d;
         val scoreRange = maxScore - minScore;
-        val normalizedScores = new double[getModel().getPathScores().size() + getModel().getOverlappingPathScores().length];
-        for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
-        {
-            var score = 0.0d;
-            if (scoreIndex < getModel().getOverlappingPathScores().length)
-            {
-                score = getModel().getOverlappingPathScores()[scoreIndex];
-            }
-            else
-            {
-                score = getModel().getPathScores().get(scoreIndex - getModel().getOverlappingPathScores().length);
-            }
+        val normalizationFactor = scoreRange * getModel().getSubSequenceLength();
 
-            normalizedScores[scoreIndex] = (-score - minScore) / scoreRange;
-        }
+        val scoresIterator = DoubleStream.concat(Arrays.stream(getModel().getOverlappingPathScores()), getModel().getPathScores().stream().mapToDouble(value -> value))
+                                         .map(score -> (-score - minScore) / normalizationFactor)
+                                         .iterator();
 
+        val numberOfMeans = (long) getModel().getOverlappingPathScores().length + getModel().getPathScores().size() - getModel().getSubSequenceLength() + 1L;
         var runningMean = 0.0d;
-        val runningMeans = new ArrayList<Double>();
-        final double windowSizeAsDouble = getModel().getSubSequenceLength();
-        for (var runningMeanStartIndex = 0; runningMeanStartIndex <= normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
+        val runningMeanWindow = new DoubleArrayList(getModel().getSubSequenceLength());
+        val runningMeans = new DoubleBigArrayBigList(numberOfMeans);
+        var meanIndex = 0L;
+        while (meanIndex++ < numberOfMeans)
         {
             if (runningMeans.isEmpty())
             {
                 for (var windowIndex = 0; windowIndex < getModel().getSubSequenceLength(); ++windowIndex)
                 {
-                    runningMean += normalizedScores[runningMeanStartIndex + windowIndex] / windowSizeAsDouble;
+                    val score = scoresIterator.nextDouble();
+                    runningMean += score;
+                    runningMeanWindow.add(score);
                 }
             }
             else
             {
-                runningMean -= normalizedScores[runningMeanStartIndex - 1] / windowSizeAsDouble;
-                runningMean += normalizedScores[runningMeanStartIndex + getModel().getSubSequenceLength() - 1] / windowSizeAsDouble;
+                val score = scoresIterator.nextDouble();
+                runningMean -= runningMeanWindow.removeDouble(0);
+                runningMean += score;
+                runningMeanWindow.add(score);
             }
 
             runningMeans.add(runningMean);
@@ -445,7 +444,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                                                                            .endTime(endTime)
                                                                                                            .build());
 
-        publishPathScores(Doubles.toArray(runningMeans));
+        publishPathScores(runningMeans.toDoubleArray());
     }
 
     private boolean isReadyToCalculateRunningMean()

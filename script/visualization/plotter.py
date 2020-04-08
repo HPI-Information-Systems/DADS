@@ -36,7 +36,7 @@ class Plotter:
 
     def __init__(self, processor: str,
                  events: Dict[str, List[StatisticsEvent]],
-                 show_annotations: bool = True,
+                 show_annotations: bool = False,
                  show_process_steps: bool = True):
         self._show_annotations: bool = show_annotations
         self._show_process_steps: bool = show_process_steps
