@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -220,6 +221,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                      .startTime(getModel().getStartTime())
                                                                                                      .endTime(getModel().getEndTime())
                                                                                                      .build());
+
+            getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
             return;
         }
 

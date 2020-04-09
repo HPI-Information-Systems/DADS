@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.merger;
 
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -8,6 +9,7 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import lombok.val;
 
 import java.util.Arrays;
@@ -117,6 +119,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
 
     private void publishGraph(ProcessorId[] workerSystems)
     {
+        getModel().setRunningGraphTransfers(new LongOpenHashSet(workerSystems.length));
         for (val workerSystem : workerSystems)
         {
             val protocol = getProtocol(workerSystem, ProtocolType.GraphMerging);
@@ -124,11 +127,26 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
                     : String.format("Unable to transfer graph to %1$s, because the processor does not implement the required protocol!", workerSystem);
 
             getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getEdges().values().toArray(new GraphEdge[0])),
-                                                         (dataDistributor, operationId) -> GraphMergingMessages.InitializeGraphTransferMessage.builder()
-                                                                                                                                              .sender(dataDistributor)
-                                                                                                                                              .receiver(protocol.get().getRootActor())
-                                                                                                                                              .operationId(operationId)
-                                                                                                                                              .build());
+                                                         (dataDistributor, operationId) ->
+                                                         {
+                                                             getModel().getRunningGraphTransfers().add(operationId);
+                                                             return GraphMergingMessages.InitializeGraphTransferMessage.builder()
+                                                                                                                       .sender(dataDistributor)
+                                                                                                                       .receiver(protocol.get().getRootActor())
+                                                                                                                       .operationId(operationId)
+                                                                                                                       .build();
+                                                         });
+        }
+    }
+
+    @Override
+    protected void onDataTransferFinished(long operationId)
+    {
+        getModel().getRunningGraphTransfers().remove(operationId);
+
+        if (getModel().getRunningGraphTransfers().isEmpty())
+        {
+            getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
         }
     }
 }

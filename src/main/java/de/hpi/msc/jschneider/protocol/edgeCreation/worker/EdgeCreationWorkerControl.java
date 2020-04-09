@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
@@ -343,6 +344,8 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                                          .receiver(eventDispatcher)
                                                                                                                          .graphPartition(graph)
                                                                                                                          .build());
+
+            getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
         }
         finally
         {
@@ -360,11 +363,6 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         for (var nodeIndex = 0; nodeIndex < nodes.length; ++nodeIndex)
         {
             val distance = Math.abs(nodes[nodeIndex] - intersection.getIntersectionDistance());
-//            if (distance < closestDistance)
-//            {
-//                closestIndex = nodeIndex;
-//                closestDistance = distance;
-//            }
             if (distance >= closestDistance)
             {
                 // since the nodes are already sorted by their distance to the origin,

@@ -6,6 +6,8 @@ import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ojalgo.function.aggregator.Aggregator;
 import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.store.MatrixStore;
@@ -25,6 +27,8 @@ import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
 
 public class Calculate
 {
+    private static final Logger Log = LogManager.getLogger(Calculate.class);
+
     public static final double FLOATING_POINT_TOLERANCE = 0.00001d;
 
     private static final double TWO_PI = 2 * Math.PI;
@@ -171,6 +175,10 @@ public class Calculate
                 intersectionCollections[intersectionSegment].getIntersections().add(intersection.get());
             }
         }
+
+        Log.info("Estimated number of intersections: {}; Actual number of intersections (avg.) {}.",
+                 estimatedNumberOfIntersectionsPerSegment,
+                 Arrays.stream(intersectionCollections).mapToLong(collection -> collection.getIntersections().size64()).sum() / (double) numberOfSegments);
 
         return intersectionCollections;
     }

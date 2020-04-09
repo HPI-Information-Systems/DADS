@@ -11,6 +11,7 @@ import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import lombok.SneakyThrows;
 import lombok.val;
 
 public class ReaperControl extends AbstractProtocolParticipantControl<ReaperModel>
@@ -65,12 +66,12 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
     {
         super.onTerminated(message);
 
-        if (!getModel().getWatchedActors().isEmpty())
-        {
-            return;
-        }
-
-        tryTerminateActorSystem();
+//        if (!getModel().getWatchedActors().isEmpty())
+//        {
+//            return;
+//        }
+//
+//        tryTerminateActorSystem();
     }
 
     private void onRegistrationAcknowledged(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent message)
@@ -90,11 +91,13 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
         }
     }
 
+    @SneakyThrows
     private void onReadyForTermination(ScoringEvents.ReadyForTerminationEvent message)
     {
         try
         {
             getLog().info("Received ready for termination event.");
+            Thread.sleep(1000); // wait for all actors to gracefully shut down
             tryTerminateActorSystem();
         }
         finally

@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -105,5 +106,7 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
                                                          .receiver(getModel().getGraphMerger())
                                                          .workerSystems(getModel().getWorkerSystems())
                                                          .build());
+
+        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 }

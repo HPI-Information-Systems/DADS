@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.receiver;
 
+import akka.actor.PoisonPill;
 import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -178,5 +179,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                       .maximumRecord(getModel().getMaximumRecord())
                                                                                                                                       .projection(projection)
                                                                                                                                       .build());
+
+        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 }

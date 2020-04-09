@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.receiver;
 
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingEvents;
@@ -59,5 +60,7 @@ public class GraphReceiverControl extends AbstractProtocolParticipantControl<Gra
                                                                                                         .receiver(eventDispatcher)
                                                                                                         .graph(getModel().getEdges())
                                                                                                         .build());
+
+        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 }

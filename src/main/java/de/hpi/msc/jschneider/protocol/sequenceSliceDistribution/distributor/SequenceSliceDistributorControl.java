@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor;
 
 import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
@@ -52,5 +53,11 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
                                                                                        .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                                        .operationId(operationId)
                                                                                        .build();
+    }
+
+    @Override
+    protected void onDataTransferFinished(long operationId)
+    {
+        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 }

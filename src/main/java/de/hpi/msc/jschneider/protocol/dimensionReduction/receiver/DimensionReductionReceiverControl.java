@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.receiver;
 
+import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -136,6 +137,8 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                       .build());
+
+        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 
     private MatrixStore<Double> reduceProjection()

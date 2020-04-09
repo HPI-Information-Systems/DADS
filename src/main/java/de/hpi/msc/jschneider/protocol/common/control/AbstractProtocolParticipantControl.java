@@ -32,6 +32,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         setModel(model);
         model.setDataTransferManager(new DataTransferManager(this));
+        model.getDataTransferManager().whenFinished(this::onDataTransferFinished);
     }
 
     protected final Logger getLog()
@@ -63,6 +64,11 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
                       .match(DataTransferMessages.DataPartMessage.class, getModel().getDataTransferManager()::onPart)
                       .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure)
                       .match(Terminated.class, this::onTerminated);
+    }
+
+    protected void onDataTransferFinished(long operationId)
+    {
+
     }
 
     protected void onBackPressure(MessageExchangeMessages.BackPressureMessage message)

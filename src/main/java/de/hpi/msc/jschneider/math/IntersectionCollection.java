@@ -13,6 +13,6 @@ public class IntersectionCollection
     public IntersectionCollection(int intersectionSegment, long estimatedNumberOfIntersections)
     {
         this.intersectionSegment = intersectionSegment;
-        intersections = new ObjectBigArrayBigList<>(Math.max(estimatedNumberOfIntersections, 256L));
+        intersections = new ObjectBigArrayBigList<>(Math.max(estimatedNumberOfIntersections, ObjectBigArrayBigList.DEFAULT_INITIAL_CAPACITY));
     }
 }
