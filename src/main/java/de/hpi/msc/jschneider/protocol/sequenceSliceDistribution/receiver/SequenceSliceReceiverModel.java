@@ -1,17 +1,12 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.receiver;
 
-import de.hpi.msc.jschneider.SystemParameters;
-import de.hpi.msc.jschneider.fileHandling.writing.BinaryDirectoryWriter;
-import de.hpi.msc.jschneider.fileHandling.writing.SequenceWriter;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.utility.matrix.MatrixBuilder;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 

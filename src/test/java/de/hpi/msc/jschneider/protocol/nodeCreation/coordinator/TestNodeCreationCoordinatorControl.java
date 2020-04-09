@@ -4,7 +4,6 @@ import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.TestProcessor;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
-import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import lombok.val;

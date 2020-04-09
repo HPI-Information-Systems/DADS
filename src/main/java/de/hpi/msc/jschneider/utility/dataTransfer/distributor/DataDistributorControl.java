@@ -92,6 +92,8 @@ public class DataDistributorControl extends AbstractProtocolParticipantControl<D
                                                                                                           .endTime(getModel().getEndTime())
                                                                                                           .transferredBytes(getModel().getTransferredBytes().get())
                                                                                                           .build());
+
+            isReadyToBeTerminated();
         }
     }
 }

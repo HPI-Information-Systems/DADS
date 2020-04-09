@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol;
 
 import akka.actor.ActorSystem;
-import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;

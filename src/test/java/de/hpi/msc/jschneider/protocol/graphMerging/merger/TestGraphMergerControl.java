@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.merger;
 
-import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;

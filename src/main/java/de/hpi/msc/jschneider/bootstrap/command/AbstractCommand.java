@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.bootstrap.command;
 
 import com.beust.jcommander.Parameter;
-import de.hpi.msc.jschneider.bootstrap.command.validation.DirectoryValidator;
 import de.hpi.msc.jschneider.bootstrap.command.validation.FileValidator;
 import de.hpi.msc.jschneider.bootstrap.command.validation.StringToPathConverter;
 import lombok.Getter;

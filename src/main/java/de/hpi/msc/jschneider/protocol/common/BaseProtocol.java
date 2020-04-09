@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
 @NoArgsConstructor @AllArgsConstructor @SuperBuilder @Getter

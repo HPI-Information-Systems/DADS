@@ -1,8 +1,6 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
-import akka.actor.RootActorPath;
 import akka.testkit.TestProbe;
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.ProtocolTestCase;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;

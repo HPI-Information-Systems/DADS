@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionSender;
 
 import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -68,6 +67,6 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
     @Override
     protected void onDataTransferFinished(long operationId)
     {
-        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
+        isReadyToBeTerminated();
     }
 }

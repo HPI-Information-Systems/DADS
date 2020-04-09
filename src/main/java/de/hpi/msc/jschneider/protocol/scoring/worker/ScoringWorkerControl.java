@@ -475,5 +475,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                                                                                                           .receiver(protocol.get().getRootActor())
                                                                                                                                           .operationId(operationId)
                                                                                                                                           .build());
+
+        isReadyToBeTerminated();
     }
 }

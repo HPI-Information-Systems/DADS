@@ -33,6 +33,11 @@ public class DataTransferManager
         this.control = control;
     }
 
+    public boolean hasRunningDataTransfers()
+    {
+        return !dataDistributors.isEmpty() || !dataReceivers.isEmpty();
+    }
+
     public DataTransferManager whenFinished(EventHandler<Long> handler)
     {
         onFinish.subscribe(handler);

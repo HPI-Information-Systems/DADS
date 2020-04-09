@@ -3,8 +3,6 @@ package de.hpi.msc.jschneider;
 import com.typesafe.config.Config;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
 
-import java.nio.file.Path;
-
 public class SystemParameters
 {
     private static AbstractCommand command;

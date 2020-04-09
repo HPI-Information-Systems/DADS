@@ -151,6 +151,7 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
                                                                    .build());
 
         val nodes = Doubles.toArray(nodeCollection.getNodes().stream().map(Node::getIntersectionLength).collect(Collectors.toList()));
+
         for (val participant : getModel().getParticipants())
         {
             val protocol = getProtocol(participant, ProtocolType.EdgeCreation);
@@ -164,5 +165,7 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
                                                                                                                                               .intersectionSegment(nodeCollection.getIntersectionSegment())
                                                                                                                                               .build());
         }
+
+        isReadyToBeTerminated();
     }
 }

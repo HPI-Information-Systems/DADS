@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
-import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
@@ -345,7 +344,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                                          .graphPartition(graph)
                                                                                                                          .build());
 
-            getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
+            isReadyToBeTerminated();
         }
         finally
         {

@@ -12,6 +12,7 @@ import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
@@ -27,6 +28,8 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
 {
     private Logger log;
     private TModel model;
+    private final Counter childActorCounter = new Counter(0L);
+    private boolean isReadyToBeTerminated = false;
 
     protected AbstractProtocolParticipantControl(TModel model)
     {
@@ -43,6 +46,12 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
         }
 
         return log;
+    }
+
+    protected void isReadyToBeTerminated()
+    {
+        isReadyToBeTerminated = true;
+        tryTerminateSelf();
     }
 
     @Override
@@ -68,7 +77,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
 
     protected void onDataTransferFinished(long operationId)
     {
-
+        tryTerminateSelf();
     }
 
     protected void onBackPressure(MessageExchangeMessages.BackPressureMessage message)
@@ -92,6 +101,28 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         tryUnwatch(message.getActor());
         getModel().getChildActors().remove(message.getActor());
+
+        tryTerminateSelf();
+    }
+
+    private void tryTerminateSelf()
+    {
+        if (!isReadyToBeTerminated)
+        {
+            return;
+        }
+
+        if (!getModel().getChildActors().isEmpty())
+        {
+            return;
+        }
+
+        if (!getModel().getDataTransferManager().hasRunningDataTransfers())
+        {
+            return;
+        }
+
+        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 
     @Override
@@ -210,8 +241,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         try
         {
-            val numberOfChildActors = getModel().getChildActors().size();
-            val child = getModel().getChildFactory().create(props, String.format("%1$s-%2$d", name, numberOfChildActors));
+            val child = getModel().getChildFactory().create(props, String.format("%1$s-%2$d", name, childActorCounter.getAndIncrement()));
             if (!getModel().getChildActors().add(child))
             {
                 child.tell(PoisonPill.getInstance(), getModel().getSelf());

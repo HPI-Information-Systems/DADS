@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.distributor;
 
-import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionMessages;
 import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
@@ -76,7 +75,9 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
             getModel().isRotationTransferCompleted() &&
             getModel().isColumnMeansTransferCompleted())
         {
-            getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
+            isReadyToBeTerminated();
         }
+
+        super.onDataTransferFinished(operationId);
     }
 }

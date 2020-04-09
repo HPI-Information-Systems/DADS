@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor;
 
 import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
@@ -29,8 +28,9 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         }
 
         getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializationMessageFactory);
-
         getLog().debug("Starting sequence slice transfer to {}.", getModel().getSliceReceiverActorSystem());
+
+        isReadyToBeTerminated();
     }
 
     @Override
@@ -53,11 +53,5 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
                                                                                        .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                                        .operationId(operationId)
                                                                                        .build();
-    }
-
-    @Override
-    protected void onDataTransferFinished(long operationId)
-    {
-        getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 }
