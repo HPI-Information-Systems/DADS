@@ -448,4 +448,9 @@ public class Calculate
 
         return (int) Math.pow(2, Math.ceil(log));
     }
+
+    public static int nextSmallerMultipleOf(int actualAmount, int baseNumber)
+    {
+        return actualAmount - (actualAmount % baseNumber);
+    }
 }

@@ -2,9 +2,12 @@ package de.hpi.msc.jschneider.utility;
 
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.structure.Access1D;
+import scala.Array;
 
 import java.nio.ByteBuffer;
 
@@ -23,6 +26,37 @@ public class Serialize
         assert size <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE bytes at once!";
 
         return (int) size;
+    }
+
+    public static int inPlace(DoubleIterator source, byte[] sink)
+    {
+        val elementSizeInBytes = Double.BYTES;
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        var sinkIndex = 0;
+        for (; source.hasNext() && sinkIndex + elementSizeInBytes <= sink.length; sinkIndex += elementSizeInBytes)
+        {
+            converter.putDouble(0, source.nextDouble());
+            Array.copy(converter.array(), 0, sink, sinkIndex, elementSizeInBytes);
+        }
+
+        return sinkIndex;
+    }
+
+    public static void backInPlace(byte[] source, int sourceLength, DoubleList sink)
+    {
+        val elementSizeInBytes = Double.BYTES;
+
+        assert source.length >= sourceLength : "SourceLength out of range!";
+        assert sourceLength % elementSizeInBytes == 0 : "SourceLength % ElementSize != 0!";
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        for (var sourceIndex = 0; sourceIndex < sourceLength; sourceIndex += elementSizeInBytes)
+        {
+            converter.position(0);
+            converter.put(source, sourceIndex, elementSizeInBytes);
+            sink.add(converter.getDouble(0));
+        }
     }
 
     public static byte[] toBytes(double[] doubles)

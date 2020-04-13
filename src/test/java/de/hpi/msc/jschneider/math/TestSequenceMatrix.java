@@ -86,7 +86,7 @@ public class TestSequenceMatrix extends TestCase
         // sub-sequence-length = 5
         // convolution-size = 2
         val data = new double[]{1, 3, 5, 7, 9, 11, 13, 15};
-        val subtrahends = (new RowMatrixBuilder(3).appendRow(new double[]{0.0d, 1.0d, 2.0d}).create());
+        val subtrahends = (new RowMatrixBuilder(3).append(new double[]{0.0d, 1.0d, 2.0d}).build());
 
         val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, data).subtractColumnBased(subtrahends);
 
@@ -121,7 +121,7 @@ public class TestSequenceMatrix extends TestCase
         // sub-sequence-length = 5
         // convolution-size = 2
         val data = new double[]{1, 3, 5, 7, 9, 11, 13, 15};
-        val subtrahends = (new RowMatrixBuilder(3).appendRow(new double[]{0.0d, 1.0d, 2.0d}).create());
+        val subtrahends = (new RowMatrixBuilder(3).append(new double[]{0.0d, 1.0d, 2.0d}).build());
         val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, data).subtractColumnBased(subtrahends).transpose();
 
         assertThat(matrix.countColumns()).isEqualTo(6);

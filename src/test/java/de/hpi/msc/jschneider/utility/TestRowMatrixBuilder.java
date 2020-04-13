@@ -11,10 +11,10 @@ public class TestRowMatrixBuilder extends TestCase
     public void testInitialize3x3()
     {
         val matrix = (new RowMatrixBuilder(3))
-                .appendRow(new double[]{1.0d, 2.0d, 3.0d})
-                .appendRow(new double[]{4.0d, 5.0d, 6.0d})
-                .appendRow(new double[]{7.0d, 8.0d, 9.0d})
-                .create();
+                .append(new double[]{1.0d, 2.0d, 3.0d})
+                .append(new double[]{4.0d, 5.0d, 6.0d})
+                .append(new double[]{7.0d, 8.0d, 9.0d})
+                .build();
 
         assertThat(matrix.countRows()).isEqualTo(3);
         assertThat(matrix.countColumns()).isEqualTo(3);
@@ -23,13 +23,13 @@ public class TestRowMatrixBuilder extends TestCase
     public void testConcat()
     {
         val firstMatrix = (new RowMatrixBuilder(3))
-                .appendRow(new double[]{0.0d, 1.0d, 2.0d})
-                .appendRow(new double[]{3.0d, 4.0d, 5.0d})
-                .create();
+                .append(new double[]{0.0d, 1.0d, 2.0d})
+                .append(new double[]{3.0d, 4.0d, 5.0d})
+                .build();
 
         val secondMatrix = (new RowMatrixBuilder(3))
-                .appendRow(new double[]{6.0d, 7.0d, 8.0d})
-                .create();
+                .append(new double[]{6.0d, 7.0d, 8.0d})
+                .build();
 
         val result = RowMatrixBuilder.concat(firstMatrix, secondMatrix);
 

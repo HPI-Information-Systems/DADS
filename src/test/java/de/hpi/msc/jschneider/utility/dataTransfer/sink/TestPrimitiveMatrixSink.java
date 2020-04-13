@@ -16,11 +16,11 @@ public class TestPrimitiveMatrixSink extends TestCase
     public void testClose()
     {
         val expectedMatrix = (new RowMatrixBuilder(3L)
-                                      .appendRow(new double[]{0.0d, 1.0d, 2.0d})
-                                      .appendRow(new double[]{3.0d, 4.0d, 5.0d})
-                                      .appendRow(new double[]{6.0d, 7.0d, 8.0d})
-                                      .appendRow(new double[]{9.0d, 10.0d, 11.0d})
-                                      .create());
+                                      .append(new double[]{0.0d, 1.0d, 2.0d})
+                                      .append(new double[]{3.0d, 4.0d, 5.0d})
+                                      .append(new double[]{6.0d, 7.0d, 8.0d})
+                                      .append(new double[]{9.0d, 10.0d, 11.0d})
+                                      .build());
 
         val values = new double[]{
                 0.0d, 3.0d, 6.0d, 9.0d,

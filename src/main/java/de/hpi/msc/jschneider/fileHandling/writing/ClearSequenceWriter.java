@@ -93,12 +93,6 @@ public class ClearSequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(byte[] part)
-    {
-        write(Serialize.toDoubles(part));
-    }
-
-    @Override
     public void close()
     {
         tryClose();

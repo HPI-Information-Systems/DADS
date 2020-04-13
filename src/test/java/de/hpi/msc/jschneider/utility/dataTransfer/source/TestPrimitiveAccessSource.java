@@ -11,11 +11,11 @@ public class TestPrimitiveAccessSource extends TestCase
 {
     public void testRead()
     {
-        val matrix = (new RowMatrixBuilder(3L).appendRow(new double[]{0.0d, 4.0d, 8.0d})
-                                              .appendRow(new double[]{1.0d, 5.0d, 9.0d})
-                                              .appendRow(new double[]{2.0d, 6.0d, 10.0d})
-                                              .appendRow(new double[]{3.0d, 7.0d, 11.0d})
-                                              .create());
+        val matrix = (new RowMatrixBuilder(3L).append(new double[]{0.0d, 4.0d, 8.0d})
+                                              .append(new double[]{1.0d, 5.0d, 9.0d})
+                                              .append(new double[]{2.0d, 6.0d, 10.0d})
+                                              .append(new double[]{3.0d, 7.0d, 11.0d})
+                                              .build());
         val source = GenericDataSource.create(matrix);
 
         assertThat(source.isAtEnd()).isFalse();
