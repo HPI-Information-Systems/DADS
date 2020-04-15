@@ -59,6 +59,7 @@ public class DensityWorkFactory implements WorkFactory
                                                                                    .samples(samples)
                                                                                    .pointsToEvaluate(pointsToEvaluate)
                                                                                    .weight(weight)
+                                                                                   .whitening(whitening)
                                                                                    .startFraction(nextChunkStart)
                                                                                    .endFraction(chunkEndFraction)
                                                                                    .build();
