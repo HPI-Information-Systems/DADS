@@ -314,7 +314,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
     {
         val responsibleProcessor = responsibleProcessor(intersectionCollection.getIntersectionSegment());
 
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(intersections),
+        getModel().getDataTransferManager().transfer(DataSource.create(intersectionCollection),
                                                      (dataDistributor, operationId) -> NodeCreationMessages.InitializeIntersectionsTransferMessage.builder()
                                                                                                                                                   .sender(dataDistributor)
                                                                                                                                                   .receiver(responsibleProcessor)

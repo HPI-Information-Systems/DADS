@@ -9,6 +9,8 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
