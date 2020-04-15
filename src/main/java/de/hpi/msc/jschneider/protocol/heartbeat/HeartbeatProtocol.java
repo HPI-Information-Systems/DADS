@@ -20,7 +20,7 @@ import java.util.Set;
 
 public class HeartbeatProtocol
 {
-    public static final boolean IS_ENABLED = true;
+    public static final boolean IS_ENABLED = false;
     public static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(5L);
     public static final Duration HEARTBEAT_WARNING_INTERVAL = Duration.ofSeconds(10L);
     public static final Duration HEARTBEAT_PANIC_INTERVAL = Duration.ofSeconds(15L);

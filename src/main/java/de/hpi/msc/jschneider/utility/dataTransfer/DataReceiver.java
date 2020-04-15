@@ -29,7 +29,6 @@ public class DataReceiver
     @Getter @Setter
     private Object state;
     private final EventImpl<DataReceiver> onFinished = new EventImpl<>();
-    private final EventImpl<DataTransferMessages.DataPartMessage> onDataPartReceived = new EventImpl<>();
     private final DataTransferMessages.InitializeDataTransferMessage initializationMessage;
     private final LocalDateTime startTime = LocalDateTime.now();
     private LocalDateTime endTime;
@@ -54,13 +53,26 @@ public class DataReceiver
         return this;
     }
 
-    public DataReceiver whenDataPartReceived(EventHandler<DataTransferMessages.DataPartMessage> handler)
+    public void requestSynchronization(ActorRef distributor)
     {
-        onDataPartReceived.subscribe(handler);
-        return this;
+        control.send(DataTransferMessages.RequestDataTransferSynchronizationMessage.builder()
+                                                                                   .sender(control.getModel().getSelf())
+                                                                                   .receiver(distributor)
+                                                                                   .operationId(operationId)
+                                                                                   .build());
     }
 
-    public void pull(ActorRef distributor)
+    public void synchronize(DataTransferMessages.DataTransferSynchronizationMessage message)
+    {
+        for (val sink : dataSinks)
+        {
+            sink.synchronize(message);
+        }
+
+        pull(message.getSender());
+    }
+
+    private void pull(ActorRef distributor)
     {
         if (finished)
         {
@@ -77,19 +89,17 @@ public class DataReceiver
 
     public void receive(DataTransferMessages.DataPartMessage message)
     {
-        transferredBytes.increment(message.getPart().length);
+        transferredBytes.increment(message.getPartLength());
 
         for (val sink : dataSinks)
         {
-            sink.write(message.getPart());
+            sink.write(message.getPart(), message.getPartLength());
 
             if (message.isLastPart())
             {
                 sink.close();
             }
         }
-
-        onDataPartReceived.invoke(message);
 
         if (!message.isLastPart())
         {

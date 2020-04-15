@@ -45,10 +45,12 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     private double[] densitySamples;
     @Setter @Getter
     private NodeCreationMessages.ReducedSubSequenceMessage reducedSubSequenceMessage;
-    @NonNull @Getter
-    private final Map<Integer, List<double[]>> intersections = new HashMap<>();
-    @NonNull @Getter
-    private final Set<IntersectionCollection[]> intersectionCollections = new HashSet<>();
+    @Setter @Getter
+    private Int2ObjectMap<DoubleBigList> intersections;
+    @Setter @Getter
+    private Int2ObjectMap<Counter> numberOfReceivedIntersectionCollections;
+    @Setter @Getter
+    private List<IntersectionCollection[]> intersectionCollections;
     @NonNull @Getter
     private final Counter totalNumberOfIntersections = new Counter(0L);
     @Setter @Getter

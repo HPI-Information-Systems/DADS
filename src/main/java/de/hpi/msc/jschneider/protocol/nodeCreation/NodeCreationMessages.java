@@ -79,7 +79,6 @@ public class NodeCreationMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .intersectionSegment(getIntersectionSegment())
                             .build();
         }
@@ -98,7 +97,6 @@ public class NodeCreationMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .intersectionSegment(getIntersectionSegment())
                             .build();
         }

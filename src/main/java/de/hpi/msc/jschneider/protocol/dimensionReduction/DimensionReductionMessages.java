@@ -21,7 +21,6 @@ public class DimensionReductionMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }
@@ -38,7 +37,6 @@ public class DimensionReductionMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }
@@ -56,7 +54,6 @@ public class DimensionReductionMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .numberOfColumns(getNumberOfColumns())
                             .build();
         }

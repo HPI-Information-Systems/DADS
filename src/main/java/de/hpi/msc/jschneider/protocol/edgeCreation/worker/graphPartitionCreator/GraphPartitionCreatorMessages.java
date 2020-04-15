@@ -7,6 +7,7 @@ import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.LocalIntersection;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -24,7 +25,7 @@ public class GraphPartitionCreatorMessages
         @NonNull
         private List<LocalIntersection> intersections;
         @NonNull
-        private Map<Integer, double[]> nodes;
+        private Map<Integer, DoubleBigList> nodes;
         private long firstSubSequenceIndex;
         private GraphNode lastNode;
         @NonNull

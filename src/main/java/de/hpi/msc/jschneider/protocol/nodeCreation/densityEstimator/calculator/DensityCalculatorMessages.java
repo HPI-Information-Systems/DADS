@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -16,10 +17,11 @@ public class DensityCalculatorMessages
     {
         private static final long serialVersionUID = -5411554227609332575L;
         @NonNull
-        private double[] samples;
+        private DoubleBigList samples;
         @NonNull
         private double[] pointsToEvaluate;
         private double weight;
+        private double whitening;
         private double startFraction;
         private double endFraction;
 
@@ -33,6 +35,7 @@ public class DensityCalculatorMessages
                             .samples(getSamples())
                             .pointsToEvaluate(getPointsToEvaluate())
                             .weight(getWeight())
+                            .whitening(getWhitening())
                             .startFraction(getStartFraction())
                             .endFraction(getEndFraction())
                             .build();

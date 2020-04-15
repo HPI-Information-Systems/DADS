@@ -24,7 +24,6 @@ public class GraphMergingMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }
@@ -33,7 +32,9 @@ public class GraphMergingMessages
     public static class EdgesReceivedMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = -7844535127694995217L;
+        @NonNull
         private GraphEdge[] edges;
+        private int edgesLength;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
@@ -56,7 +57,6 @@ public class GraphMergingMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }

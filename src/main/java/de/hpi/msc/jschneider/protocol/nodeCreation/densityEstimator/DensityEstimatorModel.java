@@ -4,6 +4,9 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.DensityCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleIterable;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import lombok.Getter;
 import lombok.NonNull;
@@ -24,12 +27,12 @@ public class DensityEstimatorModel extends AbstractProtocolParticipantModel
     private int intersectionSegment;
     @NonNull @Getter
     private Set<ProcessorId> participants;
-    @NonNull @Setter @Getter
-    private double[] samples;
+    @NonNull @Getter
+    private DoubleBigList samples;
     @NonNull @Getter
     private double[] pointsToEvaluate;
     @Setter @Getter
-    private double[] normalizedPointsToEvaluate;
+    private double whitening;
     @Setter @Getter
     private double normalizationFactor;
     @Setter @Getter

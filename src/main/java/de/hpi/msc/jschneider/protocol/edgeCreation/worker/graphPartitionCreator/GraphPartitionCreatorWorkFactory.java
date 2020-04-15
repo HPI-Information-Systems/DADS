@@ -8,6 +8,7 @@ import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkFactory;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.LocalIntersection;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.Getter;
 import lombok.val;
 import lombok.var;
@@ -21,7 +22,7 @@ public class GraphPartitionCreatorWorkFactory implements WorkFactory
 
     private final ActorRef supervisor;
     private final List<LocalIntersection> intersections;
-    private final Map<Integer, double[]> nodes;
+    private final Map<Integer, DoubleBigList> nodes;
     private final Counter nextSubSequenceIndex;
     private int nextChunkStartIndex = 0;
     private GraphNode lastNode;
@@ -32,7 +33,7 @@ public class GraphPartitionCreatorWorkFactory implements WorkFactory
 
     public GraphPartitionCreatorWorkFactory(ActorRef supervisor,
                                             List<LocalIntersection> intersections,
-                                            Map<Integer, double[]> nodes,
+                                            Map<Integer, DoubleBigList> nodes,
                                             long firstSubSequenceIndex,
                                             GraphNode lastNode,
                                             Int64Range localSubSequences)

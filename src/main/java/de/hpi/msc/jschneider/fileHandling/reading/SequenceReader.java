@@ -8,11 +8,7 @@ public interface SequenceReader extends DataSource
 
     long getPosition();
 
-    boolean isAtEnd();
-
     boolean isNull();
-
-    double[] read(long start, long length);
 
     SequenceReader subReader(long start, long length);
 }

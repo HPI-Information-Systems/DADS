@@ -50,7 +50,6 @@ public class PCAMessages
                             .minimumRecord(getMinimumRecord())
                             .maximumRecord(getMaximumRecord())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .build();
         }
     }
@@ -69,7 +68,6 @@ public class PCAMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .operationId(getOperationId())
-                            .numberOfElements(getNumberOfElements())
                             .processorIndex(getProcessorIndex())
                             .currentStepNumber(getCurrentStepNumber())
                             .build();

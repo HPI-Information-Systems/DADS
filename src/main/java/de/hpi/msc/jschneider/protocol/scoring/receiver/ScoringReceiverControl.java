@@ -12,8 +12,8 @@ import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoubleSink;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.val;
 
 import java.time.Duration;
@@ -67,22 +67,15 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            val sink = new DoublesSink(message.getNumberOfElements());
-            dataReceiver.setState(ProcessorId.of(message.getSender()));
+            val sink = new DoubleSink();
             return dataReceiver.addSink(sink)
-                               .whenFinished(this::onPathScoresTransferFinished);
+                               .whenFinished(receiver -> onPathScoresTransferFinished(ProcessorId.of(message.getSender()), sink));
         });
     }
 
-    private void onPathScoresTransferFinished(DataReceiver dataReceiver)
+    private void onPathScoresTransferFinished(ProcessorId workerSystem, DoubleSink sink)
     {
-        assert dataReceiver.getState() instanceof ProcessorId : "The data receiver state should be a ProcessorId!";
-        val workerSystem = (ProcessorId) dataReceiver.getState();
-
-        val doublesSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof DoublesSink).findFirst();
-        assert doublesSink.isPresent() : "The data receiver should have a DoublesSink!";
-
-        getModel().getPathScores().put(workerSystem, ((DoublesSink) doublesSink.get()).getDoubles());
+        getModel().getPathScores().put(workerSystem, sink.getDoubles());
         getModel().getRunningDataTransfers().remove(workerSystem);
 
         storeResults();
@@ -103,13 +96,15 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         val writer = ClearSequenceWriter.fromFile(filePath.toFile());
         val numberOfPathScores = new Counter(0L);
 
-        for (val scores : getModel().getPathScores().entrySet().stream()
+        for (val scores : getModel().getPathScores()
+                                    .object2ObjectEntrySet()
+                                    .stream()
                                     .sorted(Comparator.comparingLong(entry -> getModel().getSubSequenceResponsibilities().get(entry.getKey()).getFrom()))
                                     .map(Map.Entry::getValue)
-                                    .toArray(double[][]::new))
+                                    .toArray(DoubleBigList[]::new))
         {
             writer.write(scores);
-            numberOfPathScores.increment(scores.length);
+            numberOfPathScores.increment(scores.size64());
         }
         writer.close();
 

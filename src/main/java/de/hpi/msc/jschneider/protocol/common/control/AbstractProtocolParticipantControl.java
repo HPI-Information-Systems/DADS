@@ -71,6 +71,7 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     {
         return builder.match(DataTransferMessages.DataTransferFinishedMessage.class, getModel().getDataTransferManager()::onDataSent)
                       .match(DataTransferMessages.DataPartMessage.class, getModel().getDataTransferManager()::onPart)
+                      .match(DataTransferMessages.DataTransferSynchronizationMessage.class, getModel().getDataTransferManager()::onSynchronization)
                       .match(MessageExchangeMessages.BackPressureMessage.class, this::onBackPressure)
                       .match(Terminated.class, this::onTerminated);
     }

@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.protocol.dimensionReduction.distributor;
 
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionMessages;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 
 public class DimensionReductionDistributorControl extends AbstractProtocolParticipantControl<DimensionReductionDistributorModel>
 {
@@ -23,7 +23,7 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
 
     private void distributePrincipalComponents()
     {
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getPrincipalComponents()),
+        getModel().getDataTransferManager().transfer(DataSource.create(getModel().getPrincipalComponents()),
                                                      (dataDistributor, operationId) ->
                                                      {
                                                          getModel().setPrincipalComponentsTransferOperationId(operationId);
@@ -37,7 +37,7 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
 
     private void distributeRotation()
     {
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getRotation()),
+        getModel().getDataTransferManager().transfer(DataSource.create(getModel().getRotation()),
                                                      (dataDistributor, operationId) ->
                                                      {
                                                          getModel().setRotationTransferOperationId(operationId);
@@ -51,7 +51,7 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
 
     private void distributeColumnMeans()
     {
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getColumnMeans()),
+        getModel().getDataTransferManager().transfer(DataSource.create(getModel().getColumnMeans()),
                                                      (dataDistributor, operationId) ->
                                                      {
                                                          getModel().setColumnMeansTransferOperationId(operationId);

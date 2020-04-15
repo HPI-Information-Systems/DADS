@@ -12,7 +12,6 @@ import org.ojalgo.function.aggregator.Aggregator;
 import org.ojalgo.matrix.store.MatrixStore;
 
 import java.util.List;
-import java.util.stream.LongStream;
 
 public class IntersectionWorkFactory implements WorkFactory
 {
@@ -62,18 +61,20 @@ public class IntersectionWorkFactory implements WorkFactory
             end = projection.countColumns();
         }
 
-        val chunk = projection.logical().columns(LongStream.range(start, end).toArray()).get();
+        val chunkLength = end - start;
         val message = IntersectionCalculatorMessages.CalculateIntersectionsMessage.builder()
                                                                                   .sender(supervisor)
                                                                                   .receiver(worker)
                                                                                   .consumer(new IntersectionCalculator())
-                                                                                  .projectionChunk(chunk)
+                                                                                  .projection(projection)
+                                                                                  .chunkStart(start)
+                                                                                  .chunkLength(chunkLength)
                                                                                   .intersectionPoints(intersectionPoints)
                                                                                   .firstSubSequenceIndex(nextChunkFirstSubSequenceIndex.get())
                                                                                   .build();
 
-        nextChunkStartIndex.increment(chunk.countColumns() - 1);
-        nextChunkFirstSubSequenceIndex.increment(chunk.countColumns() - 1);
+        nextChunkStartIndex.increment(chunkLength - 1);
+        nextChunkFirstSubSequenceIndex.increment(chunkLength - 1);
         producedChunks++;
 
         return message;

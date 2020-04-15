@@ -6,8 +6,6 @@ import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
 import lombok.val;
 import lombok.var;
 
-import java.util.Arrays;
-
 public class LessPointsThanSamplesCalculator implements WorkConsumer
 {
     @Override
@@ -26,12 +24,14 @@ public class LessPointsThanSamplesCalculator implements WorkConsumer
 
         for (var resultsIndex = startIndex; resultsIndex < endIndex; ++resultsIndex)
         {
-            val scaledPointsIndex = resultsIndex;
-            results[resultsIndex - startIndex] = Arrays.stream(message.getSamples())
-                                                       .map(sample -> sample - message.getPointsToEvaluate()[scaledPointsIndex])
-                                                       .map(diff -> (diff * diff) * 0.5d)
-                                                       .map(energy -> Math.exp(-energy) * message.getWeight())
-                                                       .sum();
+            val pointToEvaluate = message.getPointsToEvaluate()[resultsIndex] * message.getWhitening();
+
+            results[resultsIndex - startIndex] = message.getSamples().stream()
+                                                        .mapToDouble(value -> value)
+                                                        .map(sample -> sample * message.getWhitening() - pointToEvaluate)
+                                                        .map(diff -> diff * diff * 0.5d)
+                                                        .map(energy -> Math.exp(-energy) * message.getWeight())
+                                                        .sum();
         }
 
         control.send(DensityCalculatorMessages.DensityProbabilitiesEstimatedMessage.builder()

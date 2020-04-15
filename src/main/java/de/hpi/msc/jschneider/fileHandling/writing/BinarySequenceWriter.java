@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
 import de.hpi.msc.jschneider.utility.Serialize;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.val;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public class BinarySequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(double[] records)
+    public void write(DoubleBigList records)
     {
         if (!isOpen)
         {
@@ -77,12 +78,13 @@ public class BinarySequenceWriter implements SequenceWriter
 
         try
         {
-            val bytes = ByteBuffer.allocate(records.length * Double.BYTES);
+            val elementSizeInBytes = Double.BYTES;
+            val converter = ByteBuffer.allocate(elementSizeInBytes);
             for (val record : records)
             {
-                bytes.putDouble(record);
+                converter.putDouble(0, record);
+                outputStream.write(converter.array());
             }
-            outputStream.write(bytes.array());
         }
         catch (IOException ioException)
         {

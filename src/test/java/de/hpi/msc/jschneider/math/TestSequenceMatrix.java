@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.math;
 
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import junit.framework.TestCase;
 import lombok.val;
 
@@ -8,13 +10,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSequenceMatrix extends TestCase
 {
+    private DoubleBigList sequenceMatrixData()
+    {
+        val data = new DoubleBigArrayBigList(8L);
+        data.add(1.0d);
+        data.add(3.0d);
+        data.add(5.0d);
+        data.add(7.0d);
+        data.add(9.0d);
+        data.add(11.0d);
+        data.add(13.0d);
+        data.add(15.0d);
+
+        return data;
+    }
+
     public void testNotTransposed()
     {
         // sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         // sub-sequence-length = 5
         // convolution-size = 2
-        val data = new double[]{1, 3, 5, 7, 9, 11, 13, 15};
-        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, data);
+        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, sequenceMatrixData());
 
         assertThat(matrix.countColumns()).isEqualTo(3);
         assertThat(matrix.countRows()).isEqualTo(6);
@@ -49,8 +65,7 @@ public class TestSequenceMatrix extends TestCase
         // sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         // sub-sequence-length = 5
         // convolution-size = 2
-        val data = new double[]{1, 3, 5, 7, 9, 11, 13, 15};
-        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, data).transpose();
+        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, sequenceMatrixData()).transpose();
 
         assertThat(matrix.countColumns()).isEqualTo(6);
         assertThat(matrix.countRows()).isEqualTo(3);
@@ -85,10 +100,9 @@ public class TestSequenceMatrix extends TestCase
         // sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         // sub-sequence-length = 5
         // convolution-size = 2
-        val data = new double[]{1, 3, 5, 7, 9, 11, 13, 15};
         val subtrahends = (new RowMatrixBuilder(3).append(new double[]{0.0d, 1.0d, 2.0d}).build());
 
-        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, data).subtractColumnBased(subtrahends);
+        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, sequenceMatrixData()).subtractColumnBased(subtrahends);
 
         assertThat(matrix.get(0L, 0L)).isEqualTo(1.0d);
         assertThat(matrix.get(0L, 1L)).isEqualTo(2.0d);
@@ -120,9 +134,8 @@ public class TestSequenceMatrix extends TestCase
         // sequence = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         // sub-sequence-length = 5
         // convolution-size = 2
-        val data = new double[]{1, 3, 5, 7, 9, 11, 13, 15};
         val subtrahends = (new RowMatrixBuilder(3).append(new double[]{0.0d, 1.0d, 2.0d}).build());
-        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, data).subtractColumnBased(subtrahends).transpose();
+        val matrix = new SequenceMatrix(3 /* sub-sequence-length - convolution-size */, sequenceMatrixData()).subtractColumnBased(subtrahends).transpose();
 
         assertThat(matrix.countColumns()).isEqualTo(6);
         assertThat(matrix.countRows()).isEqualTo(3);

@@ -16,7 +16,9 @@ import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoubleSink;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import lombok.val;
 import lombok.var;
 
@@ -63,6 +65,7 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
             getModel().setLocalSegments(message.getSegmentResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setLocalSubSequences(message.getSubSequenceResponsibilities().get(ProcessorId.of(getModel().getSelf())));
             getModel().setNumberOfIntersectionSegments(message.getNumberOfIntersectionSegments());
+            getModel().setNodesInSegment(new Int2ObjectArrayMap<>(getModel().getLocalSegments().length()));
 
             setNextResponsibleProcessor(message);
 
@@ -181,23 +184,17 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         getModel().getDataTransferManager().accept(message,
                                                    dataReceiver ->
                                                    {
-                                                       dataReceiver.setState(message.getIntersectionSegment());
-                                                       return dataReceiver.addSink(new DoublesSink(message.getNumberOfElements()))
-                                                                          .whenFinished(this::onNodesTransferFinished);
+                                                       val sink = new DoubleSink();
+                                                       return dataReceiver.addSink(sink)
+                                                                          .whenFinished(receiver -> onNodeTransferFinished(message.getIntersectionSegment(), sink));
                                                    });
     }
 
-    private void onNodesTransferFinished(DataReceiver dataReceiver)
+    private void onNodeTransferFinished(int intersectionSegment, DoubleSink sink)
     {
-        assert dataReceiver.getState() instanceof Integer : "DataReceiver state should be an Integer!";
+        assert getModel().getNodesInSegment().get(intersectionSegment) == null : "Nodes for this segment have already been created!";
 
-        val doublesSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof DoublesSink).findFirst();
-        assert doublesSink.isPresent() : "DataReceiver should contain a DoublesSink!";
-
-        val intersectionSegment = (int) dataReceiver.getState();
-        val nodes = ((DoublesSink) doublesSink.get()).getDoubles();
-
-        getModel().getNodesInSegment().put(intersectionSegment, nodes);
+        getModel().getNodesInSegment().put(intersectionSegment, sink.getDoubles());
         trySendLastNodeToNextResponsibleProcessor(intersectionSegment);
         createGraphPartitions();
     }
@@ -359,9 +356,9 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
 
         var closestIndex = 0;
         var closestDistance = Double.MAX_VALUE;
-        for (var nodeIndex = 0; nodeIndex < nodes.length; ++nodeIndex)
+        for (var nodeIndex = 0; nodeIndex < nodes.size64(); ++nodeIndex)
         {
-            val distance = Math.abs(nodes[nodeIndex] - intersection.getIntersectionDistance());
+            val distance = Math.abs(nodes.getDouble(nodeIndex) - intersection.getIntersectionDistance());
             if (distance >= closestDistance)
             {
                 // since the nodes are already sorted by their distance to the origin,

@@ -80,19 +80,19 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
 
     private void onPrincipalComponentTransferFinished(DataReceiver dataReceiver)
     {
-        getModel().setPrincipalComponents(getModel().getPrincipalComponentsSink().getMatrix(3L));
+        getModel().setPrincipalComponents(getModel().getPrincipalComponentsSink().getMatrix());
         performDimensionReduction();
     }
 
     private void onRotationTransferFinished(DataReceiver dataReceiver)
     {
-        getModel().setRotation(getModel().getRotationSink().getMatrix(3L));
+        getModel().setRotation(getModel().getRotationSink().getMatrix());
         performDimensionReduction();
     }
 
     private void onColumnMeansTransferFinished(DataReceiver dataReceiver)
     {
-        getModel().setColumnMeans(getModel().getColumnMeansSink().getMatrix(getModel().getNumberOfColumns()));
+        getModel().setColumnMeans(getModel().getColumnMeansSink().getMatrix());
         performDimensionReduction();
     }
 

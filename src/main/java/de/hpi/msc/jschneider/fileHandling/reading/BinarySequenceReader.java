@@ -1,8 +1,11 @@
 package de.hpi.msc.jschneider.fileHandling.reading;
 
-import de.hpi.msc.jschneider.utility.Serialize;
+import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.math.Calculate;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
-import lombok.var;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,7 +13,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 public class BinarySequenceReader implements SequenceReader
 {
@@ -20,7 +22,7 @@ public class BinarySequenceReader implements SequenceReader
     {
         try
         {
-            return new BinarySequenceReader(file);
+            return new BinarySequenceReader(file, SystemParameters.getMaximumMessageSize());
         }
         catch (NullPointerException | IllegalArgumentException | FileNotFoundException exception)
         {
@@ -35,8 +37,10 @@ public class BinarySequenceReader implements SequenceReader
     private long currentPosition;
     private final long minimumPosition;
     private final long maximumPosition;
+    private final byte[] readBuffer;
+    private int readBufferLength;
 
-    private BinarySequenceReader(File file) throws NullPointerException, IllegalArgumentException, FileNotFoundException
+    private BinarySequenceReader(File file, int maximumMessageSize) throws NullPointerException, IllegalArgumentException, FileNotFoundException
     {
         if (file == null)
         {
@@ -50,18 +54,20 @@ public class BinarySequenceReader implements SequenceReader
 
         this.file = file;
         inputStream = new FileInputStream(file.getAbsolutePath());
-        maximumPosition = tryGetSize() / elementSizeInBytes() - 1;
+        maximumPosition = tryGetSize() / Double.BYTES;
         minimumPosition = 0L;
         currentPosition = minimumPosition;
+        readBuffer = new byte[Calculate.nextSmallerMultipleOf((int) (maximumMessageSize * DataSource.MESSAGE_SIZE_SCALING_FACTOR), Double.BYTES)];
     }
 
-    private BinarySequenceReader(File file, long minimumPosition, long maximumPosition) throws FileNotFoundException
+    private BinarySequenceReader(File file, long minimumPosition, long maximumPosition, int maximumMessageSize) throws FileNotFoundException
     {
         this.file = file;
         this.inputStream = new FileInputStream(file.getAbsolutePath());
         this.minimumPosition = minimumPosition;
         this.maximumPosition = maximumPosition;
         currentPosition = minimumPosition;
+        readBuffer = new byte[Calculate.nextSmallerMultipleOf((int) (maximumMessageSize * DataSource.MESSAGE_SIZE_SCALING_FACTOR), Double.BYTES)];
     }
 
     private long tryGetSize()
@@ -102,26 +108,10 @@ public class BinarySequenceReader implements SequenceReader
         }
     }
 
-    private double tryReadNext()
-    {
-        try
-        {
-            val bytes = new byte[elementSizeInBytes()];
-            inputStream.read(bytes);
-            return ByteBuffer.wrap(bytes).getDouble();
-        }
-        catch (IOException ioException)
-        {
-            ioException.printStackTrace();
-            tryClose();
-            return 0.0d;
-        }
-    }
-
     @Override
     public long getSize()
     {
-        return maximumPosition - minimumPosition + 1;
+        return maximumPosition - minimumPosition;
     }
 
     @Override
@@ -131,9 +121,56 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
-    public boolean isAtEnd()
+    public DataTransferMessages.DataTransferSynchronizationMessage createSynchronizationMessage(ActorRef sender, ActorRef receiver, long operationId)
     {
-        return currentPosition >= maximumPosition;
+        return DataTransferMessages.DataTransferSynchronizationMessage.builder()
+                                                                      .sender(sender)
+                                                                      .receiver(receiver)
+                                                                      .operationId(operationId)
+                                                                      .numberOfElements(getSize())
+                                                                      .bufferSize(readBuffer.length)
+                                                                      .build();
+    }
+
+    @Override
+    public boolean hasNext()
+    {
+        return currentPosition < maximumPosition;
+    }
+
+    @Override
+    public void next()
+    {
+        if (!isOpen)
+        {
+            readBufferLength = 0;
+            return;
+        }
+
+        try
+        {
+            inputStream.getChannel().position(currentPosition * Double.BYTES);
+            readBufferLength = inputStream.read(readBuffer, 0, (int) Math.min(readBuffer.length, (maximumPosition - currentPosition) * Double.BYTES));
+            currentPosition += readBufferLength / Double.BYTES;
+        }
+        catch (IOException ioException)
+        {
+            Log.error("Exception while reading from file!", ioException);
+            readBufferLength = 0;
+            tryClose();
+        }
+    }
+
+    @Override
+    public byte[] buffer()
+    {
+        return readBuffer;
+    }
+
+    @Override
+    public int bufferLength()
+    {
+        return readBufferLength;
     }
 
     @Override
@@ -143,70 +180,14 @@ public class BinarySequenceReader implements SequenceReader
     }
 
     @Override
-    public int elementSizeInBytes()
-    {
-        return Double.BYTES;
-    }
-
-    @Override
-    public int numberOfElements()
-    {
-        return (int) maximumPosition;
-    }
-
-    @Override
-    public byte[] read(int maximumPartSize)
-    {
-        val values = read(currentPosition, (long) Math.floor(maximumPartSize / (double) elementSizeInBytes()));
-        currentPosition += values.length;
-
-        return Serialize.toBytes(values);
-    }
-
-    @Override
-    public double[] read(long start, long length)
-    {
-        val begin = Math.max(minimumPosition, Math.min(maximumPosition, start));
-        var end = Math.max(minimumPosition, Math.min(maximumPosition, begin + length - 1));
-        return tryRead(begin, end);
-    }
-
-    private double[] tryRead(long begin, long end)
-    {
-        var length = end - begin + 1;
-        if (length > Integer.MAX_VALUE)
-        {
-            Log.error("Can not allocate more than Integer.MAX_VALUE doubles at once!");
-            length = Integer.MAX_VALUE;
-        }
-
-        val doubles = new double[(int) length];
-        try
-        {
-            inputStream.getChannel().position(begin * elementSizeInBytes());
-            for (var i = 0; i < length; ++i)
-            {
-                doubles[i] = tryReadNext();
-            }
-        }
-        catch (IOException ioException)
-        {
-            ioException.printStackTrace();
-            tryClose();
-        }
-
-        return doubles;
-    }
-
-    @Override
     public SequenceReader subReader(long start, long length)
     {
         try
         {
             val min = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start));
-            val max = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length - 1));
+            val max = Math.max(minimumPosition, Math.min(maximumPosition, minimumPosition + start + length));
 
-            return new BinarySequenceReader(file, min, max);
+            return new BinarySequenceReader(file, min, max, readBuffer.length);
         }
         catch (FileNotFoundException fileNotFoundException)
         {

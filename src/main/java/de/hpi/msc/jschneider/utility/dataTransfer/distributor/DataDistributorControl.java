@@ -13,9 +13,6 @@ import java.time.LocalDateTime;
 
 public class DataDistributorControl extends AbstractProtocolParticipantControl<DataDistributorModel>
 {
-    public static final double MESSAGE_SIZE_FACTOR = 0.25d;
-
-
     public DataDistributorControl(DataDistributorModel model)
     {
         super(model);
@@ -25,6 +22,7 @@ public class DataDistributorControl extends AbstractProtocolParticipantControl<D
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return super.complementReceiveBuilder(builder)
+                    .match(DataTransferMessages.RequestDataTransferSynchronizationMessage.class, this::onRequestSynchronization)
                     .match(DataTransferMessages.RequestNextDataPartMessage.class, this::onRequestNextDataPart);
     }
 
@@ -38,6 +36,18 @@ public class DataDistributorControl extends AbstractProtocolParticipantControl<D
 
         getModel().setInitializationMessage(initializationMessage);
         getModel().setStartTime(LocalDateTime.now());
+    }
+
+    private void onRequestSynchronization(DataTransferMessages.RequestDataTransferSynchronizationMessage message)
+    {
+        try
+        {
+            send(getModel().getDataSource().createSynchronizationMessage(getModel().getSelf(), message.getSender(), getModel().getOperationId()));
+        }
+        finally
+        {
+            complete(message);
+        }
     }
 
     private void onRequestNextDataPart(DataTransferMessages.RequestNextDataPartMessage message)
@@ -59,19 +69,24 @@ public class DataDistributorControl extends AbstractProtocolParticipantControl<D
             return;
         }
 
-        val data = getModel().getDataSource().read((int) (getModel().getMaximumMessageSize() * MESSAGE_SIZE_FACTOR));
-        getModel().getTransferredBytes().increment(data.length);
+        getModel().getDataSource().next();
+
+        val buffer = getModel().getDataSource().buffer();
+        val bufferLength = getModel().getDataSource().bufferLength();
+
+        getModel().getTransferredBytes().increment(bufferLength);
 
         val message = DataTransferMessages.DataPartMessage.builder()
                                                           .sender(getModel().getSelf())
                                                           .receiver(receiver)
-                                                          .part(data)
-                                                          .isLastPart(getModel().getDataSource().isAtEnd())
+                                                          .part(buffer)
+                                                          .partLength(bufferLength)
+                                                          .isLastPart(!getModel().getDataSource().hasNext())
                                                           .operationId(getModel().getOperationId())
                                                           .build();
         send(message);
 
-        if (getModel().getDataSource().isAtEnd() && !getModel().isFinished())
+        if (!getModel().getDataSource().hasNext() && !getModel().isFinished())
         {
             getModel().setFinished(true);
             getModel().setEndTime(LocalDateTime.now());

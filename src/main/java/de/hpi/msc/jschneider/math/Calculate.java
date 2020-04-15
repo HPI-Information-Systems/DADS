@@ -1,9 +1,13 @@
 package de.hpi.msc.jschneider.math;
 
 import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
@@ -15,13 +19,10 @@ import org.ojalgo.structure.Access1D;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+import java.util.stream.StreamSupport;
 
 import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
 
@@ -141,27 +142,35 @@ public class Calculate
         return Math.acos(dotProduct / (lengthA * lengthB));
     }
 
-    public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection, List<MatrixStore<Double>> intersectionPoints, long firstSubSequenceIndex)
+    public static IntersectionCollection[] intersections(MatrixStore<Double> reducedProjection,
+                                                         long chunkStart,
+                                                         long chunkLength ,
+                                                         List<MatrixStore<Double>> intersectionPoints,
+                                                         long firstSubSequenceIndex)
     {
         assert reducedProjection.countRows() == 2 : "ReducedProjection must have 2 dimensions in column vector format!";
-        assert reducedProjection.countColumns() > 1 : "ReducedProjection must have at least 2 records!";
+        assert chunkLength > 1 : "ReducedProjection must have at least 2 records!";
+        assert reducedProjection.countColumns() >= chunkStart + chunkLength : "ChunkStart + ChunkLength > CountColumns!";
 
         val numberOfSegments = intersectionPoints.size();
         val intersectionCollections = new IntersectionCollection[numberOfSegments];
-        val estimatedNumberOfIntersectionsPerSegment = (long) Math.ceil(reducedProjection.countColumns() * 0.25d);
+        val estimatedNumberOfIntersectionsPerSegment = (long) (Math.ceil(chunkLength / (double) numberOfSegments) + numberOfSegments) * 2L;
         for (var i = 0; i < intersectionCollections.length; ++i)
         {
             intersectionCollections[i] = new IntersectionCollection(i, estimatedNumberOfIntersectionsPerSegment);
         }
 
+        val intersectionSegments = new int[numberOfSegments + 2]; // TODO: `+2` should not be needed, however in `ìntersectionSegmentsToCheck(...)` we still need it ==> why?!
         val nextIntersectionCreationIndex = new Counter(firstSubSequenceIndex * numberOfSegments);
-        for (var columnIndex = 0; columnIndex < reducedProjection.countColumns() - 1; ++columnIndex)
+        for (var columnIndex = 0; columnIndex < chunkLength - 1; ++columnIndex)
         {
-            val current = reducedProjection.sliceColumn(columnIndex);
-            val next = reducedProjection.sliceColumn(columnIndex + 1);
+            val current = reducedProjection.sliceColumn(chunkStart + columnIndex);
+            val next = reducedProjection.sliceColumn(chunkStart + columnIndex + 1);
 
-            for (val intersectionSegment : intersectionSegmentsToCheck(current, next, numberOfSegments))
+            val intersectionSegmentsLength = intersectionSegmentsToCheck(current, next, numberOfSegments, intersectionSegments);
+            for (var intersectionSegmentIndex = 0; intersectionSegmentIndex < intersectionSegmentsLength; ++intersectionSegmentIndex)
             {
+                val intersectionSegment = intersectionSegments[intersectionSegmentIndex];
                 val intersection = tryCalculateIntersection(intersectionPoints.get(intersectionSegment),
                                                             firstSubSequenceIndex + columnIndex,
                                                             nextIntersectionCreationIndex.getAndIncrement(),
@@ -176,9 +185,16 @@ public class Calculate
             }
         }
 
-        Log.info("Estimated number of intersections: {}; Actual number of intersections (avg.) {}.",
-                 estimatedNumberOfIntersectionsPerSegment,
-                 Arrays.stream(intersectionCollections).mapToLong(collection -> collection.getIntersections().size64()).sum() / (double) numberOfSegments);
+        if (Debug.IS_ENABLED)
+        {
+            val max = Arrays.stream(intersectionCollections).mapToLong(collection -> collection.getIntersections().size64()).max().orElse(0L);
+            if (max > estimatedNumberOfIntersectionsPerSegment)
+            {
+                Log.warn("Estimated number of intersections was lower than actual maximum number of intersections! ({} vs. {})",
+                         estimatedNumberOfIntersectionsPerSegment,
+                         max);
+            }
+        }
 
         return intersectionCollections;
     }
@@ -198,7 +214,7 @@ public class Calculate
         return intersectionPoints;
     }
 
-    private static int[] intersectionSegmentsToCheck(Access1D<Double> current, Access1D<Double> next, int numberOfSegments)
+    private static int intersectionSegmentsToCheck(Access1D<Double> current, Access1D<Double> next, int numberOfSegments, int[] intersectionSegmentsToCheck)
     {
         val currentX = current.get(0);
         val currentY = current.get(1);
@@ -235,14 +251,17 @@ public class Calculate
             }
         }
         diff = Math.min(diff, halfSamples);
-        val intersectionPointIndices = new int[2 * (diff + 1)];
+        val intersectionSegmentsToCheckLength = 2 * (diff + 1);
+
+        assert intersectionSegmentsToCheckLength <= intersectionSegmentsToCheck.length : "IntersectionSegmentLength out of range!";
+
         val intersectionPointOffset = -diff - 1;
-        for (var i = 0; i < intersectionPointIndices.length; ++i)
+        for (var i = 0; i < intersectionSegmentsToCheckLength; ++i)
         {
-            intersectionPointIndices[i] = Math.floorMod(currentIntersectionPointIndex + intersectionPointOffset + i, numberOfSegments);
+            intersectionSegmentsToCheck[i] = Math.floorMod(currentIntersectionPointIndex + intersectionPointOffset + i, numberOfSegments);
         }
 
-        return intersectionPointIndices;
+        return intersectionSegmentsToCheckLength;
     }
 
     private static Optional<Intersection> tryCalculateIntersection(Access1D<Double> intersectionPoint,
@@ -265,10 +284,7 @@ public class Calculate
         val line2DiffX = line2StartX - line2EndX;
         val line2DiffY = line2StartY - line2EndY;
 
-        val diffX = makeRowVector(line1DiffX, line2DiffX);
-        val diffY = makeRowVector(line1DiffY, line2DiffY);
-
-        val div = determinant(diffX, diffY);
+        val div = determinant(line1DiffX, line2DiffX, line1DiffY, line2DiffY);
         if (div == 0)
         {
             return Optional.empty();
@@ -286,10 +302,9 @@ public class Calculate
 
         val line1Det = determinant(ORIGIN_2D, intersectionPoint);
         val line2Det = determinant(current, next);
-        val determinants = makeRowVector(line1Det, line2Det);
 
-        val intersectionX = determinant(determinants, diffX) / div;
-        val intersectionY = determinant(determinants, diffY) / div;
+        val intersectionX = determinant(line1Det, line2Det, line1DiffX, line2DiffX) / div;
+        val intersectionY = determinant(line1Det, line2Det, line1DiffY, line2DiffY) / div;
 
 //        if (isMore(intersectionX, line1MaxX) || isLess(intersectionX, line1MinX) || isMore(intersectionX, line2MaxX) || isLess(intersectionX, line2MinX))
 //        {
@@ -311,9 +326,8 @@ public class Calculate
             return Optional.empty();
         }
 
-        val intersection = makeRowVector(intersectionX, intersectionY).transpose();
         return Optional.of(Intersection.builder()
-                                       .intersectionDistance(length2D(intersection))
+                                       .intersectionDistance(length2D(intersectionX, intersectionY))
                                        .subSequenceIndex(subSequenceIndex)
                                        .creationIndex(intersectionCreationIndex)
                                        .build());
@@ -324,9 +338,14 @@ public class Calculate
         return a.get(0) * b.get(1) - b.get(0) * a.get(1);
     }
 
-    private static double length2D(Access1D<Double> point)
+    private static double determinant(double aX, double aY, double bX, double bY)
     {
-        return Math.sqrt(point.get(0) * point.get(0) + point.get(1) * point.get(1));
+        return aX * bY - bX * aY;
+    }
+
+    private static double length2D(double x, double y)
+    {
+        return Math.sqrt(x * x + y * y);
     }
 
     private static MatrixStore<Double> toColumnVector(MatrixStore<Double> input)
@@ -372,13 +391,13 @@ public class Calculate
         return Ints.toArray(indices);
     }
 
-    public static int minimumDistanceIndexSorted(double value, double[] possibleResults)
+    public static int minimumDistanceIndexSorted(double value, DoubleBigList possibleResults)
     {
         var closestIndex = 0;
         var closestDistance = Double.MAX_VALUE;
-        for (var index = 0; index < possibleResults.length; ++index)
+        for (var index = 0; index < possibleResults.size64(); ++index)
         {
-            val distance = Math.abs(possibleResults[index] - value);
+            val distance = Math.abs(possibleResults.getDouble(index) - value);
 
             if (distance >= closestDistance)
             {
@@ -397,31 +416,25 @@ public class Calculate
         return Math.pow(numberOfRecords, -1.0d / (numberOfDimensions + 4.0d));
     }
 
-    public static Map<Integer, Long> nodeDegrees(Collection<GraphEdge> edges)
+    public static Int2LongMap nodeDegrees(Iterable<GraphEdge> edges)
     {
-        val incomingEdges = new HashMap<Integer, Counter>();
-        val outgoingEdges = new HashMap<Integer, Counter>();
-        val nodeHashes = edges.stream()
-                              .flatMap(edge -> Arrays.stream(new Integer[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
-                              .collect(Collectors.toSet());
-        for (var nodeHash : nodeHashes)
-        {
-            val hash = nodeHash.hashCode();
-            incomingEdges.put(hash, new Counter(0L));
-            outgoingEdges.put(hash, new Counter(0L));
-        }
+        val numberOfNodeHashes = StreamSupport.stream(edges.spliterator(), false)
+                                              .flatMapToInt(edge -> Arrays.stream(new int[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
+                                              .distinct()
+                                              .count();
+        val degrees = new Int2LongOpenHashMap((int) Math.min(numberOfNodeHashes, Integer.MAX_VALUE));
+        degrees.defaultReturnValue(0L);
 
         for (val edge : edges)
         {
-            val nodeFromHash = edge.getFrom().hashCode();
-            val nodeToHash = edge.getTo().hashCode();
+            val fromHash = edge.getFrom().hashCode();
+            degrees.put(fromHash, degrees.get(fromHash) + 1L);
 
-            outgoingEdges.get(nodeFromHash).increment();
-            incomingEdges.get(nodeToHash).increment();
+            val toHash = edge.getTo().hashCode();
+            degrees.put(toHash, degrees.get(toHash) + 1L);
         }
 
-        return nodeHashes.stream().collect(Collectors.toMap(hash -> hash,
-                                                            hash -> incomingEdges.get(hash).get() + outgoingEdges.get(hash).get()));
+        return degrees;
     }
 
     public static MatrixStore<Double> subtractColumnBased(MatrixStore<Double> matrix, MatrixStore<Double> columnSubtrahends)

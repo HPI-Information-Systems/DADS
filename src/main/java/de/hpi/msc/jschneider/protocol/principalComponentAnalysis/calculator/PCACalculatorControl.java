@@ -10,8 +10,8 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
@@ -128,7 +128,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(0);
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(columnMeans),
+        getModel().getDataTransferManager().transfer(DataSource.create(columnMeans),
                                                      (dataDistributor, operationId) -> PCAMessages.InitializeColumnMeansTransferMessage.builder()
                                                                                                                                        .sender(dataDistributor)
                                                                                                                                        .receiver(receiverProtocol.getRootActor())
@@ -167,7 +167,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(receiverIndex);
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getLocalR()),
+        getModel().getDataTransferManager().transfer(DataSource.create(getModel().getLocalR()),
                                                      (dataDistributor, operationId) -> PCAMessages.InitializeRTransferMessage.builder()
                                                                                                                              .sender(dataDistributor)
                                                                                                                              .receiver(receiverProtocol.getRootActor())
@@ -309,6 +309,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                           .rotation(rotation)
                                                                                                                           .columnMeans(totalColumnMeans)
                                                                                                                           .build());
+
+        isReadyToBeTerminated();
     }
 
     private boolean isLastStep()
@@ -367,7 +369,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     private void columnMeansTransferFinished(ProcessorId sender, PrimitiveMatrixSink sink)
     {
         getLog().debug("Received column means from {}.", sender);
-        getModel().getTransposedColumnMeans().put(sender, sink.getMatrix(getModel().getProjection().countColumns()));
+        getModel().getTransposedColumnMeans().put(sender, sink.getMatrix());
 
         finalizeCalculation();
     }
@@ -387,7 +389,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     {
         getLog().debug("Received R for step {}.", stepNumber);
 
-        getModel().getRemoteRsByProcessStep().put(stepNumber, sink.getMatrix(getModel().getProjection().countColumns()));
+        getModel().getRemoteRsByProcessStep().put(stepNumber, sink.getMatrix());
         continueCalculation();
     }
 

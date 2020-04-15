@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -13,9 +14,16 @@ import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntBigArrayBigList;
+import it.unimi.dsi.fastutil.ints.IntBigList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import lombok.val;
 import lombok.var;
 
@@ -124,7 +132,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             assert getModel().getEdgeCreationOrder() == null : "Edge creation order was received already!";
 
             val sortedEdgeCreationOrder = message.getGraphPartition().getCreatedEdgesBySubSequenceIndex()
-                                                 .entrySet()
+                                                 .long2ObjectEntrySet()
                                                  .stream()
                                                  .sorted(Comparator.comparingLong(Map.Entry::getKey))
                                                  .map(Map.Entry::getValue)
@@ -190,7 +198,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             assert getModel().getEdges() == null : "Graph received already!";
 
-            getModel().setEdges(message.getGraph());
+            getModel().setEdges(new Int2ObjectLinkedOpenHashMap<>(message.getGraph()));
             scoreSubSequences();
         }
         finally
@@ -212,7 +220,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
 //        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
-        val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
+        val pathSummands = new DoubleArrayList(getModel().getQueryPathLength());
         var pathSum = 0.0d;
         var first = true;
         var minScore = Double.MAX_VALUE;
@@ -306,30 +314,40 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
     }
 
-    private List<List<Integer>> createEdgeCreationOrder()
+    private List<IntBigList> createEdgeCreationOrder()
     {
         if (getModel().getRemoteEdgeCreationOrder() == null)
         {
             return getModel().getEdgeCreationOrder();
         }
 
-        val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
-        val remoteEdgeCreationOrder = new ArrayList<List<Integer>>();
+        val combinedEdgeCreationOrder = new ArrayList<IntBigList>(getModel().getEdgeCreationOrder());
+        val remoteEdgeCreationOrder = new ArrayList<IntBigList>(getModel().getRemoteEdgeCreationOrder().length);
         for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
         {
-            remoteEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
+            val list = new IntBigArrayBigList(remoteEdgeCreationOrderPart.length);
+            for (val entry : remoteEdgeCreationOrderPart)
+            {
+                list.add(entry);
+            }
+
+            remoteEdgeCreationOrder.add(list);
         }
 
         combinedEdgeCreationOrder.addAll(0, remoteEdgeCreationOrder);
 
+        getModel().setEdgeCreationOrder(null);
+        getModel().setRemoteEdgeCreationOrder(null);
         return combinedEdgeCreationOrder;
     }
 
-    private double addSummands(List<Double> pathSummands, List<Integer> edgeCreationOrder, double currentPathSum)
+    private double addSummands(DoubleList pathSummands, IntBigList edgeCreationOrder, double currentPathSum)
     {
         var newPathSum = currentPathSum;
-        for (val edgeHash : edgeCreationOrder)
+        val edgeCreationOrderIterator = edgeCreationOrder.iterator();
+        while (edgeCreationOrderIterator.hasNext())
         {
+            val edgeHash = edgeCreationOrderIterator.nextInt();
             val edge = getModel().getEdges().get(edgeHash);
             val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
             val summand = (double) edge.getWeight() * nodeDegree;
@@ -444,7 +462,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                                                                            .endTime(endTime)
                                                                                                            .build());
 
-        publishPathScores(runningMeans.toDoubleArray());
+        publishPathScores(runningMeans);
     }
 
     private boolean isReadyToCalculateRunningMean()
@@ -462,14 +480,14 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         return true;
     }
 
-    private void publishPathScores(double[] pathScores)
+    private void publishPathScores(DoubleBigList pathScores)
     {
 //        Debug.print(pathScores, String.format("path-scores-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val protocol = getMasterProtocol(ProtocolType.Scoring);
         assert protocol.isPresent() : "The master processor must implement the Scoring protocol!";
 
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(pathScores),
+        getModel().getDataTransferManager().transfer(DataSource.create(pathScores),
                                                      (dataDistributor, operationId) -> ScoringMessages.InitializePathScoresTransferMessage.builder()
                                                                                                                                           .sender(dataDistributor)
                                                                                                                                           .receiver(protocol.get().getRootActor())

@@ -39,7 +39,7 @@ public class MockSequenceReader implements SequenceReader
     }
 
     @Override
-    public boolean isAtEnd()
+    public boolean hasNext()
     {
         return currentPosition >= values.length;
     }

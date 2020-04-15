@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkFactory;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.SneakyThrows;
 import lombok.val;
 
@@ -14,20 +15,22 @@ public class DensityWorkFactory implements WorkFactory
     private static final double CHUNK_SIZE = 0.05;
 
     private final ActorRef supervisor;
-    private final double[] samples;
+    private final DoubleBigList samples;
     private final double[] pointsToEvaluate;
     private final double weight;
+    private final double whitening;
     private final Callable<WorkConsumer> workConsumerFactory;
     private double nextChunkStart = 0.0d;
 
-    public DensityWorkFactory(ActorRef supervisor, double[] samples, double[] pointsToEvaluate, double weight)
+    public DensityWorkFactory(ActorRef supervisor, DoubleBigList samples, double[] pointsToEvaluate, double weight, double whitening)
     {
         this.supervisor = supervisor;
         this.samples = samples;
         this.pointsToEvaluate = pointsToEvaluate;
         this.weight = weight;
+        this.whitening = whitening;
 
-        workConsumerFactory = pointsToEvaluate.length >= samples.length
+        workConsumerFactory = pointsToEvaluate.length >= samples.size64()
                               ? MorePointsThanSamplesCalculator::new
                               : LessPointsThanSamplesCalculator::new;
     }

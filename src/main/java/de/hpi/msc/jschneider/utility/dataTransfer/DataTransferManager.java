@@ -82,11 +82,30 @@ public class DataTransferManager
             receiver.whenFinished(this::whenDataReceived);
             dataReceivers.put(receiver.getOperationId(), receiver);
 
-            receiver.pull(initializationMessage.getSender());
+            receiver.requestSynchronization(initializationMessage.getSender());
         }
         finally
         {
             control.complete(initializationMessage);
+        }
+    }
+
+    public void onSynchronization(DataTransferMessages.DataTransferSynchronizationMessage message)
+    {
+        try
+        {
+            val receiver = dataReceivers.get(message.getOperationId());
+            if (receiver == null)
+            {
+                Log.error("[{}] Unable to process data part, because there is no receiver for that operation!", control.getClass().getName());
+                return;
+            }
+
+            receiver.synchronize(message);
+        }
+        finally
+        {
+            control.complete(message);
         }
     }
 

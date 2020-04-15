@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.receiver;
 
-import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -8,18 +7,12 @@ import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDis
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
-import de.hpi.msc.jschneider.utility.matrix.MatrixBuilder;
-import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
-import de.hpi.msc.jschneider.utility.matrix.SequenceMatrixBuilder;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.ImprovedSequenceMatrixSink;
 import lombok.val;
-import lombok.var;
+import org.ojalgo.function.aggregator.Aggregator;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SequenceSliceReceiverControl extends AbstractProtocolParticipantControl<SequenceSliceReceiverModel>
 {
@@ -41,7 +34,6 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         getModel().setSubSequenceLength(message.getSubSequenceLength());
         getModel().setConvolutionSize(message.getConvolutionSize());
         getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
-        getModel().setProjectionBuilder(createProjectionBuilder());
 
         trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.builder()
                                                                                                                                                   .sender(getModel().getSelf())
@@ -53,105 +45,29 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                                   .build());
 
         getModel().getDataTransferManager().accept(message,
-                                                   dataReceiver -> dataReceiver.whenDataPartReceived(this::onSlicePart)
-                                                                               .whenFinished(this::whenFinished));
+                                                   dataReceiver ->
+                                                   {
+                                                       if (SystemParameters.getCommand().isDisableSequenceMatrix())
+                                                       {
+                                                           // TODO: sink = NaiveSequenceMatrixSink
+                                                       }
+                                                       else
+                                                       {
+                                                           getModel().setProjectionSink(new ImprovedSequenceMatrixSink(getModel().getSubSequenceLength(), getModel().getConvolutionSize()));
+                                                       }
+                                                       return dataReceiver.addSink(getModel().getProjectionSink())
+                                                                          .whenFinished(this::whenFinished);
+                                                   });
 
         getModel().setStartTime(LocalDateTime.now());
         getLog().debug("Start receiving sequence slice from {}.", message.getSender().path());
     }
 
-    private MatrixBuilder createProjectionBuilder()
-    {
-        if (!SystemParameters.getCommand().isDisableSequenceMatrix())
-        {
-            return new SequenceMatrixBuilder(getModel().getSubSequenceLength(), getModel().getConvolutionSize());
-        }
-        else
-        {
-            return new RowMatrixBuilder(getModel().getSubSequenceLength() - getModel().getConvolutionSize());
-        }
-    }
-
-    private void onSlicePart(DataTransferMessages.DataPartMessage message)
-    {
-        if (message.getPart().length < 1)
-        {
-            getLog().error("Received empty sequence slice part!");
-            return;
-        }
-
-        val doubles = Serialize.toDoubles(message.getPart());
-
-        getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), Doubles.min(doubles)));
-        getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), Doubles.max(doubles)));
-        appendNewValuesToProjection(doubles);
-    }
-
-    private void appendNewValuesToProjection(double[] values)
-    {
-        if (!SystemParameters.getCommand().isDisableSequenceMatrix())
-        {
-            getModel().getProjectionBuilder().append(values);
-            return;
-        }
-
-        getModel().setUnusedRecords(Doubles.concat(getModel().getUnusedRecords(), values));
-        embedSubSequences();
-    }
-
-
-    private void embedSubSequences()
-    {
-        val unusedRecords = getModel().getUnusedRecords();
-        val lastSubSequenceStart = unusedRecords.length - getModel().getSubSequenceLength();
-        var subSequence = getModel().getRawSubSequence();
-        for (var subSequenceStart = 0; subSequenceStart <= lastSubSequenceStart; ++subSequenceStart)
-        {
-            if (subSequence == null)
-            {
-                subSequence = createFirstSubSequence();
-            }
-            else
-            {
-                subSequence.remove(0);
-                var value = 0.0d;
-                for (var convolutionIndex = 0; convolutionIndex < getModel().getConvolutionSize(); ++convolutionIndex)
-                {
-                    value += unusedRecords[subSequenceStart + getModel().getSubSequenceLength() - getModel().getConvolutionSize() - 1 + convolutionIndex];
-                }
-                subSequence.add(value);
-            }
-
-            getModel().getProjectionBuilder().append(Doubles.toArray(subSequence));
-        }
-
-        getModel().setRawSubSequence(subSequence);
-        val newUnusedRecords = new double[getModel().getSubSequenceLength() - 1];
-        System.arraycopy(getModel().getUnusedRecords(), getModel().getUnusedRecords().length - newUnusedRecords.length, newUnusedRecords, 0, newUnusedRecords.length);
-        getModel().setUnusedRecords(newUnusedRecords);
-    }
-
-    private List<Double> createFirstSubSequence()
-    {
-        val unusedRecords = getModel().getUnusedRecords();
-        val vectorLength = getModel().getSubSequenceLength() - getModel().getConvolutionSize();
-        val vector = new ArrayList<Double>(vectorLength);
-        for (var vectorIndex = 0; vectorIndex < vectorLength; ++vectorIndex)
-        {
-            var value = 0.0d;
-            for (var convolutionIndex = 0; convolutionIndex < getModel().getConvolutionSize(); ++convolutionIndex)
-            {
-                value += unusedRecords[vectorIndex + convolutionIndex];
-            }
-            vector.add(value);
-        }
-
-        return vector;
-    }
-
     private void whenFinished(DataReceiver receiver)
     {
-        val projection = getModel().getProjectionBuilder().build();
+        val projection = getModel().getProjectionSink().getMatrix();
+        val minimumRecord = projection.aggregateAll(Aggregator.MINIMUM);
+        val maximumRecord = projection.aggregateAll(Aggregator.MAXIMUM);
 
         getModel().setEndTime(LocalDateTime.now());
 
@@ -174,8 +90,8 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                       .receiver(eventDispatcher)
                                                                                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
-                                                                                                                                      .minimumRecord(getModel().getMinimumRecord())
-                                                                                                                                      .maximumRecord(getModel().getMaximumRecord())
+                                                                                                                                      .minimumRecord(minimumRecord)
+                                                                                                                                      .maximumRecord(maximumRecord)
                                                                                                                                       .projection(projection)
                                                                                                                                       .build());
 

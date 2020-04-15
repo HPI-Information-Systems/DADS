@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
-import de.hpi.msc.jschneider.fileHandling.reading.BinaryDirectoryReader;
 import junit.framework.TestCase;
 import lombok.val;
 import lombok.var;

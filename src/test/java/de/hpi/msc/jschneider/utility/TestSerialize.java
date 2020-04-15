@@ -3,6 +3,7 @@ package de.hpi.msc.jschneider.utility;
 import com.google.common.primitives.Bytes;
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import junit.framework.TestCase;
 import lombok.val;
 import lombok.var;
@@ -101,7 +102,7 @@ public class TestSerialize extends TestCase
         val it = sendDoubles.iterator();
         val buffer = new byte[Double.BYTES * 4];
 
-        val receiveDoubles = new DoubleArrayList(10);
+        val receiveDoubles = new DoubleBigArrayBigList(10);
 
         var bufferLength = Serialize.inPlace(it, buffer);
         Serialize.backInPlace(buffer, bufferLength, receiveDoubles);

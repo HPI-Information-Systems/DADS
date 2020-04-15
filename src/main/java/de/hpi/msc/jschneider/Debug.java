@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
-    private static final boolean IS_ENABLED = false;
+    public static final boolean IS_ENABLED = true;
 
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)
@@ -143,7 +143,7 @@ public class Debug
 
         for (var segmentIndex = 0; segmentIndex < sortedNodeCollections.size(); ++segmentIndex)
         {
-            for (var nodeIndex = 0; nodeIndex < sortedNodeCollections.get(segmentIndex).getNodes().size(); ++nodeIndex)
+            for (var nodeIndex = 0; nodeIndex < sortedNodeCollections.get(segmentIndex).getNodes().size64(); ++nodeIndex)
             {
                 val stringBuilder = new StringBuilder();
                 stringBuilder.append("{")
@@ -151,7 +151,7 @@ public class Debug
                              .append("_")
                              .append(nodeIndex)
                              .append("} ")
-                             .append(sortedNodeCollections.get(segmentIndex).getNodes().get(nodeIndex).getIntersectionLength())
+                             .append(sortedNodeCollections.get(segmentIndex).getNodes().getDouble(nodeIndex))
                              .append("\n");
 
                 writer.write(stringBuilder.toString());

@@ -36,9 +36,9 @@ public class SystemParameters
         return command.getNumberOfWorkers();
     }
 
-    public static long getMaximumMessageSize()
+    public static int getMaximumMessageSize()
     {
-        return configuration.getBytes("akka.remote.maximum-payload-bytes");
+        return (int) Math.min(Integer.MAX_VALUE, configuration.getBytes("akka.remote.maximum-payload-bytes"));
     }
 
     public static long getMaximumMemory()

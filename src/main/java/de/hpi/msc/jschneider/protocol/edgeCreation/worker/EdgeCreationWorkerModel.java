@@ -7,6 +7,8 @@ import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantMo
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.Int32Range;
 import de.hpi.msc.jschneider.utility.Int64Range;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -32,8 +34,8 @@ public class EdgeCreationWorkerModel extends AbstractProtocolParticipantModel
     private Counter nextSubSequenceIndex;
     @Getter
     private final Map<Integer, List<LocalIntersection>> intersectionsInSegment = new HashMap<>();
-    @Getter
-    private final Map<Integer, double[]> nodesInSegment = new HashMap<>();
+    @Setter @Getter
+    private Int2ObjectMap<DoubleBigList> nodesInSegment;
     @Setter @Getter
     private List<LocalIntersection> intersectionsToMatch;
     @Setter @Getter

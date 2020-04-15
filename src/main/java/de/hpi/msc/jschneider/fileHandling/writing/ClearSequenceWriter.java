@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
 import de.hpi.msc.jschneider.utility.Serialize;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.val;
 
 import java.io.File;
@@ -71,7 +72,7 @@ public class ClearSequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(double[] records)
+    public void write(DoubleBigList records)
     {
         if (!isOpen)
         {
