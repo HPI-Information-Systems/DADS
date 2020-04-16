@@ -267,6 +267,9 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             }
 
             val intersectionCollections = combineIntersectionCollections();
+
+            Debug.print(intersectionCollections, "intersections.txt");
+
             getModel().setIntersectionCalculationEndTime(LocalDateTime.now());
 
             trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.IntersectionsCreatedEvent.builder()
@@ -409,6 +412,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
             {
                 return;
             }
+
+            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), "nodes.txt");
 
             getModel().setNodeExtractionEndTime(LocalDateTime.now());
 

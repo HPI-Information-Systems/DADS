@@ -7,7 +7,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import lombok.val;
 import lombok.var;
 
-public class ImprovedSequenceMatrixSink implements MatrixSink
+public class ImprovedSequenceMatrixSink implements SequenceMatrixSink
 {
     private final int sequenceLength;
     private final int convolutionSize;
@@ -15,6 +15,8 @@ public class ImprovedSequenceMatrixSink implements MatrixSink
     private final double[] unusedData;
     private double[] receiveBuffer;
     private int unusedDataLength;
+    private double minimumRecord = Double.MAX_VALUE;
+    private double maximumRecord = Double.MIN_VALUE;
     private double convolutionSum = 0.0d;
     private boolean isFirstDataPart = true;
 
@@ -38,6 +40,12 @@ public class ImprovedSequenceMatrixSink implements MatrixSink
     public void write(byte[] part, int partLength)
     {
         var numberOfDoubles = Serialize.backInPlace(part, partLength, receiveBuffer);
+
+        for (var doublesIndex = 0; doublesIndex < numberOfDoubles; ++doublesIndex)
+        {
+            minimumRecord = Math.min(minimumRecord, receiveBuffer[doublesIndex]);
+            maximumRecord = Math.max(maximumRecord, receiveBuffer[doublesIndex]);
+        }
 
         var totalDataLength = unusedDataLength + numberOfDoubles;
         var dataOffset = 0;
@@ -88,5 +96,17 @@ public class ImprovedSequenceMatrixSink implements MatrixSink
     public SequenceMatrix getMatrix()
     {
         return new SequenceMatrix(sequenceLength - convolutionSize, sequenceMatrixData);
+    }
+
+    @Override
+    public double getMinimumRecord()
+    {
+        return minimumRecord;
+    }
+
+    @Override
+    public double getMaximumRecord()
+    {
+        return maximumRecord;
     }
 }

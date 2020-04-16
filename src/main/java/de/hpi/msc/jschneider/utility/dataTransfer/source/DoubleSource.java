@@ -43,7 +43,7 @@ public class DoubleSource implements DataSource
     @Override
     public boolean hasNext()
     {
-        return !dataIterator.hasNext();
+        return dataIterator.hasNext();
     }
 
     @Override

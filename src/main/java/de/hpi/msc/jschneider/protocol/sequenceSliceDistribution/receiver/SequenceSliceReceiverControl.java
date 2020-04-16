@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.receiver;
 
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -66,8 +67,10 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
     private void whenFinished(DataReceiver receiver)
     {
         val projection = getModel().getProjectionSink().getMatrix();
-        val minimumRecord = projection.aggregateAll(Aggregator.MINIMUM);
-        val maximumRecord = projection.aggregateAll(Aggregator.MAXIMUM);
+        val minimumRecord = getModel().getProjectionSink().getMinimumRecord();
+        val maximumRecord = getModel().getProjectionSink().getMaximumRecord();
+
+        Debug.print(projection, "projection.txt");
 
         getModel().setEndTime(LocalDateTime.now());
 

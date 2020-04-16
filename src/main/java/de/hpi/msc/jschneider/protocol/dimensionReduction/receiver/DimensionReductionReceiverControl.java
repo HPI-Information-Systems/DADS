@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.receiver;
 
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -117,6 +118,9 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
 
         val reducedProjection = reduceProjection();
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
+
+        Debug.print(rotatedProjection.logical().row(0, 1, 2).get().transpose(), "reduced-projection.txt");
+
         val projection2d = rotatedProjection.logical().row(0, 1).get();
 
         val endTime = LocalDateTime.now();

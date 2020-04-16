@@ -7,6 +7,8 @@ import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.LocalIntersection;
+import it.unimi.dsi.fastutil.ints.IntBigList;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import lombok.SneakyThrows;
 import lombok.val;
 import lombok.var;
@@ -52,7 +54,7 @@ public class Debug
     }
 
     @SneakyThrows
-    public static void print(GraphEdge[] edges, String fileName)
+    public static void print(ObjectCollection<GraphEdge> edges, String fileName)
     {
         if (!IS_ENABLED)
         {
@@ -61,13 +63,16 @@ public class Debug
 
         val writer = createWriter(fileName);
 
-        for (val edge : Arrays.stream(edges)
-                              .sorted(Comparator.comparingInt((GraphEdge edge) -> edge.getFrom().getIntersectionSegment())
-                                                .thenComparingInt(edge -> edge.getFrom().getIndex())
-                                                .thenComparingInt(edge -> edge.getTo().getIntersectionSegment())
-                                                .thenComparingInt(edge -> edge.getTo().getIndex()))
-                              .collect(Collectors.toList()))
+        val edgeIterator = edges.stream()
+                                .sorted(Comparator.comparingInt((GraphEdge edge) -> edge.getFrom().getIntersectionSegment())
+                                                  .thenComparingInt(edge -> edge.getFrom().getIndex())
+                                                  .thenComparingInt(edge -> edge.getTo().getIntersectionSegment())
+                                                  .thenComparingInt(edge -> edge.getTo().getIndex()))
+                                .iterator();
+
+        while (edgeIterator.hasNext())
         {
+            val edge = edgeIterator.next();
             writer.write(edge + "\n");
         }
 
@@ -172,13 +177,19 @@ public class Debug
 
         val writer = createWriter(fileName);
 
-        for (val subSequenceIndex : graph.getCreatedEdgesBySubSequenceIndex().keySet()
-                                         .stream()
-                                         .sorted(Comparator.comparingLong(Long::longValue))
-                                         .collect(Collectors.toList()))
+        val subSequenceIndexIterator = graph.getCreatedEdgesBySubSequenceIndex().keySet()
+                                            .stream()
+                                            .sorted(Comparator.comparingLong(Long::longValue))
+                                            .mapToLong(value -> value)
+                                            .iterator();
+
+        while (subSequenceIndexIterator.hasNext())
         {
-            for (val edgeHash : graph.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex))
+            val subSequenceIndex = subSequenceIndexIterator.nextLong();
+            val edgeHashIterator = graph.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex).iterator();
+            while (edgeHashIterator.hasNext())
             {
+                val edgeHash = edgeHashIterator.nextInt();
                 writer.append(graph.getEdges().get(edgeHash).getKey());
                 writer.append("\n");
             }
@@ -189,7 +200,7 @@ public class Debug
     }
 
     @SneakyThrows
-    public static void print(List<List<Integer>> edgeCreationOrder, String fileName)
+    public static void print(List<IntBigList> edgeCreationOrder, String fileName)
     {
         if (!IS_ENABLED)
         {
@@ -201,7 +212,7 @@ public class Debug
         for (val collection : edgeCreationOrder)
         {
             val stringBuilder = new StringBuilder();
-            stringBuilder.append(collection.size());
+            stringBuilder.append(collection.size64());
             stringBuilder.append("\t[");
             for (val value : collection)
             {

@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -218,6 +219,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
         getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
+        Debug.print(combinedEdgeCreationOrder, "edge-creation-order.txt");
 //        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val pathSummands = new DoubleArrayList(getModel().getQueryPathLength());
