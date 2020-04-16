@@ -71,7 +71,7 @@ public class Graph
                 val edgeHash = edgeHashIterator.nextInt();
                 val edge = partition.getEdges().get(edgeHash);
 
-                createdEdgesBySubSequenceIndex.put(subSequenceIndex, new IntBigArrayBigList(partition.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex).size64()));
+                createdEdgesBySubSequenceIndex.putIfAbsent(subSequenceIndex, new IntBigArrayBigList(partition.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex).size64()));
                 createdEdgesBySubSequenceIndex.get(subSequenceIndex).add(edgeHash);
 
                 val existingEdge = edges.get(edgeHash);

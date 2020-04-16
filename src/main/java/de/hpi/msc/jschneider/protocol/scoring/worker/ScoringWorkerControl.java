@@ -240,9 +240,9 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             }
             else
             {
-                for (var edgeIndex = 0; edgeIndex < combinedEdgeCreationOrder.get(pathStartIndex - 1).size(); ++edgeIndex)
+                for (var edgeIndex = 0; edgeIndex < combinedEdgeCreationOrder.get(pathStartIndex - 1).size64(); ++edgeIndex)
                 {
-                    pathSum -= pathSummands.remove(0);
+                    pathSum -= pathSummands.removeDouble(0);
                 }
 
                 pathSum = addSummands(pathSummands, combinedEdgeCreationOrder.get(pathStartIndex + getModel().getQueryPathLength() - 1), pathSum);
