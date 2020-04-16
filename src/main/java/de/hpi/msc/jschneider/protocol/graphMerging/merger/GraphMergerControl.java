@@ -110,7 +110,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             getLog().info("================================================================================================");
             getLog().info("================================================================================================");
 
-            Debug.print(getModel().getEdges().values(), "edges.txt");
+//            Debug.print(getModel().getEdges().values(), "edges.txt");
 
 //            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("%1$s-graph.txt", ProcessorId.of(getModel().getSelf())));
 

@@ -268,7 +268,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
 
             val intersectionCollections = combineIntersectionCollections();
 
-            Debug.print(intersectionCollections, "intersections.txt");
+//            Debug.print(intersectionCollections, "intersections.txt");
 
             getModel().setIntersectionCalculationEndTime(LocalDateTime.now());
 
@@ -413,7 +413,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                 return;
             }
 
-            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), "nodes.txt");
+//            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), "nodes.txt");
 
             getModel().setNodeExtractionEndTime(LocalDateTime.now());
 
@@ -424,7 +424,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                          .endTime(getModel().getNodeExtractionEndTime())
                                                                                                          .build());
 
-            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
+//            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }
         finally
         {

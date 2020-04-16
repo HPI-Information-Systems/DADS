@@ -51,6 +51,44 @@ public class Calculate
         return b.doubleValue() - a.doubleValue() > FLOATING_POINT_TOLERANCE;
     }
 
+    public static double fastMin(double[] doubles, int doublesLength)
+    {
+        assert doubles.length >= doublesLength : "DoublesLength out of range!";
+        assert doubles.length > 0 : "Doubles must not be empty!";
+
+        var min = doubles[0];
+        for (var i = 1; i < doublesLength; ++i)
+        {
+            min = fastMin(min, doubles[i]);
+        }
+
+        return min;
+    }
+
+    public static double fastMin(double a, double b)
+    {
+        return a < b ? a : b;
+    }
+
+    public static double fastMax(double[] doubles, int doublesLength)
+    {
+        assert doubles.length >= doublesLength : "DoublesLength out of range!";
+        assert doubles.length > 0 : "Doubles must not be empty!";
+
+        var max = doubles[0];
+        for (var i = 1; i < doublesLength; ++i)
+        {
+            max = fastMax(max, doubles[i]);
+        }
+
+        return max;
+    }
+
+    public static double fastMax(double a, double b)
+    {
+        return a > b ? a : b;
+    }
+
     public static MatrixStore<Double> makeFilledRowVector(long length, double value)
     {
         val matrix = Primitive64Matrix.FACTORY.rows(DoubleStream.generate(() -> value).limit(length).toArray());

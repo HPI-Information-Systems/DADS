@@ -292,12 +292,12 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         svd.compute(qrDecomposition.getR());
         val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());
 
-        Debug.print(principalComponents.transpose(), "pca.txt");
+//        Debug.print(principalComponents.transpose(), "pca.txt");
 
         val referenceVector = createReferenceVector(principalComponents, totalColumnMeans);
         val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
 
-        Debug.print(rotation, "rotation.txt");
+//        Debug.print(rotation, "rotation.txt");
 
         getModel().setEndTime(LocalDateTime.now());
 

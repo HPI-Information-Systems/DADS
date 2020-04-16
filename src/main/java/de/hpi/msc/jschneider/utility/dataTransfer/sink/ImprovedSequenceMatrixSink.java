@@ -1,5 +1,7 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.sink;
 
+import com.google.common.primitives.Doubles;
+import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
@@ -41,11 +43,8 @@ public class ImprovedSequenceMatrixSink implements SequenceMatrixSink
     {
         var numberOfDoubles = Serialize.backInPlace(part, partLength, receiveBuffer);
 
-        for (var doublesIndex = 0; doublesIndex < numberOfDoubles; ++doublesIndex)
-        {
-            minimumRecord = Math.min(minimumRecord, receiveBuffer[doublesIndex]);
-            maximumRecord = Math.max(maximumRecord, receiveBuffer[doublesIndex]);
-        }
+        minimumRecord = Calculate.fastMin(minimumRecord, Calculate.fastMin(receiveBuffer, numberOfDoubles));
+        maximumRecord = Calculate.fastMax(maximumRecord, Calculate.fastMax(receiveBuffer, numberOfDoubles));
 
         var totalDataLength = unusedDataLength + numberOfDoubles;
         var dataOffset = 0;

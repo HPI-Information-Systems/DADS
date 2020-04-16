@@ -219,7 +219,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
 
         getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
-        Debug.print(combinedEdgeCreationOrder, "edge-creation-order.txt");
+//        Debug.print(combinedEdgeCreationOrder, "edge-creation-order.txt");
 //        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val pathSummands = new DoubleArrayList(getModel().getQueryPathLength());

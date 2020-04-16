@@ -119,7 +119,7 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
         val reducedProjection = reduceProjection();
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
 
-        Debug.print(rotatedProjection.logical().row(0, 1, 2).get().transpose(), "reduced-projection.txt");
+//        Debug.print(rotatedProjection.logical().row(0, 1, 2).get().transpose(), "reduced-projection.txt");
 
         val projection2d = rotatedProjection.logical().row(0, 1).get();
 
