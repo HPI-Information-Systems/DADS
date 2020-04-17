@@ -14,7 +14,7 @@ import org.ojalgo.matrix.store.MatrixStore;
 
 public interface DataSource
 {
-    double MESSAGE_SIZE_SCALING_FACTOR = 0.25d;
+    double MESSAGE_SIZE_SCALING_FACTOR = 0.5d;
 
     static DataSource create(DoubleBigList data)
     {

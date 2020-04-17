@@ -27,7 +27,7 @@ public class GraphEdgeSource implements DataSource
     {
         numberOfElements = StreamSupport.stream(data.spliterator(), false).count();
         dataIterator = data.iterator();
-        sendBuffer = new byte[Calculate.nextSmallerMultipleOf((int) (maximumMessageSize * DataSource.MESSAGE_SIZE_SCALING_FACTOR), Double.BYTES)];
+        sendBuffer = new byte[Calculate.nextSmallerMultipleOf((int) (maximumMessageSize * DataSource.MESSAGE_SIZE_SCALING_FACTOR), Serialize.GRAPH_EDGE_SIZE)];
     }
 
     @Override
