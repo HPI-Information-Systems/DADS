@@ -1,77 +1,91 @@
 package de.hpi.msc.jschneider.utility.dataTransfer.sink;
 
 import de.hpi.msc.jschneider.math.Calculate;
-import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
-import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
+import de.hpi.msc.jschneider.utility.matrix.MatrixBuilder;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 import lombok.val;
 import lombok.var;
+import org.ojalgo.matrix.store.MatrixStore;
 
-public class ImprovedSequenceMatrixSink implements SequenceMatrixSink
+public class NaiveSequenceMatrixSink implements SequenceMatrixSink
 {
     private final int sequenceLength;
     private final int convolutionSize;
-    private DoubleBigArrayBigList sequenceMatrixData;
+    private final MatrixBuilder matrixBuilder;
     private final double[] unusedData;
+    private final DoubleList lastSequence;
     private double[] receiveBuffer;
-    private int unusedDataLength;
+    private int unusedDataLength = 0;
     private double minimumRecord = Double.MAX_VALUE;
     private double maximumRecord = Double.MIN_VALUE;
-    private double convolutionSum = 0.0d;
-    private boolean isFirstDataPart = true;
 
-    public ImprovedSequenceMatrixSink(int sequenceLength, int convolutionSize)
+    public NaiveSequenceMatrixSink(int sequenceLength, int convolutionSize)
     {
         this.sequenceLength = sequenceLength;
         this.convolutionSize = convolutionSize;
+        matrixBuilder = new RowMatrixBuilder(sequenceLength - convolutionSize);
         unusedData = new double[sequenceLength];
+        lastSequence = new DoubleArrayList(sequenceLength - convolutionSize);
     }
 
     @Override
     public void synchronize(DataTransferMessages.DataTransferSynchronizationMessage message)
     {
         assert message.getBufferSize() % Double.BYTES == 0 : "BufferSize % ElementSize != 0!";
-
-        sequenceMatrixData = new DoubleBigArrayBigList(message.getNumberOfElements());
         receiveBuffer = new double[message.getBufferSize() / Double.BYTES];
     }
 
     @Override
     public void write(byte[] part, int partLength)
     {
-        var numberOfDoubles = Serialize.backInPlace(part, partLength, receiveBuffer);
+        val numberOfDoubles = Serialize.backInPlace(part, partLength, receiveBuffer);
 
         minimumRecord = Calculate.fastMin(minimumRecord, Calculate.fastMin(receiveBuffer, numberOfDoubles));
         maximumRecord = Calculate.fastMax(maximumRecord, Calculate.fastMax(receiveBuffer, numberOfDoubles));
 
         var totalDataLength = unusedDataLength + numberOfDoubles;
         var dataOffset = 0;
-        while (totalDataLength - dataOffset > convolutionSize)
+        while (totalDataLength - dataOffset >= sequenceLength)
         {
-            if (isFirstDataPart)
+            if (lastSequence.isEmpty())
             {
-                isFirstDataPart = false;
-                for (var convolutionIndex = 0; convolutionIndex < convolutionSize; ++convolutionIndex)
-                {
-                    convolutionSum += getValue(dataOffset + convolutionIndex);
-                }
+                fillFirstSequence();
             }
             else
             {
-                convolutionSum += getValue(dataOffset + convolutionSize - 1);
+                lastSequence.removeDouble(0);
+                var value = 0.0d;
+                for (var convolutionIndex = 0; convolutionIndex < convolutionSize; ++convolutionIndex)
+                {
+                    value += getValue(dataOffset + sequenceLength - convolutionSize - 1 + convolutionIndex);
+                }
+                lastSequence.add(value);
             }
 
-            sequenceMatrixData.add(convolutionSum);
-            convolutionSum -= getValue(dataOffset);
+            matrixBuilder.append(lastSequence.toDoubleArray());
             dataOffset++;
         }
 
-        assert dataOffset > unusedDataLength : "DataOffset <= UnusedDataLength!";
-
         val newUnusedDataLength = totalDataLength - dataOffset;
-        System.arraycopy(receiveBuffer, dataOffset - unusedDataLength, unusedData, 0, newUnusedDataLength);
+        System.arraycopy(receiveBuffer, receiveBuffer.length - newUnusedDataLength, unusedData, 0, newUnusedDataLength);
         unusedDataLength = newUnusedDataLength;
+    }
+
+    private void fillFirstSequence()
+    {
+        for (var sequenceIndex = 0; sequenceIndex < sequenceLength - convolutionSize; ++sequenceIndex)
+        {
+            var value = 0.0d;
+            for (var convolutionIndex = 0; convolutionIndex < convolutionSize; ++convolutionIndex)
+            {
+                value += getValue(sequenceIndex + convolutionIndex);
+            }
+            lastSequence.add(value);
+        }
     }
 
     private double getValue(int index)
@@ -91,9 +105,9 @@ public class ImprovedSequenceMatrixSink implements SequenceMatrixSink
     }
 
     @Override
-    public SequenceMatrix getMatrix()
+    public MatrixStore<Double> getMatrix()
     {
-        return new SequenceMatrix(sequenceLength - convolutionSize, sequenceMatrixData);
+        return matrixBuilder.build();
     }
 
     @Override

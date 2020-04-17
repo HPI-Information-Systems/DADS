@@ -10,8 +10,8 @@ import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.ImprovedSequenceMatrixSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.NaiveSequenceMatrixSink;
 import lombok.val;
-import org.ojalgo.function.aggregator.Aggregator;
 
 import java.time.LocalDateTime;
 
@@ -50,7 +50,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                    {
                                                        if (SystemParameters.getCommand().isDisableSequenceMatrix())
                                                        {
-                                                           // TODO: sink = NaiveSequenceMatrixSink
+                                                           getModel().setProjectionSink(new NaiveSequenceMatrixSink(getModel().getSubSequenceLength(), getModel().getConvolutionSize()));
                                                        }
                                                        else
                                                        {
@@ -70,7 +70,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         val minimumRecord = getModel().getProjectionSink().getMinimumRecord();
         val maximumRecord = getModel().getProjectionSink().getMaximumRecord();
 
-//        Debug.print(projection, "projection.txt");
+        Debug.print(projection, "projection.txt");
 
         getModel().setEndTime(LocalDateTime.now());
 
