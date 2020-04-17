@@ -13,6 +13,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,8 +26,8 @@ public class ScoringReceiverModel extends AbstractProtocolParticipantModel
     private final Set<ProcessorId> runningDataTransfers = new HashSet<>();
     @Setter @Getter
     private Map<ProcessorId, Int64Range> subSequenceResponsibilities;
-    @NonNull @Getter
-    private final Object2ObjectMap<ProcessorId, DoubleBigList> pathScores = new Object2ObjectLinkedOpenHashMap<>();
+    @Setter @Getter
+    private Object2ObjectMap<ProcessorId, File> temporaryPathScoreFiles;
     @Setter @Getter @Builder.Default
     private boolean responsibilitiesReceived = false;
 }
