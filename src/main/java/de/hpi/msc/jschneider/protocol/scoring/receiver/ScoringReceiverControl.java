@@ -3,7 +3,6 @@ package de.hpi.msc.jschneider.protocol.scoring.receiver;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.fileHandling.FileMerger;
-import de.hpi.msc.jschneider.fileHandling.writing.ClearSequenceWriter;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -11,10 +10,8 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
-import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.FileDoubleSink;
-import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -24,7 +21,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map;
 
 public class ScoringReceiverControl extends AbstractProtocolParticipantControl<ScoringReceiverModel>
 {
@@ -82,6 +78,11 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
     {
         assert getModel().isResponsibilitiesReceived() : "Responsibilities were not received yet!";
 
+        if (getModel().getStartTime() == null)
+        {
+            getModel().setStartTime(LocalDateTime.now());
+        }
+
         val sender = ProcessorId.of(message.getSender());
         val fileSink = new FileDoubleSink(getModel().getTemporaryPathScoreFiles().get(sender));
 
@@ -111,20 +112,20 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
 
         val resultFile = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath().toFile();
 
-        val startTime = LocalDateTime.now();
         (new FileMerger(resultFile, it)).merge();
-        val endTime = LocalDateTime.now();
+
+        getModel().setEndTime(LocalDateTime.now());
 
         trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ResultsPersistedEvent.builder()
                                                                                                        .sender(getModel().getSelf())
                                                                                                        .receiver(eventDispatcher)
-                                                                                                       .startTime(startTime)
-                                                                                                       .endTime(endTime)
+                                                                                                       .startTime(getModel().getStartTime())
+                                                                                                       .endTime(getModel().getEndTime())
                                                                                                        .build());
 
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
-        getLog().info("Results written to {} in {}.", resultFile.toString(), Duration.between(startTime, endTime));
+        getLog().info("Results written to {} in {}.", resultFile.toString(), Duration.between(getModel().getStartTime(), getModel().getEndTime()));
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 

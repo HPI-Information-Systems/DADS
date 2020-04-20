@@ -14,6 +14,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.io.File;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,4 +31,8 @@ public class ScoringReceiverModel extends AbstractProtocolParticipantModel
     private Object2ObjectMap<ProcessorId, File> temporaryPathScoreFiles;
     @Setter @Getter @Builder.Default
     private boolean responsibilitiesReceived = false;
+    @Setter @Getter
+    private LocalDateTime startTime;
+    @Setter @Getter
+    private LocalDateTime endTime;
 }

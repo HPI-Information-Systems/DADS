@@ -71,9 +71,9 @@ public class FileDoubleSink implements DataSink
     @Override
     public void write(byte[] part, int partLength)
     {
-        val numberOfDoubles = Serialize.backInPlace(part, partLength, receiveBuffer);
+        receiveBufferLength = Serialize.backInPlace(part, partLength, receiveBuffer);
 
-        for (var doublesIndex = 0; doublesIndex < numberOfDoubles; ++doublesIndex)
+        for (var doublesIndex = 0; doublesIndex < receiveBufferLength; ++doublesIndex)
         {
             if (isFirstValue)
             {
