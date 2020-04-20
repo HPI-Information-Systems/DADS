@@ -71,6 +71,7 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         val maximumRecord = getModel().getProjectionSink().getMaximumRecord();
 
         Debug.print(projection, "projection.txt");
+        Debug.printBinary(projection, "projection.bin");
 
         getModel().setEndTime(LocalDateTime.now());
 

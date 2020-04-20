@@ -15,8 +15,10 @@ import lombok.var;
 import org.ojalgo.structure.Access2D;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
-    public static final boolean IS_ENABLED = false;
+    public static final boolean IS_ENABLED = true;
 
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)
@@ -51,6 +53,36 @@ public class Debug
 
         writer.flush();
         writer.close();
+    }
+
+    @SneakyThrows
+    public static void printBinary(Access2D<Double> matrix, String fileName)
+    {
+        if (!IS_ENABLED)
+        {
+            return;
+        }
+
+        val file = createBinaryFile(fileName);
+        val converter = ByteBuffer.allocate(8);
+
+        converter.putLong(0, matrix.countRows());
+        file.write(converter.array());
+
+        converter.putLong(0, matrix.countColumns());
+        file.write(converter.array());
+
+        for (var rowIndex = 0L; rowIndex < matrix.countRows(); ++rowIndex)
+        {
+            for (var columnIndex = 0L; columnIndex < matrix.countColumns(); ++columnIndex)
+            {
+                converter.putDouble(0, matrix.get(rowIndex, columnIndex));
+                file.write(converter.array());
+            }
+        }
+
+        file.flush();
+        file.close();
     }
 
     @SneakyThrows
@@ -306,8 +338,21 @@ public class Debug
             throw new Exception(String.format("Unable to create directory \"%1$s\"!", file.getParent()));
         }
 
-        file.delete();
+        file.createNewFile();
 
         return new PrintWriter(file);
+    }
+
+    @SneakyThrows
+    private static FileOutputStream createBinaryFile(String fileName)
+    {
+        val file = new File(".debug/" + fileName);
+        if (!file.getParentFile().exists() && !file.getParentFile().mkdirs())
+        {
+            throw new Exception(String.format("Unable to create directory \"%1$s\"!", file.getParent()));
+        }
+
+        file.createNewFile();
+        return new FileOutputStream(file, false);
     }
 }
