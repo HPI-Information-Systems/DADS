@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
-    public static final boolean IS_ENABLED = true;
+    public static final boolean IS_ENABLED = false;
 
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)
