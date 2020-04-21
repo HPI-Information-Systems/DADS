@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationMessages;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int32Range;
@@ -13,6 +14,8 @@ import lombok.val;
 import lombok.var;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -99,7 +102,7 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
     private void initializeNodeCreation(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
 
-        val messageTemplate = createInitializationMessage(sortedMessages);
+        val messageTemplate = createHeterogeneousInitializeMessage(sortedMessages);
         for (val worker : sortedMessages.stream().map(MessageExchangeMessages.MessageExchangeMessage::getSender).collect(Collectors.toList()))
         {
             send(messageTemplate.redirectTo(worker));
@@ -139,6 +142,52 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
                                                                  .maximumValue(getModel().getMaximumValue() * MAXIMUM_VALUE_SCALE_FACTOR)
                                                                  .intersectionSegmentResponsibilities(segmentResponsibilities)
                                                                  .subSequenceResponsibilities(subSequenceResponsibilities)
+                                                                 .build();
+    }
+
+    private NodeCreationMessages.InitializeNodeCreationMessage createHeterogeneousInitializeMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
+    {
+        val numberOfProcessors = sortedMessages.size();
+
+        assert numberOfProcessors == getModel().getProcessors().length : "All processors should be involved in the node creation process!";
+
+        val totalClusterMemory = Arrays.stream(getModel().getProcessors()).mapToLong(Processor::getMaximumMemoryInBytes).sum();
+        val sortedProcessors = Arrays.stream(getModel().getProcessors()).sorted(Comparator.comparingLong(Processor::getMaximumMemoryInBytes)).iterator();
+        val messageByProcessor = sortedMessages.stream().collect(Collectors.toMap(message -> ProcessorId.of(message.getSender()), message -> message));
+
+        val segmentResponsibilities = new HashMap<ActorRef, Int32Range>(numberOfProcessors);
+        val sequenceResponsibilities = new HashMap<ActorRef, Int64Range>(numberOfProcessors);
+
+        var nextIntersectionSegment = 0;
+        while (sortedProcessors.hasNext())
+        {
+            val processor = sortedProcessors.next();
+            val message = messageByProcessor.get(processor.getId());
+
+            val memoryShare = processor.getMaximumMemoryInBytes() / (double) totalClusterMemory;
+            var lastSegment = (int) Math.min(getModel().getTotalNumberOfIntersectionSegments(), nextIntersectionSegment + Math.floor(getModel().getTotalNumberOfIntersectionSegments() * memoryShare));
+            if (!sortedProcessors.hasNext())
+            {
+                lastSegment = getModel().getTotalNumberOfIntersectionSegments();
+            }
+
+            val segmentRange = Int32Range.builder()
+                                         .from(nextIntersectionSegment)
+                                         .to(lastSegment)
+                                         .build();
+            nextIntersectionSegment = lastSegment;
+
+            segmentResponsibilities.put(message.getSender(), segmentRange);
+            sequenceResponsibilities.put(message.getSender(), message.getSubSequenceIndices());
+        }
+
+        return NodeCreationMessages.InitializeNodeCreationMessage.builder()
+                                                                 .sender(getModel().getSelf())
+                                                                 .receiver(getModel().getSelf())
+                                                                 .numberOfIntersectionSegments(getModel().getTotalNumberOfIntersectionSegments())
+                                                                 .maximumValue(getModel().getMaximumValue() * MAXIMUM_VALUE_SCALE_FACTOR)
+                                                                 .intersectionSegmentResponsibilities(segmentResponsibilities)
+                                                                 .subSequenceResponsibilities(sequenceResponsibilities)
                                                                  .build();
     }
 }
