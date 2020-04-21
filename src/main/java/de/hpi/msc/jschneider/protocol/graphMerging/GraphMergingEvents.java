@@ -4,13 +4,10 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.objects.ObjectBigList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
-
-import java.util.Map;
 
 public class GraphMergingEvents
 {

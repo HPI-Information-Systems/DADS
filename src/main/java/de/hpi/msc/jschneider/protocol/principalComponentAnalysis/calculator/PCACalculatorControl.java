@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;

@@ -1,10 +1,8 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.worker;
 
 import akka.actor.ActorRef;
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
-import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -26,12 +24,7 @@ import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoubleSink;
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
-import it.unimi.dsi.fastutil.doubles.DoubleBigList;
-import it.unimi.dsi.fastutil.doubles.DoubleIterable;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
-import it.unimi.dsi.fastutil.doubles.DoubleIterators;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.function.aggregator.Aggregator;

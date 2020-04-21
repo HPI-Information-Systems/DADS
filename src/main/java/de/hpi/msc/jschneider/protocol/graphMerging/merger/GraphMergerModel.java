@@ -5,12 +5,10 @@ import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantMo
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Int64Range;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @SuperBuilder

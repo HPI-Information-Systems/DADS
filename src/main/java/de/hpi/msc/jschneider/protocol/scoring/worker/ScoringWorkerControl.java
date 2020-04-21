@@ -2,8 +2,6 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
-import de.hpi.msc.jschneider.Debug;
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -21,10 +19,8 @@ import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntBigArrayBigList;
 import it.unimi.dsi.fastutil.ints.IntBigList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import lombok.val;
 import lombok.var;
 

@@ -4,7 +4,6 @@ import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataSink;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.SneakyThrows;
-import lombok.val;
 import lombok.var;
 
 import java.io.File;

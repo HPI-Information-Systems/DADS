@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.merger;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -9,14 +8,12 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import lombok.val;
 import lombok.var;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.stream.Collectors;
 
 public class GraphMergerControl extends AbstractProtocolParticipantControl<GraphMergerModel>
 {

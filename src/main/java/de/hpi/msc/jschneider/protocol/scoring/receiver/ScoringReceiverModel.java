@@ -3,9 +3,6 @@ package de.hpi.msc.jschneider.protocol.scoring.receiver;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Int64Range;
-import it.unimi.dsi.fastutil.doubles.DoubleBigList;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenCustomHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +12,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.io.File;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

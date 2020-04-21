@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
-import de.hpi.msc.jschneider.utility.Serialize;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.val;
 

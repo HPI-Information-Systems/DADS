@@ -7,8 +7,6 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntBigList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.objects.ObjectBigList;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -18,7 +16,6 @@ import lombok.experimental.SuperBuilder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @SuperBuilder

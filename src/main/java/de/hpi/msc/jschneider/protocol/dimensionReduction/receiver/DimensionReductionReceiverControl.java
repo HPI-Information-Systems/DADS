@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.receiver;
 
-import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;

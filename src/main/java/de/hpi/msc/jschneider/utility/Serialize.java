@@ -4,7 +4,6 @@ import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.objects.ObjectBigList;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.Primitive64Matrix;

@@ -5,19 +5,11 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
-import de.hpi.msc.jschneider.utility.dataTransfer.sink.AdHocGraphEdgeSink;
-import it.unimi.dsi.fastutil.BigArrays;
-import it.unimi.dsi.fastutil.BigSwapper;
-import it.unimi.dsi.fastutil.longs.LongComparator;
-import it.unimi.dsi.fastutil.objects.ObjectBigLists;
 import lombok.val;
-import lombok.var;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class GraphReceiverControl extends AbstractProtocolParticipantControl<GraphReceiverModel>
 {

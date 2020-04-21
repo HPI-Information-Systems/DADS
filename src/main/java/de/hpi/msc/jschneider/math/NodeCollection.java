@@ -2,11 +2,7 @@ package de.hpi.msc.jschneider.math;
 
 import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
-import lombok.Builder;
 import lombok.Getter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 public class NodeCollection
