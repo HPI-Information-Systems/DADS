@@ -19,7 +19,7 @@ public class DensityCalculatorMessages
         @NonNull
         private DoubleBigList samples;
         @NonNull
-        private double[] pointsToEvaluate;
+        private DoubleBigList pointsToEvaluate;
         private double weight;
         private double whitening;
         private double startFraction;
@@ -47,8 +47,8 @@ public class DensityCalculatorMessages
     {
         private static final long serialVersionUID = -8528585974013084112L;
         @NonNull
-        private double[] probabilities;
-        private int startIndex;
+        private DoubleBigList probabilities;
+        private long startIndex;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter

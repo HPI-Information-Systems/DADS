@@ -16,13 +16,13 @@ public class DensityWorkFactory implements WorkFactory
 
     private final ActorRef supervisor;
     private final DoubleBigList samples;
-    private final double[] pointsToEvaluate;
+    private final DoubleBigList pointsToEvaluate;
     private final double weight;
     private final double whitening;
     private final Callable<WorkConsumer> workConsumerFactory;
     private double nextChunkStart = 0.0d;
 
-    public DensityWorkFactory(ActorRef supervisor, DoubleBigList samples, double[] pointsToEvaluate, double weight, double whitening)
+    public DensityWorkFactory(ActorRef supervisor, DoubleBigList samples, DoubleBigList pointsToEvaluate, double weight, double whitening)
     {
         this.supervisor = supervisor;
         this.samples = samples;
@@ -30,14 +30,14 @@ public class DensityWorkFactory implements WorkFactory
         this.weight = weight;
         this.whitening = whitening;
 
-        workConsumerFactory = pointsToEvaluate.length >= samples.size64()
+        workConsumerFactory = pointsToEvaluate.size64() >= samples.size64()
                               ? MorePointsThanSamplesCalculator::new
                               : LessPointsThanSamplesCalculator::new;
     }
 
-    public int expectedNumberOfCalculations()
+    public long expectedNumberOfCalculations()
     {
-        return (int) Math.ceil(1.0d / CHUNK_SIZE);
+        return (long) Math.ceil(1.0d / CHUNK_SIZE);
     }
 
     @Override

@@ -5,9 +5,14 @@ import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntBigArrayBigList;
+import it.unimi.dsi.fastutil.ints.IntBigList;
+import it.unimi.dsi.fastutil.longs.LongBigArrayBigList;
+import it.unimi.dsi.fastutil.longs.LongBigList;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
@@ -19,8 +24,10 @@ import org.ojalgo.structure.Access1D;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.stream.DoubleStream;
 import java.util.stream.StreamSupport;
 
@@ -101,16 +108,27 @@ public class Calculate
         return MatrixStore.PRIMITIVE64.makeWrapper(matrix).get();
     }
 
-    public static double[] makeRange(double start, double end, int numberOfSteps)
+    public static DoubleBigList makeRange(double start, double end, long numberOfSteps)
     {
         val step = (end - start) / numberOfSteps;
-        val range = new double[numberOfSteps];
-        for (var i = 0; i < range.length; ++i)
+        val range = new DoubleBigArrayBigList(numberOfSteps);
+        for (var i = 0L; i < numberOfSteps; ++i)
         {
-            range[i] = start + i * step;
+            range.add(start + i * step);
         }
 
         return range;
+    }
+
+    public static DoubleBigList makeFilledDoubleList(long length, double value)
+    {
+        val list = new DoubleBigArrayBigList(length);
+        for (var i = 0L; i < length; ++i)
+        {
+            list.add(value);
+        }
+
+        return list;
     }
 
     public static MatrixStore<Double> rotation(MatrixStore<Double> referenceVector, MatrixStore<Double> unitVector)
@@ -400,33 +418,43 @@ public class Calculate
         }
     }
 
-    public static int[] localMaximumIndices(double[] values)
+    public static LongBigList localMaximumIndices(PrimitiveIterator.OfDouble values)
     {
         // TODO: we currently assume that values[0] and values[l - 1] can *NOT* be local maxima (scipy argrelmaxima behavior), is this assumption true?
 
-        var indices = new ArrayList<Integer>();
-        for (var valueIndex = 1; valueIndex < values.length - 1; ++valueIndex)
+        val indices = new LongBigArrayBigList();
+
+        if (!values.hasNext())
         {
-            val previous = values[valueIndex - 1];
-            val current = values[valueIndex];
-            val next = values[valueIndex + 1];
+            return indices;
+        }
 
-            if (current == next)
-            {
-                // we dont need to check 'next' again, because we already know its not a local maximum
-                valueIndex++;
-                continue;
-            }
+        var previous = values.nextDouble();
 
+        if (!values.hasNext())
+        {
+            return indices;
+        }
+
+        var current = values.nextDouble();
+        var next = 0.0d;
+
+        var valueIndex = 0L;
+        while (values.hasNext())
+        {
+            valueIndex++; // skip the first value, since the first and the last value can *NOT* be local maximum
+
+            next = values.nextDouble();
             if (current > previous && current > next)
             {
                 indices.add(valueIndex);
-                // we dont need to check 'next' again, because we already know its not a local maximum
-                valueIndex++;
             }
+
+            previous = current;
+            current = next;
         }
 
-        return Ints.toArray(indices);
+        return indices;
     }
 
     public static int minimumDistanceIndexSorted(double value, DoubleBigList possibleResults)

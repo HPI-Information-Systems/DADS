@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 public class NodeCreationWorkerControl extends AbstractProtocolParticipantControl<NodeCreationWorkerModel>
 {
-    private static final int NUMBER_OF_DENSITY_SAMPLES = 250;
+    private static final long NUMBER_OF_DENSITY_SAMPLES = 250;
 
     public NodeCreationWorkerControl(NodeCreationWorkerModel model)
     {

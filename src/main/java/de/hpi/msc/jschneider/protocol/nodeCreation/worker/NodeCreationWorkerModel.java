@@ -43,7 +43,7 @@ public class NodeCreationWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter
     private int numberOfIntersectionSegments;
     @Setter @Getter
-    private double[] densitySamples;
+    private DoubleBigList densitySamples;
     @Setter @Getter
     private NodeCreationMessages.ReducedSubSequenceMessage reducedSubSequenceMessage;
     @Setter @Getter

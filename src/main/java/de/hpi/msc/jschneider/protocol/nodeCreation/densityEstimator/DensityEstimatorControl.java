@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator;
 
-import com.google.common.primitives.Doubles;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
@@ -11,12 +10,14 @@ import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.D
 import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.DensityWorkFactory;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigLists;
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import lombok.val;
 import lombok.var;
 
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Map;
 
 public class DensityEstimatorControl extends AbstractProtocolParticipantControl<DensityEstimatorModel>
 {
@@ -46,7 +47,7 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
         getModel().setWhitening(Math.sqrt(inverseCovariance));
         getModel().setNormalizationFactor(Math.sqrt(2 * Math.PI * covariance));
         getModel().setWeight(1.0d / getModel().getSamples().size64());
-        getModel().setProbabilities(new double[getModel().getPointsToEvaluate().length]);
+        getModel().setProbabilities(Calculate.makeFilledDoubleList(getModel().getPointsToEvaluate().size64(), 0.0d));
 
         dispatchWork();
     }
@@ -78,7 +79,8 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
                                                  getModel().getWeight(),
                                                  getModel().getWhitening());
         getModel().setExpectedNumberOfResults(workFactory.expectedNumberOfCalculations());
-        getModel().setResultChunkMerger(getModel().getPointsToEvaluate().length >= getModel().getSamples().size64()
+        getModel().setProbabilityChunks(new Long2ObjectLinkedOpenHashMap<>((int) Math.min(Integer.MAX_VALUE, workFactory.expectedNumberOfCalculations())));
+        getModel().setResultChunkMerger(getModel().getPointsToEvaluate().size64() >= getModel().getSamples().size64()
                                         ? this::mergeMorePointsThanSamplesResultChunks
                                         : this::mergeLessPointsThanSamplesResultChunks);
 
@@ -110,11 +112,11 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
 
     private void mergeMorePointsThanSamplesResultChunks(DensityCalculatorMessages.DensityProbabilitiesEstimatedMessage message)
     {
-        assert getModel().getProbabilities().length == message.getProbabilities().length : "Unexpected number of results delivered!";
+        assert getModel().getProbabilities().size64() == message.getProbabilities().size64() : "Unexpected number of results delivered!";
 
-        for (var resultsIndex = 0; resultsIndex < message.getProbabilities().length; ++resultsIndex)
+        for (var resultsIndex = 0L; resultsIndex < message.getProbabilities().size64(); ++resultsIndex)
         {
-            getModel().getProbabilities()[resultsIndex] += message.getProbabilities()[resultsIndex];
+            getModel().getProbabilities().set(resultsIndex, getModel().getProbabilities().getDouble(resultsIndex) + message.getProbabilities().getDouble(resultsIndex));
         }
 
         if (getModel().getProbabilityChunks().size() != getModel().getExpectedNumberOfResults())
@@ -132,22 +134,33 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
             return;
         }
 
-        getModel().setProbabilities(Doubles.concat(getModel().getProbabilityChunks().entrySet().stream()
-                                                             .sorted(Comparator.comparingInt(Map.Entry::getKey))
-                                                             .map(Map.Entry::getValue)
-                                                             .toArray(double[][]::new)));
+        val chunkIterator = getModel().getProbabilityChunks().long2ObjectEntrySet().stream()
+                                      .sorted(Comparator.comparingLong(Long2ObjectMap.Entry::getLongKey))
+                                      .map(Long2ObjectMap.Entry::getValue)
+                                      .iterator();
+
+        var resultIndex = 0L;
+        while (chunkIterator.hasNext())
+        {
+            val chunk = chunkIterator.next();
+            for (var chunkIndex = 0L; chunkIndex < chunk.size64(); ++chunkIndex)
+            {
+                getModel().getProbabilities().set(resultIndex++, chunk.getDouble(chunkIndex));
+            }
+        }
+
         finalizeCalculation();
     }
 
     private void finalizeCalculation()
     {
-        val normalizedProbabilities = Arrays.stream(getModel().getProbabilities()).map(p -> p / getModel().getNormalizationFactor()).toArray();
-        val localMaximumIndices = Calculate.localMaximumIndices(normalizedProbabilities);
-        val nodeCollection = new NodeCollection(getModel().getIntersectionSegment(), localMaximumIndices.length);
+        val normalizedProbabilitiesIterator = getModel().getProbabilities().stream().mapToDouble(value -> value / getModel().getNormalizationFactor()).iterator();
+        val localMaximumIndices = Calculate.localMaximumIndices(normalizedProbabilitiesIterator);
+        val nodeCollection = new NodeCollection(getModel().getIntersectionSegment(), localMaximumIndices.size64());
 
         for (val localMaximumIndex : localMaximumIndices)
         {
-            nodeCollection.getNodes().add(getModel().getPointsToEvaluate()[localMaximumIndex]);
+            nodeCollection.getNodes().add(getModel().getPointsToEvaluate().getDouble(localMaximumIndex));
         }
 
         publishNodeCollection(nodeCollection);
