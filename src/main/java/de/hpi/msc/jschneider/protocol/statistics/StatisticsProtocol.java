@@ -82,7 +82,8 @@ public class StatisticsProtocol
                                                     StatisticsEvents.ResultsPersistedEvent.class,
                                                     StatisticsEvents.MachineUtilizationEvent.class,
                                                     StatisticsEvents.MessageExchangeUtilizationEvent.class,
-                                                    StatisticsEvents.ActorPoolUtilizationEvent.class);
+                                                    StatisticsEvents.ActorPoolUtilizationEvent.class,
+                                                    StatisticsEvents.ActorSystemUtilizationEvent.class);
         val control = new BaseEventDispatcherControl<EventDispatcherModel>(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), EVENT_DISPATCHER_NAME);
     }

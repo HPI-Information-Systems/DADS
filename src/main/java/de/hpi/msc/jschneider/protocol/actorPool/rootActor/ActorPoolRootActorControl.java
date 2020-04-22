@@ -89,6 +89,11 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
 
     private void startMeasuringUtilization()
     {
+        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        {
+            return;
+        }
+
         if (getModel().getMeasureUtilizationTask() != null)
         {
             getModel().getMeasureUtilizationTask().cancel();

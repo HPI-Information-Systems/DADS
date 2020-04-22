@@ -5,18 +5,29 @@ import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.heartbeat.HeartbeatEvents;
-import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperMessages;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
+import de.hpi.msc.jschneider.protocol.statistics.StatisticsProtocol;
+import de.hpi.msc.jschneider.protocol.statistics.rootActor.StatisticsRootActorControl;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import lombok.SneakyThrows;
 import lombok.val;
 
+import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 public class ReaperControl extends AbstractProtocolParticipantControl<ReaperModel>
 {
+    private static class CreateUtilizationEventMessage implements Serializable
+    {
+        private static final long serialVersionUID = -9154128760961107357L;
+    }
+
     public ReaperControl(ReaperModel model)
     {
         super(model);
@@ -30,6 +41,7 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
                     .match(ReaperMessages.WatchMeMessage.class, this::onWatchMe)
                     .match(Terminated.class, this::onTerminated)
                     .match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
+                    .match(CreateUtilizationEventMessage.class, this::measureUtilization)
                     .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination)
                     .match(HeartbeatEvents.HeartbeatPanicEvent.class, this::onHeartbeatPanic);
     }
@@ -89,11 +101,48 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
             {
                 subscribeToEvent(participant.getId(), ProtocolType.Heartbeat, HeartbeatEvents.HeartbeatPanicEvent.class);
             }
+
+            startMeasuringUtilization();
         }
         finally
         {
             complete(message);
         }
+    }
+
+    private void startMeasuringUtilization()
+    {
+        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        {
+            return;
+        }
+
+        if (getModel().getMeasureUtilizationTask() != null)
+        {
+            getModel().getMeasureUtilizationTask().cancel();
+        }
+
+        val scheduler = getModel().getScheduler();
+        val dispatcher = getModel().getDispatcher();
+
+        assert scheduler != null : "Scheduler must not be null!";
+        assert dispatcher != null : "Dispatcher must not be null!";
+
+        val task = scheduler.scheduleAtFixedRate(Duration.ZERO,
+                                                 StatisticsProtocol.MEASUREMENT_INTERVAL,
+                                                 () -> getModel().getSelf().tell(new CreateUtilizationEventMessage(), getModel().getSelf()),
+                                                 dispatcher);
+        getModel().setMeasureUtilizationTask(task);
+    }
+
+    private void measureUtilization(CreateUtilizationEventMessage message)
+    {
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ActorSystemUtilizationEvent.builder()
+                                                                                                             .sender(getModel().getSelf())
+                                                                                                             .receiver(eventDispatcher)
+                                                                                                             .dateTime(LocalDateTime.now())
+                                                                                                             .numberOfActors(getModel().getWatchedActors().size())
+                                                                                                             .build());
     }
 
     @SneakyThrows
@@ -128,6 +177,11 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
     {
         try
         {
+            if (getModel().getMeasureUtilizationTask() != null)
+            {
+                getModel().getMeasureUtilizationTask().cancel();
+            }
+
             getLocalProtocol(ProtocolType.Reaper).ifPresent(protocol ->
                                                             {
                                                                 send(ReaperEvents.ActorSystemReapedEvent.builder()

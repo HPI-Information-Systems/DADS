@@ -79,6 +79,11 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void startMeasureUtilization()
     {
+        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        {
+            return;
+        }
+
         if (getModel().getMeasureUtilizationTask() != null)
         {
             return;
