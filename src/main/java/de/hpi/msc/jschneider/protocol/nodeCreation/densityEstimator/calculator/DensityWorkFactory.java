@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 
 public class DensityWorkFactory implements WorkFactory
 {
-    private static final double CHUNK_SIZE = 0.05;
+    private static final double CHUNK_SIZE = 1.0d / 250.0d;
 
     private final ActorRef supervisor;
     private final DoubleBigList samples;
