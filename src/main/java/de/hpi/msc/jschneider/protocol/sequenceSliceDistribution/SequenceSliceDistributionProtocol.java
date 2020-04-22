@@ -11,10 +11,12 @@ import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherControl;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.BaseEventDispatcherModel;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherModel;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.EqualSequenceSliceDistributorFactory;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.HeterogeneousSequenceSliceDistributionFactory;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.NullSequenceSliceDistributorFactory;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.SequenceSliceDistributionRootActorControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.SequenceSliceDistributionRootActorModel;
+import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor.SequenceSliceDistributorFactory;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
@@ -56,7 +58,7 @@ public class SequenceSliceDistributionProtocol
         if (SystemParameters.getCommand() instanceof MasterCommand)
         {
             val masterCommand = (MasterCommand) SystemParameters.getCommand();
-            distributorFactory = HeterogeneousSequenceSliceDistributionFactory.fromMasterCommand(masterCommand);
+            distributorFactory = SequenceSliceDistributorFactory.fromMasterCommand(masterCommand);
         }
 
         val model = SequenceSliceDistributionRootActorModel.builder()

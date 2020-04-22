@@ -1,6 +1,8 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.coordinator;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.SystemParameters;
+import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
@@ -101,15 +103,34 @@ public class NodeCreationCoordinatorControl extends AbstractProtocolParticipantC
 
     private void initializeNodeCreation(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
+        assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master is able to initialize the node creation!";
 
-        val messageTemplate = createHeterogeneousInitializeMessage(sortedMessages);
+        NodeCreationMessages.InitializeNodeCreationMessage message = null;
+        switch (((MasterCommand) SystemParameters.getCommand()).getDistributionStrategy())
+        {
+            case HOMOGENEOUS:
+            {
+                message = createHomogeneousInitializationMessage(sortedMessages);
+                break;
+            }
+            case HETEROGENEOUS:
+            {
+                message = createHeterogeneousInitializeMessage(sortedMessages);
+                break;
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Unknown distribution strategy!");
+            }
+        }
+
         for (val worker : sortedMessages.stream().map(MessageExchangeMessages.MessageExchangeMessage::getSender).collect(Collectors.toList()))
         {
-            send(messageTemplate.redirectTo(worker));
+            send(message.redirectTo(worker));
         }
     }
 
-    private NodeCreationMessages.InitializeNodeCreationMessage createInitializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
+    private NodeCreationMessages.InitializeNodeCreationMessage createHomogeneousInitializationMessage(List<NodeCreationMessages.NodeCreationWorkerReadyMessage> sortedMessages)
     {
         val numberOfProcessors = sortedMessages.size();
         val numberOfSamplesPerProcessor = (int) Math.floor(getModel().getTotalNumberOfIntersectionSegments() / (double) numberOfProcessors);
