@@ -63,7 +63,7 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
     {
         val model = DimensionReductionReceiverModel.builder().build();
         val control = new DimensionReductionReceiverControl(model);
-        val receiver = trySpawnChild(ProtocolParticipant.props(control), "DimensionReductionReceiver");
+        val receiver = trySpawnChild(control, "DimensionReductionReceiver");
 
         if (!receiver.isPresent())
         {
@@ -99,7 +99,7 @@ public class DimensionReductionRootActorControl extends AbstractProtocolParticip
                                                       .columnMeans(columnMeans)
                                                       .build();
         val control = new DimensionReductionDistributorControl(model);
-        val distributor = trySpawnChild(ProtocolParticipant.props(control), "DimensionReductionDistributor");
+        val distributor = trySpawnChild(control, "DimensionReductionDistributor");
 
         if (!distributor.isPresent())
         {

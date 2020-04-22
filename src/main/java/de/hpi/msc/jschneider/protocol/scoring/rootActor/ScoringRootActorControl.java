@@ -55,7 +55,7 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         val model = ScoringWorkerModel.builder()
                                       .build();
         val control = new ScoringWorkerControl(model);
-        val worker = trySpawnChild(ProtocolParticipant.props(control), "ScoringWorker");
+        val worker = trySpawnChild(control, "ScoringWorker");
 
         if (!worker.isPresent())
         {
@@ -72,7 +72,7 @@ public class ScoringRootActorControl extends AbstractProtocolParticipantControl<
         val model = ScoringReceiverModel.builder()
                                         .build();
         val control = new ScoringReceiverControl(model);
-        val receiver = trySpawnChild(ProtocolParticipant.props(control), "ScoringReceiver");
+        val receiver = trySpawnChild(control, "ScoringReceiver");
 
         if (!receiver.isPresent())
         {

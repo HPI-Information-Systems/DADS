@@ -5,6 +5,8 @@ import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
+import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor.SequenceSliceDistributorControl;
@@ -43,7 +45,7 @@ public class HeterogeneousSequenceSliceDistributionFactory implements SequenceSl
     }
 
     @Override
-    public Collection<Props> createDistributorsFromNewProcessor(Processor newProcessor)
+    public Collection<ProtocolParticipantControl<? extends ProtocolParticipantModel>> createDistributorsFromNewProcessor(Processor newProcessor)
     {
         processors.add(newProcessor);
         if (processors.size() != expectedNumberOfProcessors)
@@ -54,9 +56,9 @@ public class HeterogeneousSequenceSliceDistributionFactory implements SequenceSl
         return createSliceDistributorProps();
     }
 
-    private Collection<Props> createSliceDistributorProps()
+    private Collection<ProtocolParticipantControl<? extends ProtocolParticipantModel>> createSliceDistributorProps()
     {
-        val props = new ArrayList<Props>(processors.size());
+        val controls = new ArrayList<ProtocolParticipantControl<? extends ProtocolParticipantModel>>(processors.size());
 
         val totalMeasurements = sequenceReaderTemplate.getSize();
         val totalClusterMemory = processors.stream().mapToLong(Processor::getMaximumMemoryInBytes).sum();
@@ -88,12 +90,12 @@ public class HeterogeneousSequenceSliceDistributionFactory implements SequenceSl
                                                      .build();
 
             val control = new SequenceSliceDistributorControl(model);
-            props.add(ReapedActor.props(control));
+            controls.add(control);
 
             nextSubReaderStartPosition += Math.max(1L, reader.getSize() - sliceOverlap);
             nextSubSequenceIndex += Math.max(1L, reader.getSize() - (subSequenceLength - 1L));
         }
 
-        return props;
+        return controls;
     }
 }

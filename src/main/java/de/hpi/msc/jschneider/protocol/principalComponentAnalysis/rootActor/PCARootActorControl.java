@@ -49,7 +49,7 @@ public class PCARootActorControl extends AbstractProtocolParticipantControl<PCAR
                                       .convolutionSize(convolutionSize)
                                       .build();
         val control = new PCACalculatorControl(model);
-        val calculator = trySpawnChild(ReapedActor.props(control), "PCACalculator");
+        val calculator = trySpawnChild(control, "PCACalculator");
         if (!calculator.isPresent())
         {
             getLog().error("Unable to create PCACalculator!");
@@ -73,7 +73,7 @@ public class PCARootActorControl extends AbstractProtocolParticipantControl<PCAR
                                        .numberOfParticipants(numberOfParticipants)
                                        .build();
         val control = new PCACoordinatorControl(model);
-        val coordinator = trySpawnChild(ReapedActor.props(control), "PCACoordinator");
+        val coordinator = trySpawnChild(control, "PCACoordinator");
         if (!coordinator.isPresent())
         {
             getLog().error("Unable to create PCACoordinator!");

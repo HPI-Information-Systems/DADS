@@ -178,6 +178,6 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
         val control = new MessageProxyControl(model);
 
-        return trySpawnChild(ProtocolParticipant.props(control), "MessageProxy");
+        return trySpawnChild(control, "MessageProxy");
     }
 }

@@ -63,7 +63,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
                                         .supervisor(getModel().getSelf())
                                         .build();
         val control = new ActorPoolWorkerControl(model);
-        val worker = trySpawnChild(ProtocolParticipant.props(control), "ActorPoolWorker");
+        val worker = trySpawnChild(control, "ActorPoolWorker");
 
         if (!worker.isPresent())
         {

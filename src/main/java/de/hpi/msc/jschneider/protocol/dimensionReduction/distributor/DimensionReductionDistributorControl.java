@@ -67,6 +67,8 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
     @Override
     protected void onDataTransferFinished(long operationId)
     {
+        super.onDataTransferFinished(operationId);
+
         getModel().setPrincipalComponentsTransferCompleted(getModel().isPrincipalComponentsTransferCompleted() || operationId == getModel().getPrincipalComponentsTransferOperationId());
         getModel().setRotationTransferCompleted(getModel().isRotationTransferCompleted() || operationId == getModel().getRotationTransferOperationId());
         getModel().setColumnMeansTransferCompleted(getModel().isColumnMeansTransferCompleted() || operationId == getModel().getColumnMeansTransferOperationId());
@@ -77,7 +79,5 @@ public class DimensionReductionDistributorControl extends AbstractProtocolPartic
         {
             isReadyToBeTerminated();
         }
-
-        super.onDataTransferFinished(operationId);
     }
 }

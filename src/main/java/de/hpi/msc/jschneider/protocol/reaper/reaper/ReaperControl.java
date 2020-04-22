@@ -5,6 +5,7 @@ import de.hpi.msc.jschneider.protocol.common.CommonMessages;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.heartbeat.HeartbeatEvents;
+import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorRegistrationEvents;
 import de.hpi.msc.jschneider.protocol.reaper.ReaperEvents;
@@ -42,7 +43,7 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
     {
         try
         {
-            if (message.getSender().path().root() != getModel().getSelf().path().root())
+            if (!ProcessorId.of(message.getSender()).equals(ProcessorId.of(getModel().getSelf())))
             {
                 getLog().error("Actor of remote system ({}) wants to be watched!", ProcessorId.of(message.getSender()));
                 return;
@@ -50,8 +51,8 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
 
             if (tryWatch(message.getSender()))
             {
-                getLog().debug("{} is now watching {} actors.",
-                               getClass().getName(),
+                getLog().debug("{} created, now watching {} actors.",
+                               message.getSender().path(),
                                getModel().getWatchedActors().size());
             }
         }
@@ -65,6 +66,10 @@ public class ReaperControl extends AbstractProtocolParticipantControl<ReaperMode
     protected void onTerminated(Terminated message)
     {
         super.onTerminated(message);
+
+        getLog().debug("{} terminated, now watching {} actors.",
+                       message.getActor().path(),
+                       getModel().getWatchedActors().size());
 
 //        if (!getModel().getWatchedActors().isEmpty())
 //        {

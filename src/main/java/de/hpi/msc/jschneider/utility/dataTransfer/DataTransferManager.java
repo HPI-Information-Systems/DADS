@@ -54,7 +54,7 @@ public class DataTransferManager
                                         .initializer(initializer)
                                         .build();
         val distributorControl = new DataDistributorControl(model);
-        val distributor = control.trySpawnChild(ProtocolParticipant.props(distributorControl), "DataDistributor");
+        val distributor = control.trySpawnChild(distributorControl, "DataDistributor");
 
         if (!distributor.isPresent())
         {

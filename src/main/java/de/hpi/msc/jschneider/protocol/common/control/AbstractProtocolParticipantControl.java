@@ -6,12 +6,14 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import akka.actor.Terminated;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
+import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.eventDispatcher.EventDispatcherMessages;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
 import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferManager;
@@ -118,11 +120,12 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
             return;
         }
 
-        if (!getModel().getDataTransferManager().hasRunningDataTransfers())
+        if (getModel().getDataTransferManager().hasRunningDataTransfers())
         {
             return;
         }
 
+        getLog().debug("{} is terminating itself!", getClass().getSimpleName());
         getModel().getSelf().tell(PoisonPill.getInstance(), getModel().getSelf());
     }
 
@@ -238,10 +241,20 @@ public abstract class AbstractProtocolParticipantControl<TModel extends Protocol
     }
 
     @Override
-    public final Optional<ActorRef> trySpawnChild(Props props, String name)
+    public final <TChildModel extends ProtocolParticipantModel, TChildControl extends ProtocolParticipantControl<TChildModel>> Optional<ActorRef> trySpawnChild(TChildControl control, String name)
     {
         try
         {
+            Props props = null;
+            if (getLocalProtocol(ProtocolType.Reaper).isPresent())
+            {
+                props = ReapedActor.props(control);
+            }
+            else
+            {
+                props = ProtocolParticipant.props(control);
+            }
+
             val child = getModel().getChildFactory().create(props, String.format("%1$s-%2$d", name, childActorCounter.getAndIncrement()));
             if (!getModel().getChildActors().add(child))
             {

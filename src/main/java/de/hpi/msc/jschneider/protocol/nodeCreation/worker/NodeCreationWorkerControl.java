@@ -384,7 +384,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                          .pointsToEvaluate(getModel().getDensitySamples())
                                          .build();
         val control = new DensityEstimatorControl(model);
-        val estimator = trySpawnChild(ProtocolParticipant.props(control), "DensityEstimator");
+        val estimator = trySpawnChild(control, "DensityEstimator");
         if (!estimator.isPresent())
         {
             getLog().error("Unable to create new DensityEstimator!");

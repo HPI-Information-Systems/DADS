@@ -45,7 +45,7 @@ public class SequenceSliceDistributionRootActorControl extends AbstractProtocolP
         val model = SequenceSliceReceiverModel.builder()
                                               .build();
         val control = new SequenceSliceReceiverControl(model);
-        val sliceReceiver = trySpawnChild(ProtocolParticipant.props(control), "SequenceSliceReceiver");
+        val sliceReceiver = trySpawnChild(control, "SequenceSliceReceiver");
 
         if (!sliceReceiver.isPresent())
         {
