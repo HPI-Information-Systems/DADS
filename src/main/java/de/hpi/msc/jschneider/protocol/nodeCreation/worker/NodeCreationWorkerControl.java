@@ -418,6 +418,8 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                                                                                                          .build());
 
 //            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
+
+            isReadyToBeTerminated();
         }
         finally
         {
