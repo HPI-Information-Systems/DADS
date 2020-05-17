@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.utility.Int64Range;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,8 +23,8 @@ public class DensityCalculatorMessages
         private DoubleBigList pointsToEvaluate;
         private double weight;
         private double whitening;
-        private double startFraction;
-        private double endFraction;
+        @NonNull
+        private Int64Range calculationRange;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -36,8 +37,7 @@ public class DensityCalculatorMessages
                             .pointsToEvaluate(getPointsToEvaluate())
                             .weight(getWeight())
                             .whitening(getWhitening())
-                            .startFraction(getStartFraction())
-                            .endFraction(getEndFraction())
+                            .calculationRange(getCalculationRange())
                             .build();
         }
     }

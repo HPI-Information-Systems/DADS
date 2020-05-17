@@ -18,8 +18,8 @@ public class LessPointsThanSamplesCalculator implements WorkConsumer
 
     private void process(ActorPoolWorkerControl control, DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage message)
     {
-        val startIndex = (long) Math.floor(message.getStartFraction() * message.getPointsToEvaluate().size64());
-        val endIndex = (long) Math.floor(message.getEndFraction() * message.getPointsToEvaluate().size64());
+        val startIndex = message.getCalculationRange().getFrom();
+        val endIndex = message.getCalculationRange().getTo();
 
         val results = new DoubleBigArrayBigList(endIndex - startIndex);
 

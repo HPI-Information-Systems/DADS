@@ -95,6 +95,8 @@ public class DensityEstimatorControl extends AbstractProtocolParticipantControl<
     {
         try
         {
+            assert !getModel().getProbabilityChunks().containsKey(message.getStartIndex()) : "Probabilities for start index were already received!";
+
             getModel().getProbabilityChunks().put(message.getStartIndex(), message.getProbabilities());
 
             getLog().info("Received result chunk for intersection segment {} ({} / {}).",

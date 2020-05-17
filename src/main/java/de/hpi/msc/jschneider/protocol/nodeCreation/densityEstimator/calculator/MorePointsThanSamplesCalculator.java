@@ -19,9 +19,13 @@ public class MorePointsThanSamplesCalculator implements WorkConsumer
     private void process(ActorPoolWorkerControl control, DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage message)
     {
         val results = new DoubleBigArrayBigList(message.getPointsToEvaluate().size64());
+        for (var i = 0; i < message.getPointsToEvaluate().size64(); ++i)
+        {
+            results.add(0.0d);
+        }
 
-        val startIndex = (long) Math.floor(message.getStartFraction() * message.getSamples().size64());
-        val endIndex = (long) Math.floor(message.getEndFraction() * message.getSamples().size64());
+        val startIndex = message.getCalculationRange().getFrom();
+        val endIndex = message.getCalculationRange().getTo();
 
         for (var i = startIndex; i < endIndex; ++i)
         {

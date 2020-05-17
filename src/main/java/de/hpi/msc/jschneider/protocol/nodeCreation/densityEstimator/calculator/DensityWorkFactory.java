@@ -1,26 +1,29 @@
 package de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator;
 
 import akka.actor.ActorRef;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkFactory;
+import de.hpi.msc.jschneider.utility.Int64Range;
 import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.objects.ObjectBigArrayBigList;
+import it.unimi.dsi.fastutil.objects.ObjectBigList;
 import lombok.SneakyThrows;
 import lombok.val;
+import lombok.var;
 
 import java.util.concurrent.Callable;
 
 public class DensityWorkFactory implements WorkFactory
 {
-    private static final double CHUNK_SIZE = 1.0d / 250.0d;
-
     private final ActorRef supervisor;
     private final DoubleBigList samples;
     private final DoubleBigList pointsToEvaluate;
     private final double weight;
     private final double whitening;
     private final Callable<WorkConsumer> workConsumerFactory;
-    private double nextChunkStart = 0.0d;
+    private final ObjectBigList<Int64Range> calculationRanges;
 
     public DensityWorkFactory(ActorRef supervisor, DoubleBigList samples, DoubleBigList pointsToEvaluate, double weight, double whitening)
     {
@@ -33,38 +36,64 @@ public class DensityWorkFactory implements WorkFactory
         workConsumerFactory = pointsToEvaluate.size64() >= samples.size64()
                               ? MorePointsThanSamplesCalculator::new
                               : LessPointsThanSamplesCalculator::new;
+
+        calculationRanges = pointsToEvaluate.size64() >= samples.size64()
+                            ? createCalculationRanges(samples.size64())
+                            : createCalculationRanges(pointsToEvaluate.size64());
+    }
+
+    private ObjectBigList<Int64Range> createCalculationRanges(long maximum)
+    {
+        val desiredNumberOfChunks = SystemParameters.getNumberOfWorkers() * 10L;
+        var chunkSize = (long) Math.max(1L, maximum / (double) desiredNumberOfChunks);
+        val numberOfCalculations = (long) Math.ceil(maximum / (double) chunkSize);
+        chunkSize = (long) Math.floor(maximum / (double) numberOfCalculations);
+        val calculationRanges = new ObjectBigArrayBigList<Int64Range>(numberOfCalculations);
+        var nextChunkStart = 0L;
+
+        for (var i = 0L; i < numberOfCalculations; ++i)
+        {
+            var nextChunkEnd = Math.max(nextChunkStart + 1L, nextChunkStart + chunkSize);
+            if (i == numberOfCalculations - 1)
+            {
+                // last chunk takes all the rest
+                nextChunkEnd = maximum;
+            }
+
+            calculationRanges.add(Int64Range.builder()
+                                            .from(nextChunkStart)
+                                            .to(nextChunkEnd)
+                                            .build());
+            nextChunkStart = nextChunkEnd;
+        }
+
+        return calculationRanges;
     }
 
     public long expectedNumberOfCalculations()
     {
-        return (long) Math.ceil(1.0d / CHUNK_SIZE);
+        return calculationRanges.size64();
     }
 
     @Override
     public boolean hasNext()
     {
-        return nextChunkStart < 1.0d;
+        return !calculationRanges.isEmpty();
     }
 
     @SneakyThrows
     @Override
     public ActorPoolMessages.WorkMessage next(ActorRef worker)
     {
-        val chunkEndFraction = Math.min(1.0d, nextChunkStart + CHUNK_SIZE);
-
-        val message = DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage.builder()
-                                                                                   .sender(supervisor)
-                                                                                   .receiver(worker)
-                                                                                   .consumer(workConsumerFactory.call())
-                                                                                   .samples(samples)
-                                                                                   .pointsToEvaluate(pointsToEvaluate)
-                                                                                   .weight(weight)
-                                                                                   .whitening(whitening)
-                                                                                   .startFraction(nextChunkStart)
-                                                                                   .endFraction(chunkEndFraction)
-                                                                                   .build();
-
-        nextChunkStart += CHUNK_SIZE;
-        return message;
+        return DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage.builder()
+                                                                            .sender(supervisor)
+                                                                            .receiver(worker)
+                                                                            .consumer(workConsumerFactory.call())
+                                                                            .samples(samples)
+                                                                            .pointsToEvaluate(pointsToEvaluate)
+                                                                            .weight(weight)
+                                                                            .whitening(whitening)
+                                                                            .calculationRange(calculationRanges.remove(0L))
+                                                                            .build();
     }
 }
