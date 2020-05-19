@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.ojalgo.function.aggregator.Aggregator;
 import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.store.MatrixStore;
+import org.ojalgo.matrix.store.RawStore;
+import org.ojalgo.matrix.store.SparseStore;
 import org.ojalgo.structure.Access1D;
 
 import java.util.ArrayList;
@@ -98,8 +100,7 @@ public class Calculate
 
     public static MatrixStore<Double> makeFilledRowVector(long length, double value)
     {
-        val matrix = Primitive64Matrix.FACTORY.rows(DoubleStream.generate(() -> value).limit(length).toArray());
-        return MatrixStore.PRIMITIVE64.makeWrapper(matrix).get();
+        return new ConstantVector(1L, length, value);
     }
 
     public static MatrixStore<Double> makeRowVector(double... values)
@@ -166,7 +167,9 @@ public class Calculate
         val numberOfRows = input.countRows();
         val factor = 1.0d / numberOfRows;
         val e = makeFilledRowVector(numberOfRows, factor);
-        return e.multiply(input);
+        val result = SparseStore.PRIMITIVE64.make(e.countRows(), input.countColumns());
+        result.fillByMultiplying(e, input);
+        return result.get();
     }
 
     public static MatrixStore<Double> columnCenteredDataMatrix(MatrixStore<Double> input)
