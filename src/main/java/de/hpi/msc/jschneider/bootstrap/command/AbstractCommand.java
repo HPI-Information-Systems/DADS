@@ -16,6 +16,7 @@ public abstract class AbstractCommand
     private static final boolean DEFAULT_DISABLE_MESSAGE_EXCHANGE = false;
     private static final boolean DEFAULT_DISABLE_STATISTICS = false;
     private static final boolean DEFAULT_DISABLE_SEQUENCE_MATRIX = false;
+    private static final boolean DEFAULT_DISABLE_SMART_SCORING = false;
 
     @Parameter(names = "--host", description = "host address of THIS actor system", required = true)
     private String host;
@@ -40,4 +41,7 @@ public abstract class AbstractCommand
 
     @Parameter(names = "--no-sequence-matrix", description = "disables the SequenceMatrix optimization", required = false)
     private boolean disableSequenceMatrix = DEFAULT_DISABLE_SEQUENCE_MATRIX;
+
+    @Parameter(names = "--no-smart-scoring", description = "disables the smart scoring (caching) optimization", required = false)
+    private boolean disableSmartScoring = DEFAULT_DISABLE_SMART_SCORING;
 }
