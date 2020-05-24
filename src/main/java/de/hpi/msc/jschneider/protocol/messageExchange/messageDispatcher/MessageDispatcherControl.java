@@ -2,7 +2,6 @@ package de.hpi.msc.jschneider.protocol.messageExchange.messageDispatcher;
 
 import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.CommonMessages;
-import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
@@ -29,6 +28,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         return builder.match(CommonMessages.SetUpProtocolMessage.class, this::onSetUp)
                       .match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
                       .match(ProcessorRegistrationEvents.ProcessorJoinedEvent.class, this::onProcessorJoined)
+                      .match(MessageExchangeMessages.IntroduceMessageProxyMessage.class, this::onIntroduceMessageProxy)
                       .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage);
     }
 
@@ -48,7 +48,52 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
         // we do NOT need to complete the message, because this message is not sent via a message proxy and therefore
         // is not stored in one of the queues
+        for (val processor : getModel().getProcessors())
+        {
+            introduceMessageProxy(processor.getId());
+        }
+
         dequeueUndeliveredMessages();
+    }
+
+    private void introduceMessageProxy(ProcessorId remoteProcessor)
+    {
+        val remoteProtocol = getProtocol(remoteProcessor, ProtocolType.MessageExchange);
+        if (!remoteProtocol.isPresent())
+        {
+            getLog().error("Unable to get MessageExchange protocol of {}!", remoteProcessor);
+            return;
+        }
+
+        val proxy = getOrCreateMessageProxy(remoteProcessor);
+        if (!proxy.isPresent())
+        {
+            getLog().error("Unable to get MessageProxy for processor {}!", remoteProcessor);
+            return;
+        }
+
+        val receiver = remoteProtocol.get().getRootActor();
+        receiver.tell(MessageExchangeMessages.IntroduceMessageProxyMessage.builder()
+                                                                          .sender(getModel().getSelf())
+                                                                          .receiver(receiver)
+                                                                          .messageProxy(proxy.get())
+                                                                          .build(),
+                      getModel().getSelf());
+    }
+
+    private void onIntroduceMessageProxy(MessageExchangeMessages.IntroduceMessageProxyMessage message)
+    {
+        val proxy = getOrCreateMessageProxy(ProcessorId.of(message.getSender()));
+        if (!proxy.isPresent())
+        {
+            getLog().error("Unable to get MessageProxy for processor {}!", ProcessorId.of(message.getSender()));
+            return;
+        }
+
+        proxy.get().tell(MessageExchangeMessages.UpdateRemoteMessageReceiverMessage.builder()
+                                                                                   .remoteMessageReceiver(message.getMessageProxy())
+                                                                                   .build(),
+                         getModel().getSelf());
     }
 
     private void onProcessorJoined(ProcessorRegistrationEvents.ProcessorJoinedEvent message)
@@ -59,7 +104,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
             return;
         }
 
-        // we do NOT need to complete the message, because this message is not sent via a message proxy and therefore
+        // we do NOT need to complete this message, because it is not sent via a message proxy and therefore
         // is not stored in one of the queues
         dequeueUndeliveredMessages();
     }
@@ -171,7 +216,7 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         val model = MessageProxyModel.builder()
-                                     .remoteMessageDispatcher(remoteMessageDispatcher.get().getRootActor())
+                                     .remoteMessageReceiver(remoteMessageDispatcher.get().getRootActor())
                                      .schedulerProvider(getModel().getSchedulerProvider())
                                      .dispatcherProvider(getModel().getDispatcherProvider())
                                      .build();

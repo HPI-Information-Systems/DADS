@@ -35,6 +35,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
     public ImprovedReceiveBuilder complementReceiveBuilder(ImprovedReceiveBuilder builder)
     {
         return builder.match(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class, this::onRegistrationAcknowledged)
+                      .match(MessageExchangeMessages.UpdateRemoteMessageReceiverMessage.class, this::onUpdateRemoteMessageReceiver)
                       .match(ScoringEvents.ReadyForTerminationEvent.class, this::onReadyForTermination)
                       .match(MessageExchangeMessages.MessageCompletedMessage.class, this::onMessageCompleted)
                       .match(MessageExchangeMessages.MessageExchangeMessage.class, this::onMessage)
@@ -140,7 +141,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
                                                                                                                  .sender(getModel().getSelf())
                                                                                                                  .receiver(eventDispatcher)
                                                                                                                  .dateTime(LocalDateTime.now())
-                                                                                                                 .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageDispatcher()))
+                                                                                                                 .remoteProcessor(ProcessorId.of(getModel().getRemoteMessageReceiver()))
                                                                                                                  .totalNumberOfEnqueuedMessages(totalEnqueuedMessages.get())
                                                                                                                  .totalNumberOfUnacknowledgedMessages(totalUnacknowledgedMessages.get())
                                                                                                                  .largestMessageQueueSize(finalLargestMessageQueueSize)
@@ -162,6 +163,13 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         {
             getModel().getMeasureUtilizationTask().cancel();
         }
+    }
+
+    private void onUpdateRemoteMessageReceiver(MessageExchangeMessages.UpdateRemoteMessageReceiverMessage message)
+    {
+        getModel().setRemoteMessageReceiver(message.getRemoteMessageReceiver());
+
+        getLog().info("{} is now transferring messages to {}.", getModel().getSelf().path(), message.getRemoteMessageReceiver().path());
     }
 
     private void onMessageCompleted(MessageExchangeMessages.MessageCompletedMessage message)
@@ -247,7 +255,7 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
         }
         else
         {
-            getModel().getRemoteMessageDispatcher().tell(message, message.getSender());
+            getModel().getRemoteMessageReceiver().tell(message, message.getSender());
         }
     }
 

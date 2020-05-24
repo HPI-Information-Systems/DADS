@@ -37,7 +37,7 @@ public class TestMessageProxyControl extends ProtocolTestCase
     private MessageProxyModel model(TestProcessor connectedProcessor)
     {
         return finalizeModel(MessageProxyModel.builder()
-                                              .remoteMessageDispatcher(connectedProcessor.getProtocol(ProtocolType.MessageExchange).getRootActor())
+                                              .remoteMessageReceiver(connectedProcessor.getProtocol(ProtocolType.MessageExchange).getRootActor())
                                               .build());
     }
 

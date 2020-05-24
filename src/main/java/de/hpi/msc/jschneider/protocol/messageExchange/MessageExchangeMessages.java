@@ -48,4 +48,20 @@ public class MessageExchangeMessages
         @NonNull
         private long completedMessageId;
     }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class IntroduceMessageProxyMessage extends MessageExchangeMessage
+    {
+        private static final long serialVersionUID = -8420943951486193295L;
+        @NonNull
+        private ActorRef messageProxy;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class UpdateRemoteMessageReceiverMessage implements Serializable
+    {
+        private static final long serialVersionUID = -9094788773578277980L;
+        @NonNull
+        private ActorRef remoteMessageReceiver;
+    }
 }
