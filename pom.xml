@@ -3,10 +3,15 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>de.hpi.msc.jschneider</groupId>
+        <artifactId>distributed-anomaly-detection</artifactId>
+        <version>3.0</version>
+    </parent>
 
     <groupId>de.hpi.msc.jschneider</groupId>
-    <artifactId>distributed-anomaly-detection</artifactId>
     <version>3.0</version>
+    <artifactId>Main</artifactId>
     <packaging>jar</packaging>
 
     <properties>
@@ -70,10 +75,6 @@
             </testResource>
         </testResources>
     </build>
-
-    <modules>
-        <module>ojAlgo</module>
-    </modules>
 
     <dependencies>
         <dependency>
