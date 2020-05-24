@@ -83,6 +83,8 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
     private void onIntroduceMessageProxy(MessageExchangeMessages.IntroduceMessageProxyMessage message)
     {
+        getModel().getRemoteMessageProxies().put(ProcessorId.of(message.getSender()), message.getMessageProxy());
+
         val proxy = getOrCreateMessageProxy(ProcessorId.of(message.getSender()));
         if (!proxy.isPresent())
         {
@@ -162,6 +164,15 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
     private boolean tryDeliver(MessageExchangeMessages.MessageExchangeMessage message)
     {
+        val receiverProcessor = ProcessorId.of(message.getReceiver());
+
+        if ((message instanceof MessageExchangeMessages.MessageCompletedMessage)
+            && !receiverProcessor.equals(ProcessorId.of(getModel().getSelf())))
+        {
+            // deliver acknowledgement directly to remote MessageProxy
+            return tryDeliver((MessageExchangeMessages.MessageCompletedMessage) message);
+        }
+
         val proxy = getMessageProxy(message);
         if (!proxy.isPresent())
         {
@@ -169,6 +180,28 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
         }
 
         proxy.get().tell(message, message.getSender());
+        return true;
+    }
+
+    private boolean tryDeliver(MessageExchangeMessages.MessageCompletedMessage message)
+    {
+        val receiverProcessor = ProcessorId.of(message.getReceiver());
+        val receiverMessageProxy = getModel().getRemoteMessageProxies().get(receiverProcessor);
+
+        if (receiverMessageProxy != null)
+        {
+            receiverMessageProxy.tell(message, getModel().getSelf());
+            return true;
+        }
+
+        val remoteProtocol = getProtocol(receiverProcessor, ProtocolType.MessageExchange);
+        if (!remoteProtocol.isPresent())
+        {
+            getLog().error("Unable to get MessageExchange protocol for {}!", receiverProcessor);
+            return false;
+        }
+
+        remoteProtocol.get().getRootActor().tell(message, getModel().getSelf());
         return true;
     }
 
@@ -194,11 +227,11 @@ public class MessageDispatcherControl extends AbstractProtocolParticipantControl
 
     private Optional<ActorRef> getOrCreateMessageProxy(ProcessorId processorId)
     {
-        var messageProxy = Optional.ofNullable(getModel().getMessageProxies().get(processorId));
+        var messageProxy = Optional.ofNullable(getModel().getLocalMessageProxies().get(processorId));
         if (!messageProxy.isPresent())
         {
             messageProxy = tryCreateMessageProxy(processorId);
-            messageProxy.ifPresent(actorRef -> getModel().getMessageProxies().put(processorId, actorRef));
+            messageProxy.ifPresent(actorRef -> getModel().getLocalMessageProxies().put(processorId, actorRef));
         }
 
         return messageProxy;

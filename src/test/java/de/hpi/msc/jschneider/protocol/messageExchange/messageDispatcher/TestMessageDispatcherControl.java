@@ -62,7 +62,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
                                  .build();
         messageInterface.apply(message);
 
-        assertThat(control.getModel().getMessageProxies().size()).isEqualTo(1);
+        assertThat(control.getModel().getLocalMessageProxies().size()).isEqualTo(1);
         val forwardedMessage = localToRemoteMessageProxy.expectMsgClass(TestMessage.class);
         assertThat(forwardedMessage).isSameAs(message);
     }
@@ -70,7 +70,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
     public void testChooseSameMessageProxyForBothDirections()
     {
         val control = control(remoteProcessor);
-        control.getModel().getMessageProxies().put(remoteProcessor.getId(), localToRemoteMessageProxy.ref());
+        control.getModel().getLocalMessageProxies().put(remoteProcessor.getId(), localToRemoteMessageProxy.ref());
         val messageInterface = createMessageInterface(control);
 
         val localToRemoteMessage = TestMessage.builder()
@@ -100,7 +100,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
                                  .build();
         messageInterface.apply(message);
 
-        assertThat(control.getModel().getMessageProxies()).isEmpty();
+        assertThat(control.getModel().getLocalMessageProxies()).isEmpty();
     }
 
     public void testLocalMessagesAreAlsoProxied()
@@ -115,7 +115,7 @@ public class TestMessageDispatcherControl extends ProtocolTestCase
                                  .build();
         messageInterface.apply(message);
 
-        assertThat(control.getModel().getMessageProxies().size()).isEqualTo(1);
+        assertThat(control.getModel().getLocalMessageProxies().size()).isEqualTo(1);
         val forwardedMessage = localToLocalMessageProxy.expectMsgClass(TestMessage.class);
         assertThat(forwardedMessage).isSameAs(message);
     }

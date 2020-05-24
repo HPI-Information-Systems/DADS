@@ -200,6 +200,14 @@ public class MessageProxyControl extends AbstractProtocolParticipantControl<Mess
 
     private void onMessage(MessageExchangeMessages.MessageExchangeMessage message)
     {
+        val myProcessor = ProcessorId.of(getModel().getSelf());
+        if (ProcessorId.of(message.getReceiver()).equals(myProcessor)
+            && !ProcessorId.of(getModel().getRemoteMessageReceiver()).equals(myProcessor))
+        {
+            forward(message);
+            return;
+        }
+
         val receiverQueue = getOrCreateMessageQueue(message.getReceiver().path());
         val receiverQueueSize = receiverQueue.enqueueBack(message);
         val totalQueueSize = getModel().getTotalNumberOfEnqueuedMessages().incrementAndGet();

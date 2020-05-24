@@ -23,7 +23,9 @@ public class MessageDispatcherModel extends AbstractProtocolParticipantModel
     @NonNull @Getter @Builder.Default
     private Queue<MessageExchangeMessages.MessageExchangeMessage> undeliveredMessages = new LinkedList<>();
     @NonNull @Getter
-    private final Map<ProcessorId, ActorRef> messageProxies = new HashMap<>();
+    private final Map<ProcessorId, ActorRef> localMessageProxies = new HashMap<>();
+    @NonNull @Getter
+    private final Map<ProcessorId, ActorRef> remoteMessageProxies = new HashMap<>();
     @NonNull @Getter
     private Callable<Scheduler> schedulerProvider;
     @NonNull @Getter
