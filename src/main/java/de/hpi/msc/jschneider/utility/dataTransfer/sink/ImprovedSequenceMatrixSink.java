@@ -67,10 +67,16 @@ public class ImprovedSequenceMatrixSink implements SequenceMatrixSink
             dataOffset++;
         }
 
-        assert dataOffset > unusedDataLength : "DataOffset <= UnusedDataLength!";
-
         val newUnusedDataLength = totalDataLength - dataOffset;
-        System.arraycopy(receiveBuffer, dataOffset - unusedDataLength, unusedData, 0, newUnusedDataLength);
+        if (dataOffset < unusedDataLength)
+        {
+            System.arraycopy(unusedData, dataOffset, unusedData, 0, unusedDataLength - dataOffset);
+            System.arraycopy(receiveBuffer, 0, unusedData, unusedDataLength - dataOffset, numberOfDoubles);
+        }
+        else
+        {
+            System.arraycopy(receiveBuffer, dataOffset - unusedDataLength, unusedData, 0, newUnusedDataLength);
+        }
         unusedDataLength = newUnusedDataLength;
     }
 

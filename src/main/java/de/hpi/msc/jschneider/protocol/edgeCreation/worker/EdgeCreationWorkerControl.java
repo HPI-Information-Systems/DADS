@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.edgeCreation.worker;
 
+import de.hpi.msc.jschneider.Debug;
 import de.hpi.msc.jschneider.data.graph.Graph;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
@@ -258,6 +259,11 @@ public class EdgeCreationWorkerControl extends AbstractProtocolParticipantContro
         if (!isReadyToCreateGraphPartitions())
         {
             return;
+        }
+
+        if (getModel().getLocalProcessor().isMaster())
+        {
+            Debug.print(getModel().getNodesInSegment(), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
         }
 
         getModel().setStartTime(LocalDateTime.now());

@@ -7,6 +7,8 @@ import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.LocalIntersection;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntBigList;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import lombok.SneakyThrows;
@@ -128,6 +130,51 @@ public class Debug
                               .collect(Collectors.toList()))
         {
             writer.write(node + "\n");
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
+    public static void print(Int2ObjectMap<DoubleBigList> nodes, String fileName)
+    {
+        if (!IS_ENABLED)
+        {
+            return;
+        }
+
+        val writer = createWriter(fileName);
+
+        val segmentIterator = nodes.keySet()
+                                   .stream().mapToInt(key -> key)
+                                   .sorted()
+                                   .iterator();
+
+        while (segmentIterator.hasNext())
+        {
+            val segment = segmentIterator.nextInt();
+            var nodeIndex = 0L;
+            val nodeIterator = nodes.get(segment)
+                                    .stream()
+                                    .mapToDouble(value -> value)
+                                    .sorted()
+                                    .iterator();
+
+            val sb = new StringBuilder();
+            while (nodeIterator.hasNext())
+            {
+                val distance = nodeIterator.nextDouble();
+                sb.append("{")
+                  .append(segment)
+                  .append("_")
+                  .append(nodeIndex)
+                  .append("} ")
+                  .append(distance)
+                  .append("\n");
+                nodeIndex++;
+            }
+            writer.write(sb.toString());
         }
 
         writer.flush();

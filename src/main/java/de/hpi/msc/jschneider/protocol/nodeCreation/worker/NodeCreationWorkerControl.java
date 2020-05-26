@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
-import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
@@ -406,7 +405,7 @@ public class NodeCreationWorkerControl extends AbstractProtocolParticipantContro
                 return;
             }
 
-//            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), "nodes.txt");
+//            Debug.print(getModel().getNodeCollections().values().toArray(new NodeCollection[0]), String.format("%1$s-nodes.txt", ProcessorId.of(getModel().getSelf())));
 
             getModel().setNodeExtractionEndTime(LocalDateTime.now());
 
