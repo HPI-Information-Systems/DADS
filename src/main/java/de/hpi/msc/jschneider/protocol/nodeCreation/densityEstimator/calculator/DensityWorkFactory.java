@@ -44,7 +44,7 @@ public class DensityWorkFactory implements WorkFactory
 
     private ObjectBigList<Int64Range> createCalculationRanges(long maximum)
     {
-        val desiredNumberOfChunks = SystemParameters.getNumberOfWorkers() * 10L;
+        val desiredNumberOfChunks = SystemParameters.getNumberOfWorkers() * 100L;
         var chunkSize = (long) Math.max(1L, maximum / (double) desiredNumberOfChunks);
         val numberOfCalculations = (long) Math.ceil(maximum / (double) chunkSize);
         chunkSize = (long) Math.floor(maximum / (double) numberOfCalculations);

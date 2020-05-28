@@ -10,6 +10,67 @@ from event import CalculationCompletedEvent, DurationEvent, MachineUtilizationEv
 from event.base import StatisticsEvent
 from event.duration import *
 
+PROCESS_STEP_NAME: str = "step_name"
+PROCESS_STEP_START: str = "start_time"
+PROCESS_STEP_END: str = "end_time"
+PROCESS_STEP_ABS_DUR: str = "abs_duration"
+PROCESS_STEP_REL_DUR: str = "rel_duration"
+
+MACHINE_UTILIZATION_TIME: str = "time"
+MACHINE_UTILIZATION_AVG_CPU: str = "avg_cpu"
+MACHINE_UTILIZATION_MIN_CPU: str = "min_cpu"
+MACHINE_UTILIZATION_MAX_CPU: str = "max_cpu"
+MACHINE_UTILIZATION_TOT_REL_MEM: str = "tot_rel_mem"
+MACHINE_UTILIZATION_TOT_ABS_MEM: str = "tot_abs_mem"
+MACHINE_UTILIZATION_AVG_REL_MEM: str = "avg_rel_mem"
+MACHINE_UTILIZATION_AVG_ABS_MEM: str = "avg_abs_mem"
+MACHINE_UTILIZATION_MIN_REL_MEM: str = "min_rel_mem"
+MACHINE_UTILIZATION_MIN_ABS_MEM: str = "min_abs_mem"
+MACHINE_UTILIZATION_MAX_REL_MEM: str = "max_rel_mem"
+MACHINE_UTILIZATION_MAX_ABS_MEM: str = "max_abs_mem"
+
+DATA_TRANSFER_NAME: str = "transfer_name"
+DATA_TRANSFER_START: str = "start_time"
+DATA_TRANSFER_END: str = "end_time"
+DATA_TRANSFER_ABS_DUR: str = "abs_duration"
+DATA_TRANSFER_REL_DUR: str = "rel_duration"
+DATA_TRANSFER_ABS_VOL: str = "abs_vol"
+DATA_TRANSFER_REL_VOL: str = "rel_vol"
+DATA_TRANSFER_AVG_RATE: str = "avg_rate"
+DATA_TRANSFER_MAX_REL_VOL: str = "max_rel_vol"
+DATA_TRANSFER_MAX_ABS_VOL: str = "max_abs_vol"
+DATA_TRANSFER_MIN_REL_VOL: str = "min_rel_vol"
+DATA_TRANSFER_MIN_ABS_VOL: str = "min_abs_vol"
+DATA_TRANSFER_NUM_PROC: str = "num_processors"
+
+STEP_STATS_SUM_ABS_DURATION: str = "sum_abs_duration"
+STEP_STATS_SUM_REL_DURATION: str = "sum_rel_duration"
+STEP_STATS_AVG_CPU: str = "avg_cpu"
+STEP_STATS_AVG_ABS_MEM: str = "avg_abs_mem"
+STEP_STATS_AVG_REL_MEM: str = "avg_rel_mem"
+STEP_STATS_MAX_ABS_MEM: str = "max_abs_mem"
+STEP_STATS_MAX_REL_MEM: str = "max_rel_mem"
+STEP_STATS_AVG_ABS_IDLE_TIME: str = "avg_abs_idle_time"
+STEP_STATS_AVG_REL_IDLE_TIME: str = "avg_rel_idle_time"
+STEP_STATS_TOT_ABS_IDLE_TIME: str = "tot_abs_idle_time"
+STEP_STATS_TOT_REL_IDLE_TIME: str = "tot_rel_idle_time"
+STEP_STATS_MAX_ABS_IDLE_TIME: str = "max_abs_idle_time"
+STEP_STATS_MAX_REL_IDLE_TIME: str = "max_rel_idle_time"
+STEP_STATS_TOT_ABS_BUSY_TIME: str = "tot_abs_busy_time"
+STEP_STATS_TOT_REL_BUSY_TIME: str = "tot_rel_busy_time"
+STEP_STATS_AVG_ABS_BUSY_TIME: str = "avg_abs_busy_time"
+STEP_STATS_AVG_REL_BUSY_TIME: str = "avg_rel_busy_time"
+STEP_STATS_MAX_ABS_BUSY_TIME: str = "max_abs_busy_time"
+STEP_STATS_MAX_REL_BUSY_TIME: str = "max_rel_busy_time"
+
+PROCESSOR_STEP_STATS_PROC_NAME: str = "processor"
+PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME: str = "tot_abs_idle_time"
+PROCESSOR_STEP_STATS_TOT_REL_IDLE_TIME: str = "tot_rel_idle_time"
+PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME: str = "tot_abs_busy_time"
+PROCESSOR_STEP_STATS_TOT_REL_BUSY_TIME: str = "tot_rel_busy_time"
+PROCESSOR_STEP_STATS_MAX_ABS_MEM: str = "max_abs_mem"
+PROCESSOR_STEP_STATS_MAX_REL_MEM: str = "max_rel_mem"
+
 
 class ClusterPlotter:
 
@@ -104,18 +165,20 @@ class ClusterPlotter:
         return (start - self._start_time).total_seconds(), (end - self._start_time).total_seconds()
 
     def show(self) -> None:
-        # self._extract_process_steps()
-        # self._extract_cpu_and_memory_utilization()
-        self._extract_data_transfers()
+        phases: pd.DataFrame = self._extract_process_steps()
+        machine_utilization: pd.DataFrame = self._extract_cpu_and_memory_utilization()
+        data_transfers: pd.DataFrame = self._extract_data_transfers()
+
+        self._extract_process_step_statistics(phases, machine_utilization, data_transfers)
 
         # self._figure.show()
 
-    def _extract_process_steps(self) -> None:
-        data: pd.DataFrame = pd.DataFrame({"step-name": [],
-                                           "start-time": [],
-                                           "end-time": [],
-                                           "abs-duration": [],
-                                           "rel-duration": []})
+    def _extract_process_steps(self) -> pd.DataFrame:
+        data: pd.DataFrame = pd.DataFrame({PROCESS_STEP_NAME: [],
+                                           PROCESS_STEP_START: [],
+                                           PROCESS_STEP_END: [],
+                                           PROCESS_STEP_ABS_DUR: [],
+                                           PROCESS_STEP_REL_DUR: []})
 
         for step_name in self._process_step_event_types():
             events: List[StatisticsEvent] = self._duration_events_of_type(step_name)
@@ -125,11 +188,11 @@ class ClusterPlotter:
             start, end = self._relative_start_and_end_time(events)
             absolute_duration: float = end - start
             relative_duration: float = absolute_duration / self._process_duration
-            data = data.append({"step-name": step_name,
-                                "start-time": start,
-                                "end-time": end,
-                                "abs-duration": absolute_duration,
-                                "rel-duration": relative_duration}, ignore_index=True)
+            data = data.append({PROCESS_STEP_NAME: step_name,
+                                PROCESS_STEP_START: start,
+                                PROCESS_STEP_END: end,
+                                PROCESS_STEP_ABS_DUR: absolute_duration,
+                                PROCESS_STEP_REL_DUR: relative_duration}, ignore_index=True)
 
             self._process_steps.append({
                 "type": "rect",
@@ -146,20 +209,21 @@ class ClusterPlotter:
             })
 
         data.to_csv("process-steps.csv", sep=";", index_label="index")
+        return data
 
-    def _extract_cpu_and_memory_utilization(self) -> None:
-        data: pd.DataFrame = pd.DataFrame({"time": [],
-                                           "avg-cpu": [],
-                                           "min-cpu": [],
-                                           "max-cpu": [],
-                                           "tot-rel-mem": [],
-                                           "tot-abs-mem": [],
-                                           "avg-rel-mem": [],
-                                           "avg-abs-mem": [],
-                                           "min-rel-mem": [],
-                                           "min-abs-mem": [],
-                                           "max-rel-mem": [],
-                                           "max-abs-mem": []})
+    def _extract_cpu_and_memory_utilization(self) -> pd.DataFrame:
+        data: pd.DataFrame = pd.DataFrame({MACHINE_UTILIZATION_TIME: [],
+                                           MACHINE_UTILIZATION_AVG_CPU: [],
+                                           MACHINE_UTILIZATION_MIN_CPU: [],
+                                           MACHINE_UTILIZATION_MAX_CPU: [],
+                                           MACHINE_UTILIZATION_TOT_REL_MEM: [],
+                                           MACHINE_UTILIZATION_TOT_ABS_MEM: [],
+                                           MACHINE_UTILIZATION_AVG_REL_MEM: [],
+                                           MACHINE_UTILIZATION_AVG_ABS_MEM: [],
+                                           MACHINE_UTILIZATION_MIN_REL_MEM: [],
+                                           MACHINE_UTILIZATION_MIN_ABS_MEM: [],
+                                           MACHINE_UTILIZATION_MAX_REL_MEM: [],
+                                           MACHINE_UTILIZATION_MAX_ABS_MEM: []})
 
         events: Dict[str, List[MachineUtilizationEvent]] = self._measurement_events_of_type(MachineUtilizationEvent.event_identifier())
         event_indices: Dict[str, int] = dict([(p, 0) for p in events])
@@ -207,18 +271,18 @@ class ClusterPlotter:
                 max_abs_mem = max(max_abs_mem, mem)
                 max_rel_mem = max(max_rel_mem, mem_ratio)
 
-            data = data.append({"time": sample_time,
-                                "avg-cpu": avg_cpu,
-                                "min-cpu": min_cpu,
-                                "max-cpu": max_cpu,
-                                "tot-rel-mem": tot_mem / total_cluster_memory,
-                                "tot-abs-mem": tot_mem,
-                                "avg-rel-mem": avg_abs_mem / average_processor_memory,
-                                "avg-abs-mem": avg_abs_mem,
-                                "min-rel-mem": min_rel_mem,
-                                "min-abs-mem": min_abs_mem,
-                                "max-rel-mem": max_rel_mem,
-                                "max-abs-mem": max_abs_mem}, ignore_index=True)
+            data = data.append({MACHINE_UTILIZATION_TIME: sample_time,
+                                MACHINE_UTILIZATION_AVG_CPU: avg_cpu,
+                                MACHINE_UTILIZATION_MIN_CPU: min_cpu,
+                                MACHINE_UTILIZATION_MAX_CPU: max_cpu,
+                                MACHINE_UTILIZATION_TOT_REL_MEM: tot_mem / total_cluster_memory,
+                                MACHINE_UTILIZATION_TOT_ABS_MEM: tot_mem,
+                                MACHINE_UTILIZATION_AVG_REL_MEM: avg_abs_mem / average_processor_memory,
+                                MACHINE_UTILIZATION_AVG_ABS_MEM: avg_abs_mem,
+                                MACHINE_UTILIZATION_MIN_REL_MEM: min_rel_mem,
+                                MACHINE_UTILIZATION_MIN_ABS_MEM: min_abs_mem,
+                                MACHINE_UTILIZATION_MAX_REL_MEM: max_rel_mem,
+                                MACHINE_UTILIZATION_MAX_ABS_MEM: max_abs_mem}, ignore_index=True)
 
             sample_time += self._sample_interval
 
@@ -226,8 +290,8 @@ class ClusterPlotter:
 
         # Memory
         self._figure.add_trace(go.Scatter(
-            x=data["time"],
-            y=data["avg-rel-mem"],
+            x=data[MACHINE_UTILIZATION_TIME],
+            y=data[MACHINE_UTILIZATION_AVG_REL_MEM],
             mode="lines",
             showlegend=True,
             name="Memory",
@@ -236,8 +300,8 @@ class ClusterPlotter:
 
         # CPU (Avg.)
         self._figure.add_trace(go.Scatter(
-            x=data["time"],
-            y=data["avg-cpu"],
+            x=data[MACHINE_UTILIZATION_TIME],
+            y=data[MACHINE_UTILIZATION_AVG_CPU],
             mode="lines",
             showlegend=True,
             name="CPU (avg.)",
@@ -246,8 +310,8 @@ class ClusterPlotter:
 
         # CPU (Max.)
         self._figure.add_trace(go.Scatter(
-            x=data["time"],
-            y=data["max-cpu"],
+            x=data[MACHINE_UTILIZATION_TIME],
+            y=data[MACHINE_UTILIZATION_MAX_CPU],
             mode="lines",
             showlegend=True,
             name="CPU (max.)",
@@ -255,6 +319,7 @@ class ClusterPlotter:
         ), row=1, col=1)
 
         self._add_process_shapes(1, 1)
+        return data
 
     def _interpolation_ratios(self, event_a: MeasurementEvent, event_b: MeasurementEvent, sample_time: float) -> Tuple[float, float]:
         if event_a.date_time == event_b.date_time:
@@ -268,20 +333,20 @@ class ClusterPlotter:
 
         return factor_a, 1 - factor_a
 
-    def _extract_data_transfers(self) -> None:
-        data: pd.DataFrame = pd.DataFrame({"transfer-name": [],
-                                           "start-time": [],
-                                           "end-time": [],
-                                           "abs-duration": [],
-                                           "rel-duration": [],
-                                           "abs-data": [],
-                                           "rel-data": [],
-                                           "avg-transfer-rate": [],
-                                           "max-abs-data": [],
-                                           "max-rel-data": [],
-                                           "min-abs-data": [],
-                                           "min-rel-data": [],
-                                           "num-processors": []})
+    def _extract_data_transfers(self) -> pd.DataFrame:
+        data: pd.DataFrame = pd.DataFrame({DATA_TRANSFER_NAME: [],
+                                           DATA_TRANSFER_START: [],
+                                           DATA_TRANSFER_END: [],
+                                           DATA_TRANSFER_ABS_DUR: [],
+                                           DATA_TRANSFER_REL_DUR: [],
+                                           DATA_TRANSFER_ABS_VOL: [],
+                                           DATA_TRANSFER_REL_VOL: [],
+                                           DATA_TRANSFER_AVG_RATE: [],
+                                           DATA_TRANSFER_MAX_REL_VOL: [],
+                                           DATA_TRANSFER_MAX_ABS_VOL: [],
+                                           DATA_TRANSFER_MIN_REL_VOL: [],
+                                           DATA_TRANSFER_MIN_ABS_VOL: [],
+                                           DATA_TRANSFER_NUM_PROC: []})
 
         events: List[DataTransferredEvent] = self._duration_events_of_type(DataTransferredEvent.event_identifier())
         data_transfer_names: Set[str] = set(e.simplified_name for e in events)
@@ -327,24 +392,163 @@ class ClusterPlotter:
             if received_bytes == 0:
                 continue
 
-            data = data.append({"transfer-name": transfer_name,
-                                "start-time": start,
-                                "end-time": end,
-                                "abs-duration": duration,
-                                "rel-duration": duration / self._process_duration,
-                                "abs-data": received_bytes,
-                                "avg-transfer-rate": received_bytes / duration,
-                                "max-abs-data": max_bytes,
-                                "max-rel-data": max_bytes / received_bytes,
-                                "min-abs-data": min_bytes,
-                                "min-rel-data": min_bytes / received_bytes,
-                                "num-processors": number_involved_processors}, ignore_index=True)
+            data = data.append({DATA_TRANSFER_NAME: transfer_name,
+                                DATA_TRANSFER_START: start,
+                                DATA_TRANSFER_END: end,
+                                DATA_TRANSFER_ABS_DUR: duration,
+                                DATA_TRANSFER_REL_DUR: duration / self._process_duration,
+                                DATA_TRANSFER_ABS_VOL: received_bytes,
+                                DATA_TRANSFER_AVG_RATE: received_bytes / duration,
+                                DATA_TRANSFER_MAX_ABS_VOL: max_bytes,
+                                DATA_TRANSFER_MAX_REL_VOL: max_bytes / received_bytes,
+                                DATA_TRANSFER_MIN_ABS_VOL: min_bytes,
+                                DATA_TRANSFER_MIN_REL_VOL: min_bytes / received_bytes,
+                                DATA_TRANSFER_NUM_PROC: number_involved_processors}, ignore_index=True)
 
         for i in range(data.shape[0]):
-            data.at[i, "rel-data"] = data.at[i, "abs-data"] / total_bytes if total_bytes != 0 else 0.0
+            data.at[i, DATA_TRANSFER_REL_VOL] = data.at[i, DATA_TRANSFER_ABS_VOL] / total_bytes if total_bytes != 0 else 0.0
 
-        data = data.sort_values(by="start-time")
+        data = data.sort_values(by=DATA_TRANSFER_START)
         data.to_csv("network-utilization.csv", sep=";", index_label="index")
+        return data
+
+    def _extract_process_step_statistics(self, process_steps: pd.DataFrame, machine_utilization: pd.DataFrame, data_transfers: pd.DataFrame) -> pd.DataFrame:
+        data: pd.DataFrame = pd.DataFrame({PROCESS_STEP_NAME: [],
+                                           PROCESS_STEP_START: [],
+                                           PROCESS_STEP_END: [],
+                                           PROCESS_STEP_ABS_DUR: [],
+                                           PROCESS_STEP_REL_DUR: [],
+                                           STEP_STATS_SUM_ABS_DURATION: [],
+                                           STEP_STATS_SUM_REL_DURATION: [],
+                                           STEP_STATS_AVG_CPU: [],
+                                           STEP_STATS_AVG_ABS_MEM: [],
+                                           STEP_STATS_AVG_REL_MEM: [],
+                                           STEP_STATS_MAX_ABS_MEM: [],
+                                           STEP_STATS_MAX_REL_MEM: [],
+                                           STEP_STATS_TOT_ABS_IDLE_TIME: [],
+                                           STEP_STATS_TOT_REL_IDLE_TIME: [],
+                                           STEP_STATS_AVG_ABS_IDLE_TIME: [],
+                                           STEP_STATS_AVG_REL_IDLE_TIME: [],
+                                           STEP_STATS_MAX_ABS_IDLE_TIME: [],
+                                           STEP_STATS_MAX_REL_IDLE_TIME: [],
+                                           STEP_STATS_TOT_ABS_BUSY_TIME: [],
+                                           STEP_STATS_TOT_REL_BUSY_TIME: [],
+                                           STEP_STATS_AVG_ABS_BUSY_TIME: [],
+                                           STEP_STATS_AVG_REL_BUSY_TIME: [],
+                                           STEP_STATS_MAX_ABS_BUSY_TIME: [],
+                                           STEP_STATS_MAX_REL_BUSY_TIME: []})
+
+        processor_step_stats: pd.DataFrame = pd.DataFrame({PROCESS_STEP_NAME: [],
+                                                           PROCESS_STEP_START: [],
+                                                           PROCESS_STEP_END: [],
+                                                           PROCESS_STEP_ABS_DUR: [],
+                                                           PROCESS_STEP_REL_DUR: [],
+                                                           PROCESSOR_STEP_STATS_PROC_NAME: [],
+                                                           PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME: [],
+                                                           PROCESSOR_STEP_STATS_TOT_REL_IDLE_TIME: [],
+                                                           PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME: [],
+                                                           PROCESSOR_STEP_STATS_TOT_REL_BUSY_TIME: [],
+                                                           PROCESSOR_STEP_STATS_MAX_ABS_MEM: [],
+                                                           PROCESSOR_STEP_STATS_MAX_REL_MEM: []})
+
+        num_processors: int = len(self._events)
+        for i in range(process_steps.shape[0]):
+            step_name: str = process_steps.at[i, PROCESS_STEP_NAME]
+            start: float = process_steps.at[i, PROCESS_STEP_START]
+            end: float = process_steps.at[i, PROCESS_STEP_END]
+            duration: float = process_steps.at[i, PROCESS_STEP_ABS_DUR]
+            summed_duration: float = duration * num_processors
+
+            step_machine_utilization: pd.DataFrame = machine_utilization.query(f"{MACHINE_UTILIZATION_TIME} >= {start} & {MACHINE_UTILIZATION_TIME} <= {end}")
+            # step_data_transfer: pd.DataFrame = data_transfers.query(f"{DATA_TRANSFER_START} <= {end} & {DATA_TRANSFER_END} >= {start}")
+
+            machine_avg: pd.DataFrame = step_machine_utilization.mean()
+            machine_max: pd.DataFrame = step_machine_utilization.max()
+
+            processor_step_stats = self._processor_stats_in(process_steps.iloc[i], processor_step_stats)
+            p_stats: pd.DataFrame = processor_step_stats.query(f"{PROCESS_STEP_NAME} == '{step_name}'")
+            p_stats_sum: pd.DataFrame = p_stats.sum()
+            p_stats_max: pd.DataFrame = p_stats.max()
+
+            data = data.append({PROCESS_STEP_NAME: step_name,
+                                PROCESS_STEP_START: start,
+                                PROCESS_STEP_END: end,
+                                PROCESS_STEP_ABS_DUR: duration,
+                                PROCESS_STEP_REL_DUR: process_steps.at[i, PROCESS_STEP_REL_DUR],
+                                STEP_STATS_SUM_ABS_DURATION: summed_duration,
+                                STEP_STATS_SUM_REL_DURATION: summed_duration / (self._process_duration * num_processors),
+                                STEP_STATS_AVG_CPU: machine_avg[MACHINE_UTILIZATION_AVG_CPU],
+                                STEP_STATS_AVG_ABS_MEM: machine_avg[MACHINE_UTILIZATION_AVG_ABS_MEM],
+                                STEP_STATS_AVG_REL_MEM: machine_avg[MACHINE_UTILIZATION_AVG_REL_MEM],
+                                STEP_STATS_MAX_ABS_MEM: machine_max[MACHINE_UTILIZATION_MAX_ABS_MEM],
+                                STEP_STATS_MAX_REL_MEM: machine_max[MACHINE_UTILIZATION_MAX_REL_MEM],
+                                STEP_STATS_TOT_ABS_IDLE_TIME: p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME],
+                                STEP_STATS_TOT_REL_IDLE_TIME: p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME] / summed_duration,
+                                STEP_STATS_AVG_ABS_IDLE_TIME: p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME] / num_processors,
+                                STEP_STATS_AVG_REL_IDLE_TIME: (p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME] / num_processors) / duration,
+                                STEP_STATS_MAX_ABS_IDLE_TIME: p_stats_max[PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME],
+                                STEP_STATS_MAX_REL_IDLE_TIME: p_stats_max[PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME] / duration,
+                                STEP_STATS_TOT_ABS_BUSY_TIME: p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME],
+                                STEP_STATS_TOT_REL_BUSY_TIME: p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME] / summed_duration,
+                                STEP_STATS_AVG_ABS_BUSY_TIME: p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME] / num_processors,
+                                STEP_STATS_AVG_REL_BUSY_TIME: (p_stats_sum[PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME] / num_processors) / duration,
+                                STEP_STATS_MAX_ABS_BUSY_TIME: p_stats_max[PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME],
+                                STEP_STATS_MAX_REL_BUSY_TIME: p_stats_max[PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME] / duration}, ignore_index=True)
+
+        data.to_csv("process-step-statistics.csv", sep=";", index_label="index")
+        processor_step_stats.to_csv("processor-step-statistics.csv", sep=";", index_label="index")
+        return data
+
+    def _processor_stats_in(self, process_step: pd.DataFrame, processor_step_stats: pd.DataFrame) -> pd.DataFrame:
+        start: float = process_step[PROCESS_STEP_START]
+        end: float = process_step[PROCESS_STEP_END]
+        duration: float = process_step[PROCESS_STEP_ABS_DUR]
+
+        idle_threshold: float = 1 / 20.0
+
+        events: Dict[str, List[MachineUtilizationEvent]] = self._measurement_events_of_type(MachineUtilizationEvent.event_identifier())
+        for processor in events:
+            processor_idle_time: float = 0.0
+            processor_busy_time: float = 0.0
+            processor_max_abs_mem: int = 0
+            processor_max_rel_mem: float = 0.0
+            processor_events: List[MachineUtilizationEvent] = events[processor]
+
+            for i in range(len(processor_events) - 1):
+                a: MachineUtilizationEvent = processor_events[i]
+                b: MachineUtilizationEvent = processor_events[i + 1]
+
+                rel_time_a: float = (a.date_time - self._start_time).total_seconds()
+                rel_time_b: float = (b.date_time - self._start_time).total_seconds()
+                measurement_duration: float = rel_time_b - rel_time_a
+
+                if rel_time_a < start:
+                    continue
+                if rel_time_a > end:
+                    break
+
+                processor_max_abs_mem = max(processor_max_abs_mem, a.used_memory)
+                processor_max_rel_mem = max(processor_max_rel_mem, a.used_memory_ratio)
+
+                if a.cpu_ratio < idle_threshold and b.cpu_ratio < idle_threshold:
+                    processor_idle_time += measurement_duration
+                else:
+                    processor_busy_time += measurement_duration
+
+            processor_step_stats = processor_step_stats.append({PROCESS_STEP_NAME: process_step[PROCESS_STEP_NAME],
+                                                                PROCESS_STEP_START: start,
+                                                                PROCESS_STEP_END: end,
+                                                                PROCESS_STEP_ABS_DUR: duration,
+                                                                PROCESS_STEP_REL_DUR: process_step[PROCESS_STEP_REL_DUR],
+                                                                PROCESSOR_STEP_STATS_PROC_NAME: processor,
+                                                                PROCESSOR_STEP_STATS_TOT_ABS_IDLE_TIME: processor_idle_time,
+                                                                PROCESSOR_STEP_STATS_TOT_REL_IDLE_TIME: processor_idle_time / duration,
+                                                                PROCESSOR_STEP_STATS_TOT_ABS_BUSY_TIME: processor_busy_time,
+                                                                PROCESSOR_STEP_STATS_TOT_REL_BUSY_TIME: processor_busy_time / duration,
+                                                                PROCESSOR_STEP_STATS_MAX_ABS_MEM: processor_max_abs_mem,
+                                                                PROCESSOR_STEP_STATS_MAX_REL_MEM: processor_max_rel_mem}, ignore_index=True)
+
+        return processor_step_stats
 
     def _add_process_shapes(self, row: int, column: int) -> None:
         for shape in self._process_steps:
