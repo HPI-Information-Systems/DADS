@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor;
 
-import akka.actor.Props;
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;
@@ -8,7 +7,6 @@ import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
 import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
-import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor.SequenceSliceDistributorControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.distributor.SequenceSliceDistributorModel;
 import lombok.val;

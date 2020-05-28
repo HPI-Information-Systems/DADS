@@ -42,9 +42,15 @@ public class ProcessorRegistrationProtocol
 
     public static Protocol initialize(ActorSystem actorSystem, boolean isMaster)
     {
+        var workLoadFactor = 1.0f;
+        if (isMaster)
+        {
+            workLoadFactor = ((MasterCommand)SystemParameters.getCommand()).getWorkLoadFactor();
+        }
         val localProcessor = BaseProcessor.builder()
                                           .isMaster(isMaster)
                                           .id(ProcessorId.of(actorSystem))
+                                          .maximumMemoryInBytes((long) (SystemParameters.getMaximumMemory() * workLoadFactor))
                                           .protocols(initializeProtocols(actorSystem))
                                           .build();
 
