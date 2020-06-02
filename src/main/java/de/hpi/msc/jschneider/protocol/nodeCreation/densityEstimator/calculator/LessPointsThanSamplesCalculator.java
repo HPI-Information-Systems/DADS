@@ -3,10 +3,9 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerControl;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import lombok.val;
 import lombok.var;
-
-import java.util.Arrays;
 
 public class LessPointsThanSamplesCalculator implements WorkConsumer
 {
@@ -19,19 +18,21 @@ public class LessPointsThanSamplesCalculator implements WorkConsumer
 
     private void process(ActorPoolWorkerControl control, DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage message)
     {
-        val startIndex = (int) Math.floor(message.getStartFraction() * message.getPointsToEvaluate().length);
-        val endIndex = (int) Math.floor(message.getEndFraction() * message.getPointsToEvaluate().length);
+        val startIndex = message.getCalculationRange().getFrom();
+        val endIndex = message.getCalculationRange().getTo();
 
-        val results = new double[endIndex - startIndex];
+        val results = new DoubleBigArrayBigList(endIndex - startIndex);
 
         for (var resultsIndex = startIndex; resultsIndex < endIndex; ++resultsIndex)
         {
-            val scaledPointsIndex = resultsIndex;
-            results[resultsIndex - startIndex] = Arrays.stream(message.getSamples())
-                                                       .map(sample -> sample - message.getPointsToEvaluate()[scaledPointsIndex])
-                                                       .map(diff -> (diff * diff) * 0.5d)
-                                                       .map(energy -> Math.exp(-energy) * message.getWeight())
-                                                       .sum();
+            val pointToEvaluate = message.getPointsToEvaluate().getDouble(resultsIndex) * message.getWhitening();
+
+            results.add(message.getSamples().stream()
+                               .mapToDouble(value -> value)
+                               .map(sample -> sample * message.getWhitening() - pointToEvaluate)
+                               .map(diff -> diff * diff * 0.5d)
+                               .map(energy -> Math.exp(-energy) * message.getWeight())
+                               .sum());
         }
 
         control.send(DensityCalculatorMessages.DensityProbabilitiesEstimatedMessage.builder()

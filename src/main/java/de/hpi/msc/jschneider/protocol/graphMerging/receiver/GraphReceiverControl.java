@@ -5,13 +5,11 @@ import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipant
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
 import lombok.val;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class GraphReceiverControl extends AbstractProtocolParticipantControl<GraphReceiverModel>
 {
@@ -29,35 +27,27 @@ public class GraphReceiverControl extends AbstractProtocolParticipantControl<Gra
 
     private void onInitializeGraphTransfer(DataTransferMessages.InitializeDataTransferMessage message)
     {
-        getModel().getDataTransferManager().accept(message, dataReceiver -> dataReceiver.whenDataPartReceived(this::onGraphPartReceived)
+        getModel().getDataTransferManager().accept(message, dataReceiver -> dataReceiver.addSink(getModel().getGraphEdgeSink())
                                                                                         .whenFinished(this::onGraphTransferFinished));
-    }
-
-    private void onGraphPartReceived(DataTransferMessages.DataPartMessage message)
-    {
-        val edges = Serialize.toGraphEdges(message.getPart());
-
-        for (val edge : edges)
-        {
-            getModel().getEdges().put(edge.hashCode(), edge);
-        }
     }
 
     private void onGraphTransferFinished(DataReceiver dataReceiver)
     {
-        val numberOfEdges = getModel().getEdges().size();
-        val numberOfNodes = getModel().getEdges()
-                                      .values()
-                                      .stream()
-                                      .flatMapToInt(edge -> Arrays.stream(new int[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
-                                      .boxed()
-                                      .collect(Collectors.toSet())
-                                      .size();
+        val edges = getModel().getGraphEdgeSink().edges();
+
+        val numberOfEdges = edges.size();
+        val numberOfNodes = edges.values()
+                                 .stream()
+                                 .flatMapToInt(edge -> Arrays.stream(new int[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
+                                 .distinct()
+                                 .count();
         getLog().info("Received graph (#edges = {}, #nodes = {}).", numberOfEdges, numberOfNodes);
         trySendEvent(ProtocolType.GraphMerging, eventDispatcher -> GraphMergingEvents.GraphReceivedEvent.builder()
                                                                                                         .sender(getModel().getSelf())
                                                                                                         .receiver(eventDispatcher)
-                                                                                                        .graph(getModel().getEdges())
+                                                                                                        .graph(edges)
                                                                                                         .build());
+
+        isReadyToBeTerminated();
     }
 }

@@ -1,5 +1,7 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+
 public class NullSequenceWriter implements SequenceWriter
 {
 
@@ -14,7 +16,7 @@ public class NullSequenceWriter implements SequenceWriter
     }
 
     @Override
-    public void write(double[] records)
+    public void write(DoubleBigList records)
     {
     }
 
@@ -22,11 +24,6 @@ public class NullSequenceWriter implements SequenceWriter
     public boolean isNull()
     {
         return true;
-    }
-
-    @Override
-    public void write(byte[] part)
-    {
     }
 
     @Override

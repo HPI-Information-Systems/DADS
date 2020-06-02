@@ -24,8 +24,8 @@ public class MessageProxyModel extends AbstractProtocolParticipantModel
     private final Counter totalNumberOfEnqueuedMessages = new Counter(0L);
     @NonNull @Getter
     private final Map<ActorPath, ActorMessageQueue> messageQueues = new HashMap<>();
-    @NonNull @Getter
-    private ActorRef remoteMessageDispatcher;
+    @NonNull @Setter @Getter
+    private ActorRef remoteMessageReceiver;
     @Getter @Setter @Builder.Default
     private int singleQueueBackPressureThreshold = 1000;
     @Getter @Setter @Builder.Default

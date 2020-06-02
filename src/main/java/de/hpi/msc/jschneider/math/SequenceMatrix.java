@@ -1,28 +1,29 @@
 package de.hpi.msc.jschneider.math;
 
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.store.MatrixStore;
 import org.ojalgo.matrix.store.PhysicalStore;
-import org.ojalgo.matrix.store.PrimitiveDenseStore;
+import org.ojalgo.matrix.store.Primitive64Store;
 
 public class SequenceMatrix implements MatrixStore<Double>
 {
     private final long sequenceLength;
-    private final double[] values;
+    private final DoubleBigList values;
     private boolean isTransposed = false;
     private MatrixStore<Double> columnSubtrahends;
 
-    public SequenceMatrix(long sequenceLength, double[] values)
+    public SequenceMatrix(long sequenceLength, DoubleBigList values)
     {
         this.sequenceLength = sequenceLength;
         this.values = values;
     }
 
     @Override
-    public PhysicalStore.Factory<Double, PrimitiveDenseStore> physical()
+    public PhysicalStore.Factory<Double, Primitive64Store> physical()
     {
-        return PrimitiveDenseStore.FACTORY;
+        return Primitive64Store.FACTORY;
     }
 
     @Override
@@ -35,7 +36,7 @@ public class SequenceMatrix implements MatrixStore<Double>
         val valueRowIndex = rowIndex - diff;
         val valueColumnIndex = columnIndex + diff;
 
-        var value = values[(int) (valueColumnIndex + valueRowIndex)];
+        var value = values.getDouble(valueColumnIndex + valueRowIndex);
         if (columnSubtrahends != null)
         {
             value -= columnSubtrahends.get(0, columnIndex);
@@ -104,7 +105,7 @@ public class SequenceMatrix implements MatrixStore<Double>
 
     private long numberOfRows()
     {
-        return values.length - sequenceLength + 1;
+        return values.size64() - sequenceLength + 1;
     }
 
     private SequenceMatrix myCopy()

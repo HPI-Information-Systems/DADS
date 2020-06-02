@@ -434,5 +434,32 @@ public class StatisticsEvents
         }
     }
 
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class ActorSystemUtilizationEvent extends MeasurementEvent
+    {
+        private static final long serialVersionUID = 5218986191293213196L;
+        private int numberOfActors;
+
+        @Override
+        public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
+        {
+            return builder().sender(getSender())
+                            .receiver(newReceiver)
+                            .forwarder(getReceiver())
+                            .dateTime(getDateTime())
+                            .numberOfActors(getNumberOfActors())
+                            .build();
+        }
+
+        @Override
+        public String toString()
+        {
+            val sb = new StringBuilder();
+            return this.startStringCreation(sb, "ActorSystemUtilization")
+                       .appendProperty(sb, "Actors", getNumberOfActors())
+                       .createString(sb);
+        }
+    }
+
     // endregion
 }

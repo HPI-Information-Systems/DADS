@@ -1,7 +1,6 @@
 package de.hpi.msc.jschneider.protocol.common.control;
 
 import akka.actor.ActorRef;
-import akka.actor.Props;
 import akka.actor.RootActorPath;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
@@ -39,7 +38,7 @@ public interface ProtocolParticipantControl<TModel extends ProtocolParticipantMo
 
     boolean tryUnwatch(ActorRef subject);
 
-    Optional<ActorRef> trySpawnChild(Props props, String name);
+    <TChildModel extends ProtocolParticipantModel, TChildControl extends ProtocolParticipantControl<TChildModel>> Optional<ActorRef> trySpawnChild(TChildControl control, String name);
 
     void onAny(Object message);
 

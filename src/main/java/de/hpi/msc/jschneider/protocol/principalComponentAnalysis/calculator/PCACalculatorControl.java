@@ -10,9 +10,9 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.MatrixInitializer;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 import de.hpi.msc.jschneider.utility.dataTransfer.sink.PrimitiveMatrixSink;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.matrix.RowMatrixBuilder;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.matrix.decomposition.QR;
@@ -128,7 +128,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(0);
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(columnMeans),
+        getModel().getDataTransferManager().transfer(DataSource.create(columnMeans),
                                                      (dataDistributor, operationId) -> PCAMessages.InitializeColumnMeansTransferMessage.builder()
                                                                                                                                        .sender(dataDistributor)
                                                                                                                                        .receiver(receiverProtocol.getRootActor())
@@ -167,7 +167,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         }
 
         val receiverProtocol = getPCAProtocolAtProcessorWithIndex(receiverIndex);
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getLocalR()),
+        getModel().getDataTransferManager().transfer(DataSource.create(getModel().getLocalR()),
                                                      (dataDistributor, operationId) -> PCAMessages.InitializeRTransferMessage.builder()
                                                                                                                              .sender(dataDistributor)
                                                                                                                              .receiver(receiverProtocol.getRootActor())
@@ -220,6 +220,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                      .startTime(getModel().getStartTime())
                                                                                                      .endTime(getModel().getEndTime())
                                                                                                      .build());
+
+            isReadyToBeTerminated();
             return;
         }
 
@@ -238,7 +240,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                 return;
             }
             getModel().getRemoteRsByProcessStep().remove(currentStep - 1);
-            dataMatrix = MatrixInitializer.concat(dataMatrix, remoteR);
+            dataMatrix = RowMatrixBuilder.concat(dataMatrix, remoteR);
         }
 
         calculateAndTransferR(dataMatrix);
@@ -275,7 +277,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         getLog().info("Finalizing PCA calculation.");
 
         val totalColumnMeans = totalColumnMeans();
-        val matrixInitializer = new MatrixInitializer(getModel().getProjection().countColumns());
+        val matrixInitializer = new RowMatrixBuilder(getModel().getProjection().countColumns());
         for (var processorIndex = 0; processorIndex < getModel().getProcessorIndices().size(); ++processorIndex)
         {
             val diff = getTransposedColumnMeans(processorIndex).subtract(totalColumnMeans);
@@ -284,12 +286,17 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
         matrixInitializer.append(getModel().getLocalR());
 
         val qrDecomposition = QR.PRIMITIVE.make();
-        qrDecomposition.compute(matrixInitializer.create());
+        qrDecomposition.compute(matrixInitializer.build());
         val svd = SingularValue.PRIMITIVE.make();
         svd.compute(qrDecomposition.getR());
         val principalComponents = normalizePrincipalComponents(svd.getV().logical().column(0, 1, 2).get());
+
+//        Debug.print(principalComponents.transpose(), "pca.txt");
+
         val referenceVector = createReferenceVector(principalComponents, totalColumnMeans);
         val rotation = Calculate.rotation(referenceVector, Calculate.makeRowVector(0.0d, 0.0d, 1.0d));
+
+//        Debug.print(rotation, "rotation.txt");
 
         getModel().setEndTime(LocalDateTime.now());
 
@@ -307,6 +314,8 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
                                                                                                                           .rotation(rotation)
                                                                                                                           .columnMeans(totalColumnMeans)
                                                                                                                           .build());
+
+        isReadyToBeTerminated();
     }
 
     private boolean isLastStep()
@@ -365,7 +374,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     private void columnMeansTransferFinished(ProcessorId sender, PrimitiveMatrixSink sink)
     {
         getLog().debug("Received column means from {}.", sender);
-        getModel().getTransposedColumnMeans().put(sender, sink.getMatrix(getModel().getProjection().countColumns()));
+        getModel().getTransposedColumnMeans().put(sender, sink.getMatrix());
 
         finalizeCalculation();
     }
@@ -385,7 +394,7 @@ public class PCACalculatorControl extends AbstractProtocolParticipantControl<PCA
     {
         getLog().debug("Received R for step {}.", stepNumber);
 
-        getModel().getRemoteRsByProcessStep().put(stepNumber, sink.getMatrix(getModel().getProjection().countColumns()));
+        getModel().getRemoteRsByProcessStep().put(stepNumber, sink.getMatrix());
         continueCalculation();
     }
 

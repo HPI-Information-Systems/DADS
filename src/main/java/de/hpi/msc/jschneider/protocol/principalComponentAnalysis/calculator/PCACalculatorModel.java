@@ -1,6 +1,5 @@
 package de.hpi.msc.jschneider.protocol.principalComponentAnalysis.calculator;
 
-import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.Counter;
@@ -27,7 +26,7 @@ public class PCACalculatorModel extends AbstractProtocolParticipantModel
     @Getter @Setter
     private long myProcessorIndex;
     @Getter @Setter
-    private SequenceMatrix projection;
+    private MatrixStore<Double> projection;
     @Builder.Default @Getter @Setter
     private double minimumRecord = Double.MAX_VALUE;
     @Builder.Default @Getter @Setter

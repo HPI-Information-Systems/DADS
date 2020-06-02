@@ -4,6 +4,9 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntBigList;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -13,7 +16,6 @@ import lombok.experimental.SuperBuilder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @SuperBuilder
@@ -30,7 +32,7 @@ public class ScoringWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter @Builder.Default
     private double[] overlappingPathScores = new double[0];
     @Setter @Getter
-    private List<List<Integer>> edgeCreationOrder;
+    private List<IntBigList> edgeCreationOrder;
     @Setter @Getter
     private int[][] remoteEdgeCreationOrder;
     @Setter @Getter
@@ -44,9 +46,9 @@ public class ScoringWorkerModel extends AbstractProtocolParticipantModel
     @Setter @Getter @Builder.Default
     private double globalMaximumScore = Double.MIN_VALUE;
     @Setter @Getter
-    private Map<Integer, GraphEdge> edges;
+    private Int2ObjectMap<GraphEdge> edges;
     @Setter @Getter
-    private Map<Integer, Long> nodeDegrees;
+    private Int2LongMap nodeDegrees;
     @NonNull @Getter
     private final List<Double> pathScores = new ArrayList<>();
 }

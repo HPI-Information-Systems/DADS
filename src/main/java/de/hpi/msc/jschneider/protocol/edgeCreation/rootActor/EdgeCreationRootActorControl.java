@@ -37,7 +37,7 @@ public class EdgeCreationRootActorControl extends AbstractProtocolParticipantCon
         val model = EdgeCreationWorkerModel.builder()
                                            .build();
         val control = new EdgeCreationWorkerControl(model);
-        val worker = trySpawnChild(ProtocolParticipant.props(control), "EdgeCreationWorker");
+        val worker = trySpawnChild(control, "EdgeCreationWorker");
 
         if (!worker.isPresent())
         {

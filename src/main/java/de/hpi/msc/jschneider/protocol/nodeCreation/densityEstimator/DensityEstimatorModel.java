@@ -4,13 +4,13 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.protocol.common.model.AbstractProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator.DensityCalculatorMessages;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -23,22 +23,22 @@ public class DensityEstimatorModel extends AbstractProtocolParticipantModel
     private int intersectionSegment;
     @NonNull @Getter
     private Set<ProcessorId> participants;
-    @NonNull @Setter @Getter
-    private double[] samples;
     @NonNull @Getter
-    private double[] pointsToEvaluate;
+    private DoubleBigList samples;
+    @NonNull @Getter
+    private DoubleBigList pointsToEvaluate;
     @Setter @Getter
-    private double[] normalizedPointsToEvaluate;
+    private double whitening;
     @Setter @Getter
     private double normalizationFactor;
     @Setter @Getter
     private double weight;
     @Setter @Getter
-    private double[] probabilities;
+    private DoubleBigList probabilities;
     @Setter @Getter
-    private int expectedNumberOfResults;
-    @NonNull @Getter
-    private final Map<Integer, double[]> probabilityChunks = new HashMap<>();
+    private long expectedNumberOfResults;
+    @Setter @Getter
+    private Long2ObjectMap<DoubleBigList> probabilityChunks;
     @Setter @Getter
     private Consumer<DensityCalculatorMessages.DensityProbabilitiesEstimatedMessage> resultChunkMerger;
 }

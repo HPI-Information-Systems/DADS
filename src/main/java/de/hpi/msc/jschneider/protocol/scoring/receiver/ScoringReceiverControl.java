@@ -2,7 +2,7 @@ package de.hpi.msc.jschneider.protocol.scoring.receiver;
 
 import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
-import de.hpi.msc.jschneider.fileHandling.writing.ClearSequenceWriter;
+import de.hpi.msc.jschneider.fileHandling.FileMerger;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
@@ -10,17 +10,17 @@ import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringEvents;
 import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
-import de.hpi.msc.jschneider.utility.Counter;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.sink.DoublesSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.FileDoubleSink;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import lombok.SneakyThrows;
 import lombok.val;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map;
 
 public class ScoringReceiverControl extends AbstractProtocolParticipantControl<ScoringReceiverModel>
 {
@@ -54,6 +54,18 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
             getModel().setResponsibilitiesReceived(true);
             getModel().getRunningDataTransfers().addAll(message.getSubSequenceResponsibilities().keySet());
             getModel().setSubSequenceResponsibilities(new HashMap<>(message.getSubSequenceResponsibilities()));
+            getModel().setTemporaryPathScoreFiles(new Object2ObjectLinkedOpenHashMap<>(getModel().getSubSequenceResponsibilities().size()));
+
+            val it = getModel().getSubSequenceResponsibilities().entrySet()
+                               .stream()
+                               .sorted(Comparator.comparingLong(entry -> entry.getValue().getFrom()))
+                               .iterator();
+            while (it.hasNext())
+            {
+                val entry = it.next();
+                val path = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath().toString() + "~" + entry.getValue().getFrom();
+                getModel().getTemporaryPathScoreFiles().put(entry.getKey(), new File(path));
+            }
         }
         finally
         {
@@ -61,70 +73,59 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
         }
     }
 
+    @SneakyThrows
     private void onInitializePathScoresTransfer(ScoringMessages.InitializePathScoresTransferMessage message)
     {
         assert getModel().isResponsibilitiesReceived() : "Responsibilities were not received yet!";
 
-        getModel().getDataTransferManager().accept(message, dataReceiver ->
+        if (getModel().getStartTime() == null)
         {
-            val sink = new DoublesSink();
-            dataReceiver.setState(ProcessorId.of(message.getSender()));
-            return dataReceiver.addSink(sink)
-                               .whenFinished(this::onPathScoresTransferFinished);
-        });
+            getModel().setStartTime(LocalDateTime.now());
+        }
+
+        val sender = ProcessorId.of(message.getSender());
+        val fileSink = new FileDoubleSink(getModel().getTemporaryPathScoreFiles().get(sender));
+
+        getModel().getDataTransferManager().accept(message, dataReceiver -> dataReceiver.addSink(fileSink)
+                                                                                        .whenFinished(receiver -> onPathScoresTransferFinished(sender)));
     }
 
-    private void onPathScoresTransferFinished(DataReceiver dataReceiver)
+    private void onPathScoresTransferFinished(ProcessorId workerSystem)
     {
-        assert dataReceiver.getState() instanceof ProcessorId : "The data receiver state should be a ProcessorId!";
-        val workerSystem = (ProcessorId) dataReceiver.getState();
-
-        val doublesSink = dataReceiver.getDataSinks().stream().filter(sink -> sink instanceof DoublesSink).findFirst();
-        assert doublesSink.isPresent() : "The data receiver should have a DoublesSink!";
-
-        getModel().getPathScores().put(workerSystem, ((DoublesSink) doublesSink.get()).getDoubles());
         getModel().getRunningDataTransfers().remove(workerSystem);
-
-        storeResults();
+        mergeResults();
     }
 
-    private void storeResults()
+    @SneakyThrows
+    private void mergeResults()
     {
-        if (!isReadyToStoreResults())
+        if (!isReadyToMergeResults())
         {
             return;
         }
 
-        assert SystemParameters.getCommand() instanceof MasterCommand : "Only the master processor can store the results!";
+        val it = getModel().getSubSequenceResponsibilities().entrySet()
+                           .stream()
+                           .sorted(Comparator.comparingLong(entry -> entry.getValue().getFrom()))
+                           .map(entry -> getModel().getTemporaryPathScoreFiles().get(entry.getKey()))
+                           .iterator();
 
-        val startTime = LocalDateTime.now();
+        val resultFile = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath().toFile();
 
-        val filePath = ((MasterCommand) SystemParameters.getCommand()).getOutputFilePath();
-        val writer = ClearSequenceWriter.fromFile(filePath.toFile());
-        val numberOfPathScores = new Counter(0L);
+        (new FileMerger(resultFile, it)).merge();
 
-        for (val scores : getModel().getPathScores().entrySet().stream()
-                                    .sorted(Comparator.comparingLong(entry -> getModel().getSubSequenceResponsibilities().get(entry.getKey()).getFrom()))
-                                    .map(Map.Entry::getValue)
-                                    .toArray(double[][]::new))
-        {
-            writer.write(scores);
-            numberOfPathScores.increment(scores.length);
-        }
-        writer.close();
-
-        val endTime = LocalDateTime.now();
+        getModel().setEndTime(LocalDateTime.now());
 
         trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.ResultsPersistedEvent.builder()
                                                                                                        .sender(getModel().getSelf())
                                                                                                        .receiver(eventDispatcher)
-                                                                                                       .startTime(startTime)
-                                                                                                       .endTime(endTime)
+                                                                                                       .startTime(getModel().getStartTime())
+                                                                                                       .endTime(getModel().getEndTime())
                                                                                                        .build());
 
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
-        getLog().info("{} results written to {} in {}.", numberOfPathScores.get(), filePath.toString(), Duration.between(startTime, endTime));
+        getLog().info("Results written to {} in {}.", resultFile.toString(), Duration.between(getModel().getStartTime(), getModel().getEndTime()));
         getLog().info("================================================================================================");
         getLog().info("================================================================================================");
 
@@ -132,9 +133,10 @@ public class ScoringReceiverControl extends AbstractProtocolParticipantControl<S
                                                                                                     .sender(getModel().getSelf())
                                                                                                     .receiver(eventDispatcher)
                                                                                                     .build());
+        isReadyToBeTerminated();
     }
 
-    private boolean isReadyToStoreResults()
+    private boolean isReadyToMergeResults()
     {
         return getModel().isResponsibilitiesReceived()
                && getModel().getRunningDataTransfers().isEmpty();

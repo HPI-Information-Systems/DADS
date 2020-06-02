@@ -7,12 +7,13 @@ import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import lombok.val;
+import lombok.var;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.stream.Collectors;
 
 public class GraphMergerControl extends AbstractProtocolParticipantControl<GraphMergerModel>
 {
@@ -45,6 +46,7 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             assert getModel().getSubSequenceResponsibilities() == null : "Responsibilities were received already!";
 
             getModel().setSubSequenceResponsibilities(new HashMap<>(message.getSubSequenceResponsibilities()));
+            getModel().setEdges(new Int2ObjectLinkedOpenHashMap<>((int) getModel().getSubSequenceResponsibilities().get(ProcessorId.of(getModel().getSelf())).length()));
         }
         finally
         {
@@ -56,9 +58,9 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
     {
         try
         {
-            for (val edge : message.getEdges())
+            for (var edgeIndex = 0; edgeIndex < message.getEdgesLength(); ++edgeIndex)
             {
-                addEdge(edge);
+                addEdge(message.getEdges()[edgeIndex]);
             }
         }
         finally
@@ -90,9 +92,9 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             val numberOfNodes = getModel().getEdges()
                                           .values()
                                           .stream()
-                                          .flatMap(edge -> Arrays.stream(new Integer[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
-                                          .collect(Collectors.toSet())
-                                          .size();
+                                          .flatMapToInt(edge -> Arrays.stream(new int[]{edge.getFrom().hashCode(), edge.getTo().hashCode()}))
+                                          .distinct()
+                                          .count();
             val totalEdgeWeights = getModel().getEdges()
                                              .values()
                                              .stream()
@@ -104,6 +106,8 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             getLog().info("Graph merged: {} edges (tot. weight: {}), {} nodes.", numberOfEdges, totalEdgeWeights, numberOfNodes);
             getLog().info("================================================================================================");
             getLog().info("================================================================================================");
+
+//            Debug.print(getModel().getEdges().values(), "edges.txt");
 
 //            Debug.print(getModel().getEdges().values().toArray(new GraphEdge[0]), String.format("%1$s-graph.txt", ProcessorId.of(getModel().getSelf())));
 
@@ -123,12 +127,14 @@ public class GraphMergerControl extends AbstractProtocolParticipantControl<Graph
             assert protocol.isPresent()
                     : String.format("Unable to transfer graph to %1$s, because the processor does not implement the required protocol!", workerSystem);
 
-            getModel().getDataTransferManager().transfer(GenericDataSource.create(getModel().getEdges().values().toArray(new GraphEdge[0])),
+            getModel().getDataTransferManager().transfer(DataSource.create(getModel().getEdges().values()),
                                                          (dataDistributor, operationId) -> GraphMergingMessages.InitializeGraphTransferMessage.builder()
                                                                                                                                               .sender(dataDistributor)
                                                                                                                                               .receiver(protocol.get().getRootActor())
                                                                                                                                               .operationId(operationId)
                                                                                                                                               .build());
         }
+
+        isReadyToBeTerminated();
     }
 }

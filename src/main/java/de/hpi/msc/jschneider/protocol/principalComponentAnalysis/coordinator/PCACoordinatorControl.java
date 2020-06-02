@@ -98,5 +98,7 @@ public class PCACoordinatorControl extends AbstractProtocolParticipantControl<PC
                                                                                    .build());
                                });
         }
+
+        isReadyToBeTerminated();
     }
 }

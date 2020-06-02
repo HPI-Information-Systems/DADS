@@ -19,7 +19,9 @@ public class IntersectionCalculatorMessages
     {
         private static final long serialVersionUID = -4528791212461532270L;
         @NonNull
-        private MatrixStore<Double> projectionChunk;
+        private MatrixStore<Double> projection;
+        private long chunkStart;
+        private long chunkLength;
         @NonNull
         private List<MatrixStore<Double>> intersectionPoints;
         @NonNull
@@ -32,7 +34,9 @@ public class IntersectionCalculatorMessages
                             .receiver(newReceiver)
                             .forwarder(getReceiver())
                             .consumer(getConsumer())
-                            .projectionChunk(getProjectionChunk())
+                            .projection(getProjection())
+                            .chunkStart(getChunkStart())
+                            .chunkLength(getChunkLength())
                             .intersectionPoints(getIntersectionPoints())
                             .firstSubSequenceIndex(getFirstSubSequenceIndex())
                             .build();

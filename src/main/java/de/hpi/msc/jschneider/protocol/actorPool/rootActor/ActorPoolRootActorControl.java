@@ -51,7 +51,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
             spawnWorker();
         }
 
-        if (StatisticsProtocol.IS_ENABLED)
+        if (getLocalProtocol(ProtocolType.Statistics).isPresent())
         {
             subscribeToLocalEvent(ProtocolType.ProcessorRegistration, ProcessorRegistrationEvents.RegistrationAcknowledgedEvent.class);
         }
@@ -63,7 +63,7 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
                                         .supervisor(getModel().getSelf())
                                         .build();
         val control = new ActorPoolWorkerControl(model);
-        val worker = trySpawnChild(ProtocolParticipant.props(control), "ActorPoolWorker");
+        val worker = trySpawnChild(control, "ActorPoolWorker");
 
         if (!worker.isPresent())
         {
@@ -89,6 +89,11 @@ public class ActorPoolRootActorControl extends AbstractProtocolParticipantContro
 
     private void startMeasuringUtilization()
     {
+        if (!getLocalProtocol(ProtocolType.Statistics).isPresent())
+        {
+            return;
+        }
+
         if (getModel().getMeasureUtilizationTask() != null)
         {
             getModel().getMeasureUtilizationTask().cancel();

@@ -7,14 +7,20 @@ import de.hpi.msc.jschneider.data.graph.GraphNode;
 import de.hpi.msc.jschneider.math.IntersectionCollection;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.edgeCreation.worker.LocalIntersection;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntBigList;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import lombok.SneakyThrows;
 import lombok.val;
 import lombok.var;
 import org.ojalgo.structure.Access2D;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -22,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class Debug
 {
-    private static final boolean IS_ENABLED = false;
+    public static final boolean IS_ENABLED = false;
 
     @SneakyThrows
     public static void print(Access2D<Double> matrix, String fileName)
@@ -52,7 +58,37 @@ public class Debug
     }
 
     @SneakyThrows
-    public static void print(GraphEdge[] edges, String fileName)
+    public static void printBinary(Access2D<Double> matrix, String fileName)
+    {
+        if (!IS_ENABLED)
+        {
+            return;
+        }
+
+        val file = createBinaryFile(fileName);
+        val converter = ByteBuffer.allocate(8);
+
+        converter.putLong(0, matrix.countRows());
+        file.write(converter.array());
+
+        converter.putLong(0, matrix.countColumns());
+        file.write(converter.array());
+
+        for (var rowIndex = 0L; rowIndex < matrix.countRows(); ++rowIndex)
+        {
+            for (var columnIndex = 0L; columnIndex < matrix.countColumns(); ++columnIndex)
+            {
+                converter.putDouble(0, matrix.get(rowIndex, columnIndex));
+                file.write(converter.array());
+            }
+        }
+
+        file.flush();
+        file.close();
+    }
+
+    @SneakyThrows
+    public static void print(ObjectCollection<GraphEdge> edges, String fileName)
     {
         if (!IS_ENABLED)
         {
@@ -61,13 +97,16 @@ public class Debug
 
         val writer = createWriter(fileName);
 
-        for (val edge : Arrays.stream(edges)
-                              .sorted(Comparator.comparingInt((GraphEdge edge) -> edge.getFrom().getIntersectionSegment())
-                                                .thenComparingInt(edge -> edge.getFrom().getIndex())
-                                                .thenComparingInt(edge -> edge.getTo().getIntersectionSegment())
-                                                .thenComparingInt(edge -> edge.getTo().getIndex()))
-                              .collect(Collectors.toList()))
+        val edgeIterator = edges.stream()
+                                .sorted(Comparator.comparingInt((GraphEdge edge) -> edge.getFrom().getIntersectionSegment())
+                                                  .thenComparingInt(edge -> edge.getFrom().getIndex())
+                                                  .thenComparingInt(edge -> edge.getTo().getIntersectionSegment())
+                                                  .thenComparingInt(edge -> edge.getTo().getIndex()))
+                                .iterator();
+
+        while (edgeIterator.hasNext())
         {
+            val edge = edgeIterator.next();
             writer.write(edge + "\n");
         }
 
@@ -91,6 +130,51 @@ public class Debug
                               .collect(Collectors.toList()))
         {
             writer.write(node + "\n");
+        }
+
+        writer.flush();
+        writer.close();
+    }
+
+    @SneakyThrows
+    public static void print(Int2ObjectMap<DoubleBigList> nodes, String fileName)
+    {
+        if (!IS_ENABLED)
+        {
+            return;
+        }
+
+        val writer = createWriter(fileName);
+
+        val segmentIterator = nodes.keySet()
+                                   .stream().mapToInt(key -> key)
+                                   .sorted()
+                                   .iterator();
+
+        while (segmentIterator.hasNext())
+        {
+            val segment = segmentIterator.nextInt();
+            var nodeIndex = 0L;
+            val nodeIterator = nodes.get(segment)
+                                    .stream()
+                                    .mapToDouble(value -> value)
+                                    .sorted()
+                                    .iterator();
+
+            val sb = new StringBuilder();
+            while (nodeIterator.hasNext())
+            {
+                val distance = nodeIterator.nextDouble();
+                sb.append("{")
+                  .append(segment)
+                  .append("_")
+                  .append(nodeIndex)
+                  .append("} ")
+                  .append(distance)
+                  .append("\n");
+                nodeIndex++;
+            }
+            writer.write(sb.toString());
         }
 
         writer.flush();
@@ -143,7 +227,7 @@ public class Debug
 
         for (var segmentIndex = 0; segmentIndex < sortedNodeCollections.size(); ++segmentIndex)
         {
-            for (var nodeIndex = 0; nodeIndex < sortedNodeCollections.get(segmentIndex).getNodes().size(); ++nodeIndex)
+            for (var nodeIndex = 0; nodeIndex < sortedNodeCollections.get(segmentIndex).getNodes().size64(); ++nodeIndex)
             {
                 val stringBuilder = new StringBuilder();
                 stringBuilder.append("{")
@@ -151,7 +235,7 @@ public class Debug
                              .append("_")
                              .append(nodeIndex)
                              .append("} ")
-                             .append(sortedNodeCollections.get(segmentIndex).getNodes().get(nodeIndex).getIntersectionLength())
+                             .append(sortedNodeCollections.get(segmentIndex).getNodes().getDouble(nodeIndex))
                              .append("\n");
 
                 writer.write(stringBuilder.toString());
@@ -172,13 +256,19 @@ public class Debug
 
         val writer = createWriter(fileName);
 
-        for (val subSequenceIndex : graph.getCreatedEdgesBySubSequenceIndex().keySet()
-                                         .stream()
-                                         .sorted(Comparator.comparingLong(Long::longValue))
-                                         .collect(Collectors.toList()))
+        val subSequenceIndexIterator = graph.getCreatedEdgesBySubSequenceIndex().keySet()
+                                            .stream()
+                                            .sorted(Comparator.comparingLong(Long::longValue))
+                                            .mapToLong(value -> value)
+                                            .iterator();
+
+        while (subSequenceIndexIterator.hasNext())
         {
-            for (val edgeHash : graph.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex))
+            val subSequenceIndex = subSequenceIndexIterator.nextLong();
+            val edgeHashIterator = graph.getCreatedEdgesBySubSequenceIndex().get(subSequenceIndex).iterator();
+            while (edgeHashIterator.hasNext())
             {
+                val edgeHash = edgeHashIterator.nextInt();
                 writer.append(graph.getEdges().get(edgeHash).getKey());
                 writer.append("\n");
             }
@@ -189,7 +279,7 @@ public class Debug
     }
 
     @SneakyThrows
-    public static void print(List<List<Integer>> edgeCreationOrder, String fileName)
+    public static void print(List<IntBigList> edgeCreationOrder, String fileName)
     {
         if (!IS_ENABLED)
         {
@@ -201,7 +291,7 @@ public class Debug
         for (val collection : edgeCreationOrder)
         {
             val stringBuilder = new StringBuilder();
-            stringBuilder.append(collection.size());
+            stringBuilder.append(collection.size64());
             stringBuilder.append("\t[");
             for (val value : collection)
             {
@@ -295,8 +385,21 @@ public class Debug
             throw new Exception(String.format("Unable to create directory \"%1$s\"!", file.getParent()));
         }
 
-        file.delete();
+        file.createNewFile();
 
         return new PrintWriter(file);
+    }
+
+    @SneakyThrows
+    private static FileOutputStream createBinaryFile(String fileName)
+    {
+        val file = new File(".debug/" + fileName);
+        if (!file.getParentFile().exists() && !file.getParentFile().mkdirs())
+        {
+            throw new Exception(String.format("Unable to create directory \"%1$s\"!", file.getParent()));
+        }
+
+        file.createNewFile();
+        return new FileOutputStream(file, false);
     }
 }

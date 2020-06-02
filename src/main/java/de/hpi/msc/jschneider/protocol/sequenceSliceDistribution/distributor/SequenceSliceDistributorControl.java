@@ -28,8 +28,9 @@ public class SequenceSliceDistributorControl extends AbstractProtocolParticipant
         }
 
         getModel().getDataTransferManager().transfer(getModel().getSequenceReader(), this::initializationMessageFactory);
-
         getLog().debug("Starting sequence slice transfer to {}.", getModel().getSliceReceiverActorSystem());
+
+        isReadyToBeTerminated();
     }
 
     @Override

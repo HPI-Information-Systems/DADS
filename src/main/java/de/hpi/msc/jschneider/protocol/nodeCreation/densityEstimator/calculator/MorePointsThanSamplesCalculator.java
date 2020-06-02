@@ -3,10 +3,9 @@ package de.hpi.msc.jschneider.protocol.nodeCreation.densityEstimator.calculator;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.ActorPoolWorkerControl;
 import de.hpi.msc.jschneider.protocol.actorPool.worker.WorkConsumer;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
 import lombok.val;
 import lombok.var;
-
-import java.util.Arrays;
 
 public class MorePointsThanSamplesCalculator implements WorkConsumer
 {
@@ -19,23 +18,27 @@ public class MorePointsThanSamplesCalculator implements WorkConsumer
 
     private void process(ActorPoolWorkerControl control, DensityCalculatorMessages.EvaluateDensityProbabilitiesMessage message)
     {
-        val results = new double[message.getPointsToEvaluate().length];
+        val results = new DoubleBigArrayBigList(message.getPointsToEvaluate().size64());
+        for (var i = 0; i < message.getPointsToEvaluate().size64(); ++i)
+        {
+            results.add(0.0d);
+        }
 
-        val startIndex = (int) Math.floor(message.getStartFraction() * message.getSamples().length);
-        val endIndex = (int) Math.floor(message.getEndFraction() * message.getSamples().length);
+        val startIndex = message.getCalculationRange().getFrom();
+        val endIndex = message.getCalculationRange().getTo();
 
         for (var i = startIndex; i < endIndex; ++i)
         {
-            val samplesIndex = i;
-            val temp = Arrays.stream(message.getPointsToEvaluate())
-                             .map(point -> message.getSamples()[samplesIndex] - point)
-                             .map(diff -> (diff * diff) * 0.5d)
-                             .map(energy -> Math.exp(-energy) * message.getWeight())
-                             .toArray();
+            val sample = message.getSamples().getDouble(i) * message.getWhitening();
+            val temp = message.getPointsToEvaluate().stream()
+                              .map(point -> sample - point * message.getWhitening())
+                              .map(diff -> (diff * diff) * 0.5d)
+                              .map(energy -> Math.exp(-energy) * message.getWeight())
+                              .iterator();
 
-            for (var resultsIndex = 0; resultsIndex < results.length; ++resultsIndex)
+            for (var resultsIndex = 0L; resultsIndex < results.size64(); ++resultsIndex)
             {
-                results[resultsIndex] += temp[resultsIndex];
+                results.set(resultsIndex, results.getDouble(resultsIndex) + temp.next());
             }
         }
 

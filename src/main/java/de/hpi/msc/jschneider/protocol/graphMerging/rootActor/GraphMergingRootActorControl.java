@@ -50,7 +50,7 @@ public class GraphMergingRootActorControl extends AbstractProtocolParticipantCon
         val model = GraphReceiverModel.builder()
                                       .build();
         val control = new GraphReceiverControl(model);
-        val receiver = trySpawnChild(ProtocolParticipant.props(control), "GraphReceiver");
+        val receiver = trySpawnChild(control, "GraphReceiver");
 
         if (!receiver.isPresent())
         {
@@ -67,7 +67,7 @@ public class GraphMergingRootActorControl extends AbstractProtocolParticipantCon
         val model = GraphPartitionSenderModel.builder()
                                              .build();
         val control = new GraphPartitionSenderControl(model);
-        val sender = trySpawnChild(ProtocolParticipant.props(control), "GraphPartitionSender");
+        val sender = trySpawnChild(control, "GraphPartitionSender");
 
         if (!sender.isPresent())
         {
@@ -87,7 +87,7 @@ public class GraphMergingRootActorControl extends AbstractProtocolParticipantCon
                                                .graphMerger(getModel().getGraphMerger())
                                                .build();
         val control = new GraphPartitionReceiverControl(model);
-        val receiver = trySpawnChild(ProtocolParticipant.props(control), "GraphPartitionReceiver");
+        val receiver = trySpawnChild(control, "GraphPartitionReceiver");
 
         if (!receiver.isPresent())
         {
@@ -104,7 +104,7 @@ public class GraphMergingRootActorControl extends AbstractProtocolParticipantCon
         val model = GraphMergerModel.builder()
                                     .build();
         val control = new GraphMergerControl(model);
-        val merger = trySpawnChild(ProtocolParticipant.props(control), "GraphMerger");
+        val merger = trySpawnChild(control, "GraphMerger");
 
         if (!merger.isPresent())
         {

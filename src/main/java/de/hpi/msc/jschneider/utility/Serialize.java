@@ -2,11 +2,17 @@ package de.hpi.msc.jschneider.utility;
 
 import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.data.graph.GraphNode;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import lombok.val;
 import lombok.var;
+import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.structure.Access1D;
+import scala.Array;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.PrimitiveIterator;
 
 public class Serialize
 {
@@ -23,6 +29,155 @@ public class Serialize
         assert size <= Integer.MAX_VALUE : "Unable to allocate more than Integer.MAX_VALUE bytes at once!";
 
         return (int) size;
+    }
+
+    public static int inPlace(PrimitiveIterator.OfDouble source, byte[] sink)
+    {
+        val elementSizeInBytes = Double.BYTES;
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        var sinkIndex = 0;
+        for (; source.hasNext() && sinkIndex + elementSizeInBytes <= sink.length; sinkIndex += elementSizeInBytes)
+        {
+            converter.putDouble(0, source.nextDouble());
+            Array.copy(converter.array(), 0, sink, sinkIndex, elementSizeInBytes);
+        }
+
+        return sinkIndex;
+    }
+
+    public static void backInPlace(byte[] source, int sourceLength, DoubleBigList sink)
+    {
+        val elementSizeInBytes = Double.BYTES;
+
+        assert source.length >= sourceLength : "SourceLength out of range!";
+        assert sourceLength % elementSizeInBytes == 0 : "SourceLength % ElementSize != 0!";
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        for (var sourceIndex = 0; sourceIndex < sourceLength; sourceIndex += elementSizeInBytes)
+        {
+            converter.position(0);
+            converter.put(source, sourceIndex, elementSizeInBytes);
+            sink.add(converter.getDouble(0));
+        }
+    }
+
+    public static int backInPlace(byte[] source, int sourceLength, double[] sink)
+    {
+        val elementSizeInBytes = Double.BYTES;
+
+        assert source.length >= sourceLength : "SourceLength out of range!";
+        assert sourceLength % elementSizeInBytes == 0 : "SourceLength % ElementSize != 0!";
+        assert sink.length >= sourceLength / elementSizeInBytes : "Sink overflow!";
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        var sinkIndex = 0;
+        for (var sourceIndex = 0; sourceIndex < sourceLength; sourceIndex += elementSizeInBytes, ++sinkIndex)
+        {
+            converter.position(0);
+            converter.put(source, sourceIndex, elementSizeInBytes);
+            sink[sinkIndex] = converter.getDouble(0);
+        }
+
+        return sinkIndex;
+    }
+
+    public static long backInPlace(byte[] source, int sourceLength, Primitive64Matrix.DenseReceiver sink, long sinkIndex)
+    {
+        val elementSizeInBytes = Double.BYTES;
+
+        assert source.length >= sourceLength : "SourceLength out of range!";
+        assert sourceLength % elementSizeInBytes == 0 : "SourceLength % ElementSize != 0!";
+        assert sinkIndex + (sourceLength / elementSizeInBytes) <= sink.count() : "Sink overflow!";
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        for (var sourceIndex = 0; sourceIndex < sourceLength; sourceIndex += elementSizeInBytes, ++sinkIndex)
+        {
+            converter.position(0);
+            converter.put(source, sourceIndex, elementSizeInBytes);
+            sink.set(sinkIndex, converter.getDouble(0));
+        }
+
+        return sinkIndex;
+    }
+
+    public static int inPlace(Iterator<GraphEdge> source, byte[] sink)
+    {
+        val elementSizeInBytes = GRAPH_EDGE_SIZE;
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        var sinkIndex = 0;
+        for (; source.hasNext() && sinkIndex + elementSizeInBytes <= sink.length; sinkIndex += elementSizeInBytes)
+        {
+            val value = source.next();
+
+            converter.position(0);
+            converter.putInt(value.getFrom().getIntersectionSegment())
+                     .putInt(value.getFrom().getIndex())
+                     .putInt(value.getTo().getIntersectionSegment())
+                     .putInt(value.getTo().getIndex())
+                     .putLong(value.getWeight());
+
+            Array.copy(converter.array(), 0, sink, sinkIndex, elementSizeInBytes);
+        }
+
+        return sinkIndex;
+    }
+
+    public static int backInPlace(byte[] source, int sourceLength, GraphEdge[] sink)
+    {
+        val elementSizeInBytes = GRAPH_EDGE_SIZE;
+
+        assert source.length >= sourceLength : "SourceLength out of range!";
+        assert sourceLength % elementSizeInBytes == 0 : "SourceLength % ElementSize != 0!";
+        assert sourceLength / elementSizeInBytes <= sink.length : "Sink overflow!";
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        var sinkIndex = 0;
+        for (var sourceIndex = 0; sourceIndex < sourceLength; sourceIndex += elementSizeInBytes, ++sinkIndex)
+        {
+            converter.position(0);
+            converter.put(source, sourceIndex, elementSizeInBytes);
+            sink[sinkIndex] = graphEdgeFromConverter(converter);
+        }
+
+        return sinkIndex;
+    }
+
+    public static void backInPlace(byte[] source, int sourceLength, Int2ObjectMap<GraphEdge> sink)
+    {
+        val elementSizeInBytes = GRAPH_EDGE_SIZE;
+
+        assert source.length >= sourceLength : "SourceLength out of range!";
+        assert sourceLength % elementSizeInBytes == 0 : "SourceLength % ElementSize != 0!";
+
+        val converter = ByteBuffer.allocate(elementSizeInBytes);
+        for (var sourceIndex = 0; sourceIndex < sourceLength; sourceIndex += elementSizeInBytes)
+        {
+            converter.position(0);
+            converter.put(source, sourceIndex, elementSizeInBytes);
+            val edge = graphEdgeFromConverter(converter);
+            sink.put(edge.hashCode(), edge);
+        }
+    }
+
+    private static GraphEdge graphEdgeFromConverter(ByteBuffer converter)
+    {
+        val from = GraphNode.builder()
+                            .intersectionSegment(converter.getInt(0))
+                            .index(converter.getInt(4))
+                            .build();
+        val to = GraphNode.builder()
+                          .intersectionSegment(converter.getInt(8))
+                          .index(converter.getInt(12))
+                          .build();
+        val edge = GraphEdge.builder()
+                            .from(from)
+                            .to(to)
+                            .build();
+        edge.setWeight(converter.getLong(16));
+
+        return edge;
     }
 
     public static byte[] toBytes(double[] doubles)

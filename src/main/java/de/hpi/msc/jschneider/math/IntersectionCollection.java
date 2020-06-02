@@ -1,14 +1,18 @@
 package de.hpi.msc.jschneider.math;
 
-import lombok.Builder;
+import it.unimi.dsi.fastutil.objects.ObjectBigArrayBigList;
+import it.unimi.dsi.fastutil.objects.ObjectBigList;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@Builder @Getter
+@Getter
 public class IntersectionCollection
 {
-    private int intersectionSegment;
-    private final List<Intersection> intersections = new ArrayList<>();
+    private final int intersectionSegment;
+    private final ObjectBigList<Intersection> intersections;
+
+    public IntersectionCollection(int intersectionSegment, long estimatedNumberOfIntersections)
+    {
+        this.intersectionSegment = intersectionSegment;
+        intersections = new ObjectBigArrayBigList<>(Math.max(estimatedNumberOfIntersections, ObjectBigArrayBigList.DEFAULT_INITIAL_CAPACITY));
+    }
 }

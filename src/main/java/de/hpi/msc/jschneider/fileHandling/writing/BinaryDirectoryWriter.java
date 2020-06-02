@@ -1,6 +1,6 @@
 package de.hpi.msc.jschneider.fileHandling.writing;
 
-import de.hpi.msc.jschneider.utility.Serialize;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.val;
 
 import java.io.File;
@@ -45,7 +45,7 @@ public class BinaryDirectoryWriter implements SequenceWriter
     }
 
     @Override
-    public void write(double[] records)
+    public void write(DoubleBigList records)
     {
         val file = Paths.get(directory.getAbsolutePath(), String.format("%06d.bin", currentSliceIndex)).toFile();
         val writer = BinarySequenceWriter.fromFile(file);
@@ -59,12 +59,6 @@ public class BinaryDirectoryWriter implements SequenceWriter
     public boolean isNull()
     {
         return false;
-    }
-
-    @Override
-    public void write(byte[] part)
-    {
-        write(Serialize.toDoubles(part));
     }
 
     @Override

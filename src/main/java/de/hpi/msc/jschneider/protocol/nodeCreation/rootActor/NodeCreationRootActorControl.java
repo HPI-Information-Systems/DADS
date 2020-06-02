@@ -47,7 +47,7 @@ public class NodeCreationRootActorControl extends AbstractProtocolParticipantCon
                                            .build();
         val control = new NodeCreationWorkerControl(model);
 
-        val worker = trySpawnChild(ProtocolParticipant.props(control), "NodeCreationWorker");
+        val worker = trySpawnChild(control, "NodeCreationWorker");
 
         if (!worker.isPresent())
         {
@@ -70,7 +70,7 @@ public class NodeCreationRootActorControl extends AbstractProtocolParticipantCon
                                                 .build();
         val control = new NodeCreationCoordinatorControl(model);
 
-        val coordinator = trySpawnChild(ProtocolParticipant.props(control), "NodeCreationCoordinator");
+        val coordinator = trySpawnChild(control, "NodeCreationCoordinator");
 
         if (!coordinator.isPresent())
         {

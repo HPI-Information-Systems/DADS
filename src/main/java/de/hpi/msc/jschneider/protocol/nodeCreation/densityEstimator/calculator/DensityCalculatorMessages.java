@@ -4,6 +4,8 @@ import akka.actor.ActorRef;
 import de.hpi.msc.jschneider.math.NodeCollection;
 import de.hpi.msc.jschneider.protocol.actorPool.ActorPoolMessages;
 import de.hpi.msc.jschneider.protocol.messageExchange.MessageExchangeMessages;
+import de.hpi.msc.jschneider.utility.Int64Range;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -16,12 +18,13 @@ public class DensityCalculatorMessages
     {
         private static final long serialVersionUID = -5411554227609332575L;
         @NonNull
-        private double[] samples;
+        private DoubleBigList samples;
         @NonNull
-        private double[] pointsToEvaluate;
+        private DoubleBigList pointsToEvaluate;
         private double weight;
-        private double startFraction;
-        private double endFraction;
+        private double whitening;
+        @NonNull
+        private Int64Range calculationRange;
 
         @Override
         public MessageExchangeMessages.RedirectableMessage redirectTo(ActorRef newReceiver)
@@ -33,8 +36,8 @@ public class DensityCalculatorMessages
                             .samples(getSamples())
                             .pointsToEvaluate(getPointsToEvaluate())
                             .weight(getWeight())
-                            .startFraction(getStartFraction())
-                            .endFraction(getEndFraction())
+                            .whitening(getWhitening())
+                            .calculationRange(getCalculationRange())
                             .build();
         }
     }
@@ -44,8 +47,8 @@ public class DensityCalculatorMessages
     {
         private static final long serialVersionUID = -8528585974013084112L;
         @NonNull
-        private double[] probabilities;
-        private int startIndex;
+        private DoubleBigList probabilities;
+        private long startIndex;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter

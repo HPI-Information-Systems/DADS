@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from typing import List, Optional, Dict
 
+from cluster_plotter import ClusterPlotter
 from event import *
 from plotter import Plotter
 
@@ -12,9 +13,12 @@ def main():
 
     events: Dict[str, Dict[str, List[base.StatisticsEvent]]] = _load_events(args.input, args.input_filter)
 
-    for processor in sorted(events):
-        plotter: Plotter = Plotter(processor, events[processor])
-        plotter.show()
+    cluster_plotter: ClusterPlotter = ClusterPlotter(events)
+    cluster_plotter.show()
+
+    # for processor in sorted(events):
+    #     plotter: Plotter = Plotter(processor, events[processor])
+    #     plotter.show()
 
 
 def _create_arg_parser():

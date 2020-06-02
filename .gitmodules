@@ -1,0 +1,3 @@
+[submodule "ojAlgo"]
+	path = ojAlgo
+	url = https://github.com/optimatika/ojAlgo.git

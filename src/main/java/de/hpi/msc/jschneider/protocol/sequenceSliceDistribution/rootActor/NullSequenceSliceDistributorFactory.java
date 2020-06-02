@@ -1,6 +1,7 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.rootActor;
 
-import akka.actor.Props;
+import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public class NullSequenceSliceDistributorFactory implements SequenceSliceDistrib
     }
 
     @Override
-    public Collection<Props> createDistributorsFromNewProcessor(Processor newProcessor)
+    public Collection<ProtocolParticipantControl<? extends ProtocolParticipantModel>> createDistributorsFromNewProcessor(Processor newProcessor)
     {
         return new ArrayList<>();
     }

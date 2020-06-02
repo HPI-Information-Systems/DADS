@@ -8,6 +8,8 @@ import de.hpi.msc.jschneider.utility.IdGenerator;
 import de.hpi.msc.jschneider.utility.dataTransfer.distributor.DataDistributorControl;
 import de.hpi.msc.jschneider.utility.dataTransfer.distributor.DataDistributorInitializer;
 import de.hpi.msc.jschneider.utility.dataTransfer.distributor.DataDistributorModel;
+import de.hpi.msc.jschneider.utility.event.EventHandler;
+import de.hpi.msc.jschneider.utility.event.EventImpl;
 import lombok.val;
 import lombok.var;
 import org.apache.logging.log4j.LogManager;
@@ -24,10 +26,22 @@ public class DataTransferManager
     private final Map<Long, DataReceiver> dataReceivers = new HashMap<>();
     private final Map<Long, ActorRef> dataDistributors = new HashMap<>();
     private final ProtocolParticipantControl<? extends ProtocolParticipantModel> control;
+    private final EventImpl<Long> onFinish = new EventImpl<>();
 
     public DataTransferManager(ProtocolParticipantControl<? extends ProtocolParticipantModel> control)
     {
         this.control = control;
+    }
+
+    public boolean hasRunningDataTransfers()
+    {
+        return !dataDistributors.isEmpty() || !dataReceivers.isEmpty();
+    }
+
+    public DataTransferManager whenFinished(EventHandler<Long> handler)
+    {
+        onFinish.subscribe(handler);
+        return this;
     }
 
     public void transfer(DataSource dataSource, DataDistributorInitializer initializer)
@@ -40,7 +54,7 @@ public class DataTransferManager
                                         .initializer(initializer)
                                         .build();
         val distributorControl = new DataDistributorControl(model);
-        val distributor = control.trySpawnChild(ProtocolParticipant.props(distributorControl), "DataDistributor");
+        val distributor = control.trySpawnChild(distributorControl, "DataDistributor");
 
         if (!distributor.isPresent())
         {
@@ -68,11 +82,30 @@ public class DataTransferManager
             receiver.whenFinished(this::whenDataReceived);
             dataReceivers.put(receiver.getOperationId(), receiver);
 
-            receiver.pull(initializationMessage.getSender());
+            receiver.requestSynchronization(initializationMessage.getSender());
         }
         finally
         {
             control.complete(initializationMessage);
+        }
+    }
+
+    public void onSynchronization(DataTransferMessages.DataTransferSynchronizationMessage message)
+    {
+        try
+        {
+            val receiver = dataReceivers.get(message.getOperationId());
+            if (receiver == null)
+            {
+                Log.error("[{}] Unable to process data part, because there is no receiver for that operation!", control.getClass().getName());
+                return;
+            }
+
+            receiver.synchronize(message);
+        }
+        finally
+        {
+            control.complete(message);
         }
     }
 
@@ -98,6 +131,8 @@ public class DataTransferManager
     private void whenDataReceived(DataReceiver receiver)
     {
         dataReceivers.remove(receiver.getOperationId());
+
+        onFinish.invoke(receiver.getOperationId());
     }
 
     public void onDataSent(DataTransferMessages.DataTransferFinishedMessage message)
@@ -105,6 +140,7 @@ public class DataTransferManager
         try
         {
             dataDistributors.remove(message.getOperationId());
+            onFinish.invoke(message.getOperationId());
         }
         finally
         {

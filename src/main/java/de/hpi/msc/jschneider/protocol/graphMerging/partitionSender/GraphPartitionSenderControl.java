@@ -1,13 +1,12 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionSender;
 
 import akka.actor.ActorRef;
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.edgeCreation.EdgeCreationEvents;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
 import lombok.val;
 
 public class GraphPartitionSenderControl extends AbstractProtocolParticipantControl<GraphPartitionSenderModel>
@@ -51,16 +50,17 @@ public class GraphPartitionSenderControl extends AbstractProtocolParticipantCont
     {
         getLog().info("Start transferring edge partition to {}.", receiver.path().root());
 
-        val edges = message.getGraphPartition().getEdges().values().toArray(new GraphEdge[0]);
-//        val edges = Arrays.stream(message.getGraphPartition())
-//                          .flatMap(graph -> graph.getEdges().values().stream())
-//                          .toArray(GraphEdge[]::new);
-
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(edges),
+        getModel().getDataTransferManager().transfer(DataSource.create(message.getGraphPartition().getEdges().values()),
                                                      (dataDistributor, operationId) -> GraphMergingMessages.InitializeEdgePartitionTransferMessage.builder()
                                                                                                                                                   .sender(dataDistributor)
                                                                                                                                                   .receiver(receiver)
                                                                                                                                                   .operationId(operationId)
                                                                                                                                                   .build());
+    }
+
+    @Override
+    protected void onDataTransferFinished(long operationId)
+    {
+        isReadyToBeTerminated();
     }
 }

@@ -32,7 +32,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     @Setter
     private Callable<Processor[]> processorProvider;
     @Setter
-    private Callable<Long> maximumMessageSizeProvider;
+    private Callable<Integer> maximumMessageSizeProvider;
     @Getter @Setter
     private Consumer<ActorRef> watchActorCallback;
     @Getter @Setter
@@ -141,7 +141,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
     }
 
     @Override
-    public long getMaximumMessageSize()
+    public int getMaximumMessageSize()
     {
         try
         {
@@ -150,7 +150,7 @@ public abstract class AbstractProtocolParticipantModel implements ProtocolPartic
         catch (Exception exception)
         {
             getLog().error("Unable to retrieve maximum message size!", exception);
-            return 0L;
+            return 0;
         }
     }
 }

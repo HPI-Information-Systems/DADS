@@ -1,5 +1,6 @@
 package de.hpi.msc.jschneider.protocol.dimensionReduction.receiver;
 
+import de.hpi.msc.jschneider.math.SequenceMatrix;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.dimensionReduction.DimensionReductionEvents;
@@ -9,8 +10,11 @@ import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
 import lombok.val;
+import org.ojalgo.matrix.store.MatrixStore;
 
 import java.time.LocalDateTime;
+
+import static org.ojalgo.function.constant.PrimitiveMath.SUBTRACT;
 
 public class DimensionReductionReceiverControl extends AbstractProtocolParticipantControl<DimensionReductionReceiverModel>
 {
@@ -76,19 +80,19 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
 
     private void onPrincipalComponentTransferFinished(DataReceiver dataReceiver)
     {
-        getModel().setPrincipalComponents(getModel().getPrincipalComponentsSink().getMatrix(3L));
+        getModel().setPrincipalComponents(getModel().getPrincipalComponentsSink().getMatrix());
         performDimensionReduction();
     }
 
     private void onRotationTransferFinished(DataReceiver dataReceiver)
     {
-        getModel().setRotation(getModel().getRotationSink().getMatrix(3L));
+        getModel().setRotation(getModel().getRotationSink().getMatrix());
         performDimensionReduction();
     }
 
     private void onColumnMeansTransferFinished(DataReceiver dataReceiver)
     {
-        getModel().setColumnMeans(getModel().getColumnMeansSink().getMatrix(getModel().getNumberOfColumns()));
+        getModel().setColumnMeans(getModel().getColumnMeansSink().getMatrix());
         performDimensionReduction();
     }
 
@@ -111,8 +115,11 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
 
         val startTime = LocalDateTime.now();
 
-        val reducedProjection = getModel().getProjection().subtractColumnBased(getModel().getColumnMeans()).multiply(getModel().getPrincipalComponents());
+        val reducedProjection = reduceProjection();
         val rotatedProjection = getModel().getRotation().multiply(reducedProjection.transpose());
+
+//        Debug.print(rotatedProjection.logical().row(0, 1, 2).get().transpose(), "reduced-projection.txt");
+
         val projection2d = rotatedProjection.logical().row(0, 1).get();
 
         val endTime = LocalDateTime.now();
@@ -132,5 +139,17 @@ public class DimensionReductionReceiverControl extends AbstractProtocolParticipa
                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
                                                                       .build());
+
+        isReadyToBeTerminated();
+    }
+
+    private MatrixStore<Double> reduceProjection()
+    {
+        if (getModel().getProjection() instanceof SequenceMatrix)
+        {
+            return ((SequenceMatrix) getModel().getProjection()).subtractColumnBased(getModel().getColumnMeans()).multiply(getModel().getPrincipalComponents());
+        }
+
+        return getModel().getProjection().operateOnColumns(SUBTRACT, getModel().getColumnMeans()).get().multiply(getModel().getPrincipalComponents());
     }
 }

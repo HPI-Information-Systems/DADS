@@ -4,6 +4,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import de.hpi.msc.jschneider.bootstrap.command.validation.ExistingFileValidator;
 import de.hpi.msc.jschneider.bootstrap.command.validation.FileValidator;
+import de.hpi.msc.jschneider.bootstrap.command.validation.StringToDistributionStrategyConverter;
 import de.hpi.msc.jschneider.bootstrap.command.validation.StringToPathConverter;
 import lombok.Getter;
 
@@ -13,6 +14,10 @@ import java.nio.file.Path;
 @Parameters(commandDescription = "starts a master actor system")
 public class MasterCommand extends AbstractCommand
 {
+    private static final DistributionStrategy DEFAULT_DISTRIBUTION_STRATEGY = DistributionStrategy.HETEROGENEOUS;
+
+    private static final float DEFAULT_WORK_LOAD_FACTOR = 0.8f;
+
     @Parameter(names = "--min-slaves", description = "minimum number of slaves to start processing", required = true)
     private int minimumNumberOfSlaves;
 
@@ -33,4 +38,10 @@ public class MasterCommand extends AbstractCommand
 
     @Parameter(names = "--output", description = "file to write resulting normality scores to", required = true, converter = StringToPathConverter.class, validateValueWith = FileValidator.class)
     private Path outputFilePath;
+
+    @Parameter(names = "--distribution", description = "strategy for distributing the workload", required = false, converter = StringToDistributionStrategyConverter.class)
+    private DistributionStrategy distributionStrategy = DEFAULT_DISTRIBUTION_STRATEGY;
+
+    @Parameter(names = "--work-load-factor", description = "portion of main memory that is contributed to the usual calculation process", required = false)
+    private float workLoadFactor = DEFAULT_WORK_LOAD_FACTOR;
 }

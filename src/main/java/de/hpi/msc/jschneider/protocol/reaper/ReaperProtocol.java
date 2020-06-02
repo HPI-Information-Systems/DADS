@@ -49,6 +49,8 @@ public class ReaperProtocol
     {
         val model = ReaperModel.builder()
                                .terminateActorSystemCallback(actorSystem::terminate)
+                               .schedulerProvider(actorSystem::scheduler)
+                               .dispatcherProvider(actorSystem::dispatcher)
                                .build();
         val control = new ReaperControl(model);
         return actorSystem.actorOf(ProtocolParticipant.props(control), ROOT_ACTOR_NAME);

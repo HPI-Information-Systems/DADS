@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.scoring.worker;
 
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.math.Calculate;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
@@ -13,7 +14,14 @@ import de.hpi.msc.jschneider.protocol.scoring.ScoringMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
 import de.hpi.msc.jschneider.utility.Int64Range;
-import de.hpi.msc.jschneider.utility.dataTransfer.source.GenericDataSource;
+import de.hpi.msc.jschneider.utility.dataTransfer.DataSource;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigArrayBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleBigList;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntBigArrayBigList;
+import it.unimi.dsi.fastutil.ints.IntBigList;
 import lombok.val;
 import lombok.var;
 
@@ -24,6 +32,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 public class ScoringWorkerControl extends AbstractProtocolParticipantControl<ScoringWorkerModel>
 {
@@ -121,7 +130,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             assert getModel().getEdgeCreationOrder() == null : "Edge creation order was received already!";
 
             val sortedEdgeCreationOrder = message.getGraphPartition().getCreatedEdgesBySubSequenceIndex()
-                                                 .entrySet()
+                                                 .long2ObjectEntrySet()
                                                  .stream()
                                                  .sorted(Comparator.comparingLong(Map.Entry::getKey))
                                                  .map(Map.Entry::getValue)
@@ -187,7 +196,7 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         {
             assert getModel().getEdges() == null : "Graph received already!";
 
-            getModel().setEdges(message.getGraph());
+            getModel().setEdges(new Int2ObjectLinkedOpenHashMap<>(message.getGraph()));
             scoreSubSequences();
         }
         finally
@@ -203,13 +212,26 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             return;
         }
 
+        if (SystemParameters.getCommand().isDisableSmartScoring())
+        {
+            scoreSubSequenceNaive();
+        }
+        else
+        {
+            scoreSubSequencesSmart();
+        }
+    }
+
+    private void scoreSubSequencesSmart()
+    {
         val startTime = LocalDateTime.now();
 
         getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
         val combinedEdgeCreationOrder = createEdgeCreationOrder();
+//        Debug.print(combinedEdgeCreationOrder, "edge-creation-order.txt");
 //        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
-        val pathSummands = new ArrayList<Double>(getModel().getQueryPathLength());
+        val pathSummands = new DoubleArrayList(getModel().getQueryPathLength());
         var pathSum = 0.0d;
         var first = true;
         var minScore = Double.MAX_VALUE;
@@ -227,15 +249,80 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             }
             else
             {
-                for (var edgeIndex = 0; edgeIndex < combinedEdgeCreationOrder.get(pathStartIndex - 1).size(); ++edgeIndex)
+                for (var edgeIndex = 0; edgeIndex < combinedEdgeCreationOrder.get(pathStartIndex - 1).size64(); ++edgeIndex)
                 {
-                    pathSum -= pathSummands.remove(0);
+                    pathSum -= pathSummands.removeDouble(0);
                 }
 
                 pathSum = addSummands(pathSummands, combinedEdgeCreationOrder.get(pathStartIndex + getModel().getQueryPathLength() - 1), pathSum);
             }
 
             val score = pathSum / pathSummands.size();
+            maxScore = Math.max(maxScore, score);
+            minScore = Math.min(minScore, score);
+            getModel().getPathScores().add(score);
+        }
+
+        val endTime = LocalDateTime.now();
+
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.PathScoresCreatedEvent.builder()
+                                                                                                        .sender(getModel().getSelf())
+                                                                                                        .receiver(eventDispatcher)
+                                                                                                        .startTime(startTime)
+                                                                                                        .endTime(endTime)
+                                                                                                        .build());
+
+        sendLastPathScoresToNextResponsibleProcessor();
+        publishMinimumAndMaximumScore(minScore, maxScore);
+    }
+
+    private double addSummands(DoubleList pathSummands, IntBigList edgeCreationOrder, double currentPathSum)
+    {
+        var newPathSum = currentPathSum;
+        val edgeCreationOrderIterator = edgeCreationOrder.iterator();
+        while (edgeCreationOrderIterator.hasNext())
+        {
+            val edgeHash = edgeCreationOrderIterator.nextInt();
+            val edge = getModel().getEdges().get(edgeHash);
+            val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
+            val summand = (double) edge.getWeight() * nodeDegree;
+            newPathSum += summand;
+            pathSummands.add(summand);
+        }
+
+        return newPathSum;
+    }
+
+    private void scoreSubSequenceNaive()
+    {
+        val startTime = LocalDateTime.now();
+
+        getModel().setNodeDegrees(Calculate.nodeDegrees(getModel().getEdges().values()));
+        val combinedEdgeCreationOrder = createEdgeCreationOrder();
+//        Debug.print(combinedEdgeCreationOrder, "edge-creation-order.txt");
+//        Debug.print(combinedEdgeCreationOrder, String.format("edge-creation-order-%1$s.txt", ProcessorId.of(getModel().getSelf())));
+
+        var minScore = Double.MAX_VALUE;
+        var maxScore = Double.MIN_VALUE;
+
+        for (var pathStartIndex = 0; pathStartIndex <= combinedEdgeCreationOrder.size() - getModel().getQueryPathLength(); ++pathStartIndex)
+        {
+            var score = 0.0d;
+            var numberOfSummands = 0;
+            for (var edgeIndex = 0; edgeIndex < getModel().getQueryPathLength(); ++edgeIndex)
+            {
+                val edgeCreationOrderIterator = combinedEdgeCreationOrder.get(pathStartIndex + edgeIndex).iterator();
+                while (edgeCreationOrderIterator.hasNext())
+                {
+                    val edgeHash = edgeCreationOrderIterator.nextInt();
+                    val edge = getModel().getEdges().get(edgeHash);
+                    val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
+                    score += (double) edge.getWeight() * nodeDegree;
+                    numberOfSummands++;
+                }
+            }
+
+            score /= numberOfSummands;
             maxScore = Math.max(maxScore, score);
             minScore = Math.min(minScore, score);
             getModel().getPathScores().add(score);
@@ -303,38 +390,31 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         }
     }
 
-    private List<List<Integer>> createEdgeCreationOrder()
+    private List<IntBigList> createEdgeCreationOrder()
     {
         if (getModel().getRemoteEdgeCreationOrder() == null)
         {
             return getModel().getEdgeCreationOrder();
         }
 
-        val combinedEdgeCreationOrder = new ArrayList<List<Integer>>(getModel().getEdgeCreationOrder());
-        val remoteEdgeCreationOrder = new ArrayList<List<Integer>>();
+        val combinedEdgeCreationOrder = new ArrayList<IntBigList>(getModel().getEdgeCreationOrder());
+        val remoteEdgeCreationOrder = new ArrayList<IntBigList>(getModel().getRemoteEdgeCreationOrder().length);
         for (val remoteEdgeCreationOrderPart : getModel().getRemoteEdgeCreationOrder())
         {
-            remoteEdgeCreationOrder.add(Arrays.stream(remoteEdgeCreationOrderPart).boxed().collect(Collectors.toList()));
+            val list = new IntBigArrayBigList(remoteEdgeCreationOrderPart.length);
+            for (val entry : remoteEdgeCreationOrderPart)
+            {
+                list.add(entry);
+            }
+
+            remoteEdgeCreationOrder.add(list);
         }
 
         combinedEdgeCreationOrder.addAll(0, remoteEdgeCreationOrder);
 
+        getModel().setEdgeCreationOrder(null);
+        getModel().setRemoteEdgeCreationOrder(null);
         return combinedEdgeCreationOrder;
-    }
-
-    private double addSummands(List<Double> pathSummands, List<Integer> edgeCreationOrder, double currentPathSum)
-    {
-        var newPathSum = currentPathSum;
-        for (val edgeHash : edgeCreationOrder)
-        {
-            val edge = getModel().getEdges().get(edgeHash);
-            val nodeDegree = getModel().getNodeDegrees().get(edge.getFrom().hashCode()) - 1L;
-            val summand = (double) edge.getWeight() * nodeDegree;
-            newPathSum += summand;
-            pathSummands.add(summand);
-        }
-
-        return newPathSum;
     }
 
     private boolean isReadyToScoreSubSequences()
@@ -394,43 +474,51 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
             return;
         }
 
+        if (SystemParameters.getCommand().isDisableSmartScoring())
+        {
+            calculateRunningMeanNaive();
+        }
+        else
+        {
+            calculateRunningMeanSmart();
+        }
+    }
+
+    private void calculateRunningMeanSmart()
+    {
         val startTime = LocalDateTime.now();
 
         val minScore = getModel().getGlobalMaximumScore() * -1.0d;
         val maxScore = getModel().getGlobalMinimumScore() * -1.0d;
         val scoreRange = maxScore - minScore;
-        val normalizedScores = new double[getModel().getPathScores().size() + getModel().getOverlappingPathScores().length];
-        for (var scoreIndex = 0; scoreIndex < normalizedScores.length; ++scoreIndex)
-        {
-            var score = 0.0d;
-            if (scoreIndex < getModel().getOverlappingPathScores().length)
-            {
-                score = getModel().getOverlappingPathScores()[scoreIndex];
-            }
-            else
-            {
-                score = getModel().getPathScores().get(scoreIndex - getModel().getOverlappingPathScores().length);
-            }
+        val normalizationFactor = scoreRange * getModel().getSubSequenceLength();
 
-            normalizedScores[scoreIndex] = (-score - minScore) / scoreRange;
-        }
+        val scoresIterator = DoubleStream.concat(Arrays.stream(getModel().getOverlappingPathScores()), getModel().getPathScores().stream().mapToDouble(value -> value))
+                                         .map(score -> (-score - minScore) / normalizationFactor)
+                                         .iterator();
 
+        val numberOfMeans = (long) getModel().getOverlappingPathScores().length + getModel().getPathScores().size() - getModel().getSubSequenceLength() + 1L;
         var runningMean = 0.0d;
-        val runningMeans = new ArrayList<Double>();
-        final double windowSizeAsDouble = getModel().getSubSequenceLength();
-        for (var runningMeanStartIndex = 0; runningMeanStartIndex <= normalizedScores.length - getModel().getSubSequenceLength(); ++runningMeanStartIndex)
+        val runningMeanWindow = new DoubleArrayList(getModel().getSubSequenceLength());
+        val runningMeans = new DoubleBigArrayBigList(numberOfMeans);
+        var meanIndex = 0L;
+        while (meanIndex++ < numberOfMeans)
         {
             if (runningMeans.isEmpty())
             {
                 for (var windowIndex = 0; windowIndex < getModel().getSubSequenceLength(); ++windowIndex)
                 {
-                    runningMean += normalizedScores[runningMeanStartIndex + windowIndex] / windowSizeAsDouble;
+                    val score = scoresIterator.nextDouble();
+                    runningMean += score;
+                    runningMeanWindow.add(score);
                 }
             }
             else
             {
-                runningMean -= normalizedScores[runningMeanStartIndex - 1] / windowSizeAsDouble;
-                runningMean += normalizedScores[runningMeanStartIndex + getModel().getSubSequenceLength() - 1] / windowSizeAsDouble;
+                val score = scoresIterator.nextDouble();
+                runningMean -= runningMeanWindow.removeDouble(0);
+                runningMean += score;
+                runningMeanWindow.add(score);
             }
 
             runningMeans.add(runningMean);
@@ -445,7 +533,45 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
                                                                                                            .endTime(endTime)
                                                                                                            .build());
 
-        publishPathScores(Doubles.toArray(runningMeans));
+        publishPathScores(runningMeans);
+    }
+
+    private void calculateRunningMeanNaive()
+    {
+        val startTime = LocalDateTime.now();
+
+        val minScore = getModel().getGlobalMaximumScore() * -1.0d;
+        val maxScore = getModel().getGlobalMinimumScore() * -1.0d;
+        val scoreRange = maxScore - minScore;
+        val normalizationFactor = scoreRange * getModel().getSubSequenceLength();
+
+        val scores = DoubleStream.concat(Arrays.stream(getModel().getOverlappingPathScores()), getModel().getPathScores().stream().mapToDouble(value -> value))
+                                 .map(score -> (-score - minScore) / normalizationFactor)
+                                 .toArray();
+
+        val numberOfMeans = (long) getModel().getOverlappingPathScores().length + getModel().getPathScores().size() - getModel().getSubSequenceLength() + 1L;
+        val runningMeans = new DoubleBigArrayBigList(numberOfMeans);
+
+        for (var meanStartIndex = 0; meanStartIndex < numberOfMeans; ++meanStartIndex)
+        {
+            var score = 0.0d;
+            for (var windowIndex = 0; windowIndex < getModel().getSubSequenceLength(); ++windowIndex)
+            {
+                score += scores[meanStartIndex + windowIndex];
+            }
+            runningMeans.add(score);
+        }
+
+        val endTime = LocalDateTime.now();
+
+        trySendEvent(ProtocolType.Statistics, eventDispatcher -> StatisticsEvents.PathScoresNormalizedEvent.builder()
+                                                                                                           .sender(getModel().getSelf())
+                                                                                                           .receiver(eventDispatcher)
+                                                                                                           .startTime(startTime)
+                                                                                                           .endTime(endTime)
+                                                                                                           .build());
+
+        publishPathScores(runningMeans);
     }
 
     private boolean isReadyToCalculateRunningMean()
@@ -463,18 +589,20 @@ public class ScoringWorkerControl extends AbstractProtocolParticipantControl<Sco
         return true;
     }
 
-    private void publishPathScores(double[] pathScores)
+    private void publishPathScores(DoubleBigList pathScores)
     {
 //        Debug.print(pathScores, String.format("path-scores-%1$s.txt", ProcessorId.of(getModel().getSelf())));
 
         val protocol = getMasterProtocol(ProtocolType.Scoring);
         assert protocol.isPresent() : "The master processor must implement the Scoring protocol!";
 
-        getModel().getDataTransferManager().transfer(GenericDataSource.create(pathScores),
+        getModel().getDataTransferManager().transfer(DataSource.create(pathScores),
                                                      (dataDistributor, operationId) -> ScoringMessages.InitializePathScoresTransferMessage.builder()
                                                                                                                                           .sender(dataDistributor)
                                                                                                                                           .receiver(protocol.get().getRootActor())
                                                                                                                                           .operationId(operationId)
                                                                                                                                           .build());
+
+        isReadyToBeTerminated();
     }
 }

@@ -1,18 +1,13 @@
 package de.hpi.msc.jschneider.protocol.graphMerging.partitionReceiver;
 
-import de.hpi.msc.jschneider.data.graph.GraphEdge;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.graphMerging.GraphMergingMessages;
 import de.hpi.msc.jschneider.protocol.nodeCreation.NodeCreationEvents;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.Serialize;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.AdHocGraphEdgeSink;
 import lombok.val;
-
-import java.util.Arrays;
 
 public class GraphPartitionReceiverControl extends AbstractProtocolParticipantControl<GraphPartitionReceiverModel>
 {
@@ -58,41 +53,26 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
 
         getModel().getDataTransferManager().accept(message, dataReceiver ->
         {
-            dataReceiver.setState(ProcessorId.of(message.getSender()));
-
-            return dataReceiver.whenDataPartReceived(this::onEdgePartitionPartReceived)
-                               .whenFinished(this::onEdgePartitionTransferFinished);
+            val workerSystem = ProcessorId.of(message.getSender());
+            val sink = new AdHocGraphEdgeSink().whenDataPart(s -> onEdgePartReceived(workerSystem, s));
+            return dataReceiver.addSink(sink)
+                    .whenFinished(receiver -> onEdgePartitionTransferFinished(workerSystem));
         });
     }
 
-    private void onEdgePartitionPartReceived(DataTransferMessages.DataPartMessage message)
+    private void onEdgePartReceived(ProcessorId workerSystem, AdHocGraphEdgeSink sink)
     {
-        if (message.getPart().length < 1)
-        {
-            return;
-        }
-
-        val edges = Serialize.toGraphEdges(message.getPart());
-        val summedEdgeWeights = Arrays.stream(edges).mapToLong(GraphEdge::getWeight).sum();
-
-        getLog().info("Received graph edges (#edges = {}, tot. edge weight = {}) from {}.",
-                      edges.length,
-                      summedEdgeWeights,
-                      message.getSender().path().root());
-
+        getLog().info("Received graph {} graph edges from {}.", sink.edgesLength(), workerSystem);
         send(GraphMergingMessages.EdgesReceivedMessage.builder()
                                                       .sender(getModel().getSelf())
                                                       .receiver(getModel().getGraphMerger())
-                                                      .edges(edges)
+                                                      .edges(sink.edges())
+                                                      .edgesLength(sink.edgesLength())
                                                       .build());
     }
 
-    private void onEdgePartitionTransferFinished(DataReceiver dataReceiver)
+    private void onEdgePartitionTransferFinished(ProcessorId workerSystem)
     {
-        assert dataReceiver.getState() instanceof ProcessorId : "DataReceiver state should be a ProcessorId!";
-
-        val workerSystem = (ProcessorId) dataReceiver.getState();
-
         getModel().getRunningDataTransfers().remove(workerSystem);
 
         if (!getModel().getRunningDataTransfers().isEmpty())
@@ -105,5 +85,7 @@ public class GraphPartitionReceiverControl extends AbstractProtocolParticipantCo
                                                          .receiver(getModel().getGraphMerger())
                                                          .workerSystems(getModel().getWorkerSystems())
                                                          .build());
+
+        isReadyToBeTerminated();
     }
 }

@@ -3,8 +3,6 @@ package de.hpi.msc.jschneider;
 import com.typesafe.config.Config;
 import de.hpi.msc.jschneider.bootstrap.command.AbstractCommand;
 
-import java.nio.file.Path;
-
 public class SystemParameters
 {
     private static AbstractCommand command;
@@ -38,14 +36,9 @@ public class SystemParameters
         return command.getNumberOfWorkers();
     }
 
-    public static Path getWorkingDirectory()
+    public static int getMaximumMessageSize()
     {
-        return command.getWorkingDirectory();
-    }
-
-    public static long getMaximumMessageSize()
-    {
-        return configuration.getBytes("akka.remote.maximum-payload-bytes");
+        return (int) Math.min(Integer.MAX_VALUE, configuration.getBytes("akka.remote.maximum-payload-bytes"));
     }
 
     public static long getMaximumMemory()

@@ -5,6 +5,8 @@ import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.bootstrap.command.MasterCommand;
 import de.hpi.msc.jschneider.fileHandling.reading.BinarySequenceReader;
 import de.hpi.msc.jschneider.fileHandling.reading.SequenceReader;
+import de.hpi.msc.jschneider.protocol.common.control.ProtocolParticipantControl;
+import de.hpi.msc.jschneider.protocol.common.model.ProtocolParticipantModel;
 import de.hpi.msc.jschneider.protocol.processorRegistration.Processor;
 import de.hpi.msc.jschneider.protocol.processorRegistration.ProcessorId;
 import de.hpi.msc.jschneider.protocol.reaper.ReapedActor;
@@ -60,9 +62,9 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
 
 
     @Override
-    public Collection<Props> createDistributorsFromNewProcessor(Processor newProcessor)
+    public Collection<ProtocolParticipantControl<? extends ProtocolParticipantModel>> createDistributorsFromNewProcessor(Processor newProcessor)
     {
-        val props = new ArrayList<Props>();
+        val controls = new ArrayList<ProtocolParticipantControl<? extends ProtocolParticipantModel>>();
         var sequenceReader = sequenceReaders.get(newProcessor.getId());
         if (sequenceReader != null)
         {
@@ -73,14 +75,14 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
         {
             sequenceReader = createNextSequenceReader();
             sequenceReaders.put(newProcessor.getId(), sequenceReader);
-            props.add(createProps(newProcessor.getId(), sequenceReader, sequenceReaders.size() == expectedNumberOfProcessors));
+            controls.add(createControl(newProcessor.getId(), sequenceReader, sequenceReaders.size() == expectedNumberOfProcessors));
         }
 
 
-        return props;
+        return controls;
     }
 
-    private Props createProps(ProcessorId sliceReceiverActorSystem, SequenceReader reader, boolean isLastSubSequenceChunk)
+    private ProtocolParticipantControl<? extends ProtocolParticipantModel> createControl(ProcessorId sliceReceiverActorSystem, SequenceReader reader, boolean isLastSubSequenceChunk)
     {
         val currentSubSequenceStartIndex = nextSubSequenceStartIndex;
         nextSubSequenceStartIndex += Math.max(1, reader.getSize() - (subSequenceLength - 1));
@@ -100,8 +102,7 @@ public class EqualSequenceSliceDistributorFactory implements SequenceSliceDistri
                                                  .convolutionSize(convolutionSize)
                                                  .build();
 
-        val control = new SequenceSliceDistributorControl(model);
-        return ReapedActor.props(control);
+        return new SequenceSliceDistributorControl(model);
     }
 
     private SequenceReader createNextSequenceReader()

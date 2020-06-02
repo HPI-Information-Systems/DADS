@@ -17,7 +17,11 @@ public class IntersectionCalculator implements WorkConsumer
 
     private void process(ActorPoolWorkerControl control, IntersectionCalculatorMessages.CalculateIntersectionsMessage message)
     {
-        val intersections = Calculate.intersections(message.getProjectionChunk(), message.getIntersectionPoints(), message.getFirstSubSequenceIndex());
+        val intersections = Calculate.intersections(message.getProjection(),
+                                                    message.getChunkStart(),
+                                                    message.getChunkLength(),
+                                                    message.getIntersectionPoints(),
+                                                    message.getFirstSubSequenceIndex());
         control.send(IntersectionCalculatorMessages.IntersectionsCalculatedMessage.builder()
                                                                                   .sender(control.getModel().getSelf())
                                                                                   .receiver(message.getSender())

@@ -12,19 +12,41 @@ public class DataTransferMessages
     public static abstract class InitializeDataTransferMessage extends MessageExchangeMessages.RedirectableMessage
     {
         private static final long serialVersionUID = 7385042862954704746L;
-        @NonNull
         private long operationId;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class RequestDataTransferSynchronizationMessage extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = 2494274760654501310L;
+        private long operationId;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class DataTransferSynchronizationMessage extends MessageExchangeMessages.MessageExchangeMessage
+    {
+        private static final long serialVersionUID = 5673457957093341350L;
+        private long operationId;
+        private long numberOfElements;
+        private int bufferSize;
+    }
+
+    @NoArgsConstructor @SuperBuilder @Getter
+    public static class MatrixTransferSynchronizationMessage extends DataTransferSynchronizationMessage
+    {
+        private static final long serialVersionUID = -5071371382988058267L;
+        private long numberOfRows;
+        private long numberOfColumns;
     }
 
     @NoArgsConstructor @SuperBuilder @Getter
     public static class DataPartMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = -4211856951220195380L;
-        @NonNull
         private long operationId;
         @NonNull
         private byte[] part;
-        @NonNull
+        private int partLength;
         private boolean isLastPart;
     }
 
@@ -32,7 +54,6 @@ public class DataTransferMessages
     public static class RequestNextDataPartMessage extends MessageExchangeMessages.MessageExchangeMessage
     {
         private static final long serialVersionUID = 53330389621278219L;
-        @NonNull
         private long operationId;
     }
 

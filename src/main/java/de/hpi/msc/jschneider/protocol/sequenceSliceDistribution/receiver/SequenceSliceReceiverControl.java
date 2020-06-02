@@ -1,16 +1,15 @@
 package de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.receiver;
 
-import com.google.common.primitives.Doubles;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.ProtocolType;
 import de.hpi.msc.jschneider.protocol.common.control.AbstractProtocolParticipantControl;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionEvents;
 import de.hpi.msc.jschneider.protocol.sequenceSliceDistribution.SequenceSliceDistributionMessages;
 import de.hpi.msc.jschneider.protocol.statistics.StatisticsEvents;
 import de.hpi.msc.jschneider.utility.ImprovedReceiveBuilder;
-import de.hpi.msc.jschneider.utility.SequenceMatrixInitializer;
-import de.hpi.msc.jschneider.utility.Serialize;
 import de.hpi.msc.jschneider.utility.dataTransfer.DataReceiver;
-import de.hpi.msc.jschneider.utility.dataTransfer.DataTransferMessages;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.ImprovedSequenceMatrixSink;
+import de.hpi.msc.jschneider.utility.dataTransfer.sink.NaiveSequenceMatrixSink;
 import lombok.val;
 
 import java.time.LocalDateTime;
@@ -35,7 +34,6 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
         getModel().setSubSequenceLength(message.getSubSequenceLength());
         getModel().setConvolutionSize(message.getConvolutionSize());
         getModel().setLastSubSequenceChunk(message.isLastSubSequenceChunk());
-        getModel().setProjectionInitializer(new SequenceMatrixInitializer(getModel().getSubSequenceLength(), getModel().getConvolutionSize()));
 
         trySendEvent(ProtocolType.SequenceSliceDistribution, eventDispatcher -> SequenceSliceDistributionEvents.SubSequenceParametersReceivedEvent.builder()
                                                                                                                                                   .sender(getModel().getSelf())
@@ -47,32 +45,32 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                                   .build());
 
         getModel().getDataTransferManager().accept(message,
-                                                   dataReceiver -> dataReceiver.whenDataPartReceived(this::onSlicePart)
-                                                                               .whenFinished(this::whenFinished)
-                                                                               .addSink(getModel().getSequenceWriter()));
+                                                   dataReceiver ->
+                                                   {
+                                                       if (SystemParameters.getCommand().isDisableSequenceMatrix())
+                                                       {
+                                                           getModel().setProjectionSink(new NaiveSequenceMatrixSink(getModel().getSubSequenceLength(), getModel().getConvolutionSize()));
+                                                       }
+                                                       else
+                                                       {
+                                                           getModel().setProjectionSink(new ImprovedSequenceMatrixSink(getModel().getSubSequenceLength(), getModel().getConvolutionSize()));
+                                                       }
+                                                       return dataReceiver.addSink(getModel().getProjectionSink())
+                                                                          .whenFinished(this::whenFinished);
+                                                   });
 
         getModel().setStartTime(LocalDateTime.now());
         getLog().debug("Start receiving sequence slice from {}.", message.getSender().path());
     }
 
-    private void onSlicePart(DataTransferMessages.DataPartMessage message)
-    {
-        if (message.getPart().length < 1)
-        {
-            getLog().error("Received empty sequence slice part!");
-            return;
-        }
-
-        val doubles = Serialize.toDoubles(message.getPart());
-
-        getModel().setMinimumRecord(Math.min(getModel().getMinimumRecord(), Doubles.min(doubles)));
-        getModel().setMaximumRecord(Math.max(getModel().getMaximumRecord(), Doubles.max(doubles)));
-        getModel().getProjectionInitializer().append(doubles);
-    }
-
     private void whenFinished(DataReceiver receiver)
     {
-        val projection = getModel().getProjectionInitializer().create();
+        val projection = getModel().getProjectionSink().getMatrix();
+        val minimumRecord = getModel().getProjectionSink().getMinimumRecord();
+        val maximumRecord = getModel().getProjectionSink().getMaximumRecord();
+
+//        Debug.print(projection, "projection.txt");
+//        Debug.printBinary(projection, "projection.bin");
 
         getModel().setEndTime(LocalDateTime.now());
 
@@ -95,9 +93,11 @@ public class SequenceSliceReceiverControl extends AbstractProtocolParticipantCon
                                                                                                                                       .receiver(eventDispatcher)
                                                                                                                                       .firstSubSequenceIndex(getModel().getFirstSubSequenceIndex())
                                                                                                                                       .isLastSubSequenceChunk(getModel().isLastSubSequenceChunk())
-                                                                                                                                      .minimumRecord(getModel().getMinimumRecord())
-                                                                                                                                      .maximumRecord(getModel().getMaximumRecord())
+                                                                                                                                      .minimumRecord(minimumRecord)
+                                                                                                                                      .maximumRecord(maximumRecord)
                                                                                                                                       .projection(projection)
                                                                                                                                       .build());
+
+        isReadyToBeTerminated();
     }
 }

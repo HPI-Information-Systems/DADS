@@ -17,7 +17,7 @@ public interface ProtocolParticipantModel
 
     void setProcessorProvider(Callable<Processor[]> provider);
 
-    void setMaximumMessageSizeProvider(Callable<Long> provider);
+    void setMaximumMessageSizeProvider(Callable<Integer> provider);
 
     ActorRef getSelf();
 
@@ -35,7 +35,7 @@ public interface ProtocolParticipantModel
 
     Processor[] getProcessors();
 
-    long getMaximumMessageSize();
+    int getMaximumMessageSize();
 
     Consumer<ActorRef> getWatchActorCallback();
 

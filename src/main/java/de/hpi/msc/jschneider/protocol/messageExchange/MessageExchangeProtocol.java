@@ -2,6 +2,7 @@ package de.hpi.msc.jschneider.protocol.messageExchange;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import de.hpi.msc.jschneider.SystemParameters;
 import de.hpi.msc.jschneider.protocol.common.BaseProtocol;
 import de.hpi.msc.jschneider.protocol.common.Protocol;
 import de.hpi.msc.jschneider.protocol.common.ProtocolParticipant;
@@ -19,18 +20,18 @@ import java.util.Set;
 
 public class MessageExchangeProtocol
 {
-    public static final boolean IS_ENABLED = true;
-
     private static final Logger Log = LogManager.getLogger(MessageExchangeProtocol.class);
     private static final String ROOT_ACTOR_NAME = "MessageExchangeRootActor";
     private static final String EVENT_DISPATCHER_NAME = "MessageExchangeEventDispatcher";
 
     public static void initializeInPlace(Set<Protocol> localProtocols, ActorSystem actorSystem)
     {
-        if (IS_ENABLED)
+        if (SystemParameters.getCommand().isDisableMessageExchange())
         {
-            localProtocols.add(initialize(actorSystem));
+            return;
         }
+
+        localProtocols.add(initialize(actorSystem));
     }
 
     private static Protocol initialize(ActorSystem actorSystem)

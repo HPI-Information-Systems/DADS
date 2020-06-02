@@ -58,6 +58,7 @@ public class StatisticsRootActorControl extends AbstractProtocolParticipantContr
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.MachineUtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.MessageExchangeUtilizationEvent.class);
         subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.ActorPoolUtilizationEvent.class);
+        subscribeToLocalEvent(ProtocolType.Statistics, StatisticsEvents.ActorSystemUtilizationEvent.class);
     }
 
     private void onRegistrationAcknowledged(ProcessorRegistrationEvents.RegistrationAcknowledgedEvent message)
