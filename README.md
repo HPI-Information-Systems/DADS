@@ -2,6 +2,8 @@
 
 Source code for the Distributed Anomaly Detection System (DADS)
 
+This algorithm is based on the [Series2Graph](http://helios.mi.parisdescartes.fr/~themisp/series2graph/) algorithm, that was published in `P. Boniol and T. Palpanas, Series2Graph: Graph-based Subsequence Anomaly Detection in Time Series, PVLDB (2020)`.
+
 ## Usage
 
 ### Building
