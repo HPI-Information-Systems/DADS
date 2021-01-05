@@ -20,6 +20,25 @@ mvn package
 You can skip the tests with `-DskipTests`.
 The created fat JAR is located in the `target`-folder.
 
+### Notes
+
+The algorithm only accepts binary input files without timestamps and ordered double values.
+To convert a text file, use the Python script in [`script/sequence-converter/convert.py`](./script/sequence-converter/convert.py).
+
+#### Example Conversion
+
+Input file:
+```text
+0.333443
+0.466437
+0.474765
+```
+
+Converting:
+```shell
+python3 script/sequence-converter/convert.py --input input.txt --output output.bin
+```
+
 ### Running
 
 Requirements:
